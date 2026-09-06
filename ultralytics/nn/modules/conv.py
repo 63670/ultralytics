@@ -16,6 +16,7 @@ __all__ = (
     "Conv",
     "Conv2",
     "ConvTranspose",
+    "DirectionalConv",
     "DWConv",
     "DWConvTranspose2d",
     "Focus",
@@ -198,6 +199,30 @@ class DWConv(Conv):
             act (bool | nn.Module): Activation function.
         """
         super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), d=d, act=act)
+
+
+class DirectionalConv(nn.Module):
+    """Fuse horizontal, vertical, and local depth-wise convolution features."""
+
+    def __init__(self, c1, c2, k=7):
+        """Initialize directional convolutions with a residual connection when channels match.
+
+        Args:
+            c1 (int): Number of input channels.
+            c2 (int): Number of output channels.
+            k (int): Horizontal and vertical kernel size.
+        """
+        super().__init__()
+        self.horizontal = DWConv(c1, c1, (1, k))
+        self.vertical = DWConv(c1, c1, (k, 1))
+        self.local = DWConv(c1, c1, 3)
+        self.fuse = Conv(c1 * 3, c2, 1)
+        self.add = c1 == c2
+
+    def forward(self, x):
+        """Apply directional convolutions and fuse their features."""
+        y = self.fuse(torch.cat((self.horizontal(x), self.vertical(x), self.local(x)), 1))
+        return x + y if self.add else y
 
 
 class DWConvTranspose2d(nn.ConvTranspose2d):
