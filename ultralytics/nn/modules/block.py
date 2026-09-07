@@ -11,7 +11,7 @@ from torch import nn
 
 from ultralytics.utils.torch_utils import fuse_conv_and_bn
 
-from .conv import Conv, DWConv, GhostConv, LightConv, RepConv, autopad
+from .conv import Conv, DWConv, DirectionalConv, GhostConv, LightConv, RepConv, autopad
 from .transformer import TransformerBlock
 
 __all__ = (
@@ -36,6 +36,7 @@ __all__ = (
     "C2f",
     "C2fAttn",
     "C2fCIB",
+    "C2fDirectional",
     "C2fPSA",
     "C3Ghost",
     "C3k2",
@@ -320,6 +321,19 @@ class C2f(nn.Module):
         y = [y[0], y[1]]
         y.extend(m(y[-1]) for m in self.m)
         return self.cv2(torch.cat(y, 1))
+
+
+class C2fDirectional(C2f):
+    """C2f block followed by residual directional feature fusion."""
+
+    def __init__(self, c1: int, c2: int, n: int = 1, shortcut: bool = False, g: int = 1, e: float = 0.5):
+        """Initialize C2f with horizontal, vertical, and local feature fusion."""
+        super().__init__(c1, c2, n, shortcut, g, e)
+        self.direction = DirectionalConv(c2, c2)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply C2f feature extraction followed by directional fusion."""
+        return self.direction(super().forward(x))
 
 
 class C3(nn.Module):
