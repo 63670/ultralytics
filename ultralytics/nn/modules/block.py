@@ -53,6 +53,7 @@ __all__ = (
     "RepNCSPELAN4",
     "RepVGGDW",
     "ResNetLayer",
+    "SCAM",
     "SCDown",
     "TorchVision",
 )
@@ -239,6 +240,58 @@ class SPPF(nn.Module):
         y.extend(self.m(y[-1]) for _ in range(getattr(self, "n", 3)))
         y = self.cv2(torch.cat(y, 1))
         return y + x if getattr(self, "add", False) else y
+
+
+class ChannelRMSNorm(nn.Module):
+    """RMS normalization over the channel dimension of a BHWC tensor."""
+
+    def __init__(self, dim: int, eps: float = 1e-6):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(dim))
+        self.eps = eps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Normalize each spatial location across channels."""
+        rms = torch.rsqrt(x.pow(2).mean(dim=-1, keepdim=True) + self.eps)
+        return x * rms * self.weight
+
+
+class GlobalResponseNorm(nn.Module):
+    """Global response normalization retaining inter-channel response diversity."""
+
+    def __init__(self, channels: int, eps: float = 1e-6):
+        super().__init__()
+        self.gamma = nn.Parameter(torch.zeros(1, channels, 1, 1))
+        self.beta = nn.Parameter(torch.zeros(1, channels, 1, 1))
+        self.eps = eps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply global response normalization with an identity residual path."""
+        response = torch.norm(x, p=2, dim=(2, 3), keepdim=True)
+        normalized = response / (response.mean(dim=1, keepdim=True) + self.eps)
+        return self.gamma * (x * normalized) + self.beta + x
+
+
+class SCAM(nn.Module):
+    """Spatial correlation aggregation with large-kernel depth-wise mixing and channel MLP."""
+
+    def __init__(self, c1: int, c2: int, expand: int = 3):
+        super().__init__()
+        self.project = Conv(c1, c2, 1) if c1 != c2 else nn.Identity()
+        hidden = c2 * expand
+        self.dw = nn.Conv2d(c2, c2, 7, padding=3, groups=c2, bias=False)
+        self.norm = ChannelRMSNorm(c2)
+        self.fc1 = nn.Linear(c2, hidden)
+        self.fc2 = nn.Linear(hidden, c2)
+        self.act = nn.GELU()
+        self.grn = GlobalResponseNorm(c2)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Aggregate spatial correlation and return globally normalized residual features."""
+        residual = self.project(x)
+        y = self.dw(residual).permute(0, 2, 3, 1)
+        y = self.fc2(self.act(self.fc1(self.norm(y)))).permute(0, 3, 1, 2)
+        return self.grn(residual + y)
 
 
 class C1(nn.Module):

@@ -58,6 +58,7 @@ from .block import (
     RepNCSPELAN4,
     RepVGGDW,
     ResNetLayer,
+    SCAM,
     SCDown,
     TorchVision,
 )
@@ -183,6 +184,7 @@ __all__ = (
     "RepNCSPELAN4",
     "RepVGGDW",
     "ResNetLayer",
+    "SCAM",
     "SCDown",
     "Segment",
     "Segment26",
