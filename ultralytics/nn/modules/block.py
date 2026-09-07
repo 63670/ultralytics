@@ -27,7 +27,6 @@ __all__ = (
     "SPP",
     "SPPELAN",
     "SPPF",
-    "CrossScaleChannelGate",
     "AConv",
     "ADown",
     "Attention",
@@ -240,36 +239,6 @@ class SPPF(nn.Module):
         y.extend(self.m(y[-1]) for _ in range(getattr(self, "n", 3)))
         y = self.cv2(torch.cat(y, 1))
         return y + x if getattr(self, "add", False) else y
-
-
-class CrossScaleChannelGate(nn.Module):
-    """Adaptively balance high- and low-resolution features before neck fusion."""
-
-    def __init__(self, c_high: int, c_low: int, reduction: int = 16):
-        """Initialize a residual channel gate for a two-scale feature pair."""
-        super().__init__()
-        self.c_high, self.c_low = c_high, c_low
-        total_channels = c_high + c_low
-        hidden = max(total_channels // reduction, 8)
-        self.fc1 = nn.Conv2d(total_channels, hidden, 1, bias=True)
-        self.act = nn.SiLU()
-        self.fc2 = nn.Conv2d(hidden, total_channels, 1, bias=True)
-        self.gate = nn.Hardsigmoid()
-        nn.init.zeros_(self.fc2.weight)
-        nn.init.zeros_(self.fc2.bias)
-
-    def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
-        """Gate both scales from their joint global descriptor and concatenate the reweighted outputs."""
-        high, low = x
-        if high.shape[1] != self.c_high or low.shape[1] != self.c_low:
-            raise ValueError(
-                f"Expected {self.c_high}/{self.c_low} channels, got {high.shape[1]}/{low.shape[1]}."
-            )
-        descriptor = torch.cat((high.mean((2, 3), keepdim=True), low.mean((2, 3), keepdim=True)), 1)
-        high_gate, low_gate = (2 * self.gate(self.fc2(self.act(self.fc1(descriptor))))).split(
-            (self.c_high, self.c_low), 1
-        )
-        return torch.cat((high * high_gate, low * low_gate), 1)
 
 
 class C1(nn.Module):
