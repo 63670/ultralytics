@@ -17,6 +17,7 @@ __all__ = (
     "Conv2",
     "ConvTranspose",
     "DirectionalConv",
+    "DirectionalDownsample",
     "DWConv",
     "DWConvTranspose2d",
     "Focus",
@@ -223,6 +224,38 @@ class DirectionalConv(nn.Module):
         """Apply directional convolutions and fuse their features."""
         y = self.fuse(torch.cat((self.horizontal(x), self.vertical(x), self.local(x)), 1))
         return x + y if self.add else y
+
+
+class DirectionalDownsample(nn.Module):
+    """Downsample features with local, horizontal, and vertical depth-wise convolutions."""
+
+    def __init__(self, c1, c2, k=7, d=2):
+        """Initialize directional downsampling branches.
+
+        Args:
+            c1 (int): Number of input channels.
+            c2 (int): Number of output channels.
+            k (int): Horizontal and vertical kernel size.
+            d (int): Horizontal and vertical dilation.
+        """
+        super().__init__()
+
+        def depthwise(kernel_size, padding, dilation=1):
+            return nn.Sequential(
+                nn.Conv2d(c1, c1, kernel_size, 2, padding, dilation, groups=c1, bias=False),
+                nn.BatchNorm2d(c1),
+                nn.SiLU(),
+            )
+
+        padding = d * (k - 1) // 2
+        self.local = depthwise(3, 1)
+        self.horizontal = depthwise((1, k), (0, padding), (1, d))
+        self.vertical = depthwise((k, 1), (padding, 0), (d, 1))
+        self.project = Conv(c1, c2, 1)
+
+    def forward(self, x):
+        """Downsample and fuse local and directional features."""
+        return self.project(self.local(x) + self.horizontal(x) + self.vertical(x))
 
 
 class DWConvTranspose2d(nn.ConvTranspose2d):
