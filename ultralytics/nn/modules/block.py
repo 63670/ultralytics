@@ -27,7 +27,6 @@ __all__ = (
     "SPP",
     "SPPELAN",
     "SPPF",
-    "DirectionalSPPF",
     "AConv",
     "ADown",
     "Attention",
@@ -240,27 +239,6 @@ class SPPF(nn.Module):
         y.extend(self.m(y[-1]) for _ in range(getattr(self, "n", 3)))
         y = self.cv2(torch.cat(y, 1))
         return y + x if getattr(self, "add", False) else y
-
-
-class DirectionalSPPF(nn.Module):
-    """Spatial pyramid pooling with local, horizontal, and vertical context branches."""
-
-    def __init__(self, c1: int, c2: int, k: int = 5, strip_k: int = 11):
-        """Initialize a direction-aware SPPF with the same fusion width as standard SPPF."""
-        super().__init__()
-        if k % 2 == 0 or strip_k % 2 == 0:
-            raise ValueError("k and strip_k must be odd to preserve spatial dimensions.")
-        c_ = c1 // 2
-        self.cv1 = Conv(c1, c_, 1, 1, act=False)
-        self.cv2 = Conv(c_ * 4, c2, 1, 1)
-        self.local = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
-        self.horizontal = nn.MaxPool2d(kernel_size=(1, strip_k), stride=1, padding=(0, strip_k // 2))
-        self.vertical = nn.MaxPool2d(kernel_size=(strip_k, 1), stride=1, padding=(strip_k // 2, 0))
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Fuse raw local features with horizontal and vertical long-range pooled context."""
-        x = self.cv1(x)
-        return self.cv2(torch.cat((x, self.local(x), self.horizontal(x), self.vertical(x)), 1))
 
 
 class C1(nn.Module):
