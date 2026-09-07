@@ -17,7 +17,6 @@ __all__ = (
     "Conv2",
     "ConvTranspose",
     "DirectionalConv",
-    "PartialDirectionalConv",
     "DirectionalDownsample",
     "DWConv",
     "DWConvTranspose2d",
@@ -225,36 +224,6 @@ class DirectionalConv(nn.Module):
         """Apply directional convolutions and fuse their features."""
         y = self.fuse(torch.cat((self.horizontal(x), self.vertical(x), self.local(x)), 1))
         return x + y if self.add else y
-
-
-class PartialDirectionalConv(nn.Module):
-    """Mix a subset of channels with local, horizontal, and vertical depth-wise convolutions.
-
-    Untouched channels form a low-cost identity path, while only three small channel groups receive spatial
-    convolution. The design adapts InceptionNeXt's partial-channel mixer to elongated fabric defects.
-    """
-
-    def __init__(self, c1, c2, branch_ratio=0.125, k=11):
-        """Initialize the partial directional mixer."""
-        super().__init__()
-        if not 0 < branch_ratio < 1 / 3:
-            raise ValueError(f"branch_ratio must be in (0, 1/3), but got {branch_ratio}.")
-        self.branch_channels = max(1, int(c1 * branch_ratio))
-        self.identity_channels = c1 - 3 * self.branch_channels
-        if self.identity_channels < 1:
-            raise ValueError(f"c1={c1} is too small for branch_ratio={branch_ratio}.")
-        self.local = DWConv(self.branch_channels, self.branch_channels, 3)
-        self.horizontal = DWConv(self.branch_channels, self.branch_channels, (1, k))
-        self.vertical = DWConv(self.branch_channels, self.branch_channels, (k, 1))
-        self.project = Conv(c1, c2, 1) if c1 != c2 else nn.Identity()
-
-    def forward(self, x):
-        """Preserve identity channels and mix fixed partial directional channel groups."""
-        x_id, x_local, x_horizontal, x_vertical = x.split(
-            (self.identity_channels, self.branch_channels, self.branch_channels, self.branch_channels), 1
-        )
-        y = torch.cat((x_id, self.local(x_local), self.horizontal(x_horizontal), self.vertical(x_vertical)), 1)
-        return self.project(y)
 
 
 class DirectionalDownsample(nn.Module):
