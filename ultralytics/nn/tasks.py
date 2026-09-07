@@ -37,6 +37,7 @@ from ultralytics.nn.modules import (
     C2fCIB,
     C2fDirectional,
     C2fPSA,
+    CrossScaleChannelGate,
     C3Ghost,
     C3k2,
     C3x,
@@ -2117,6 +2118,10 @@ def parse_model(d, ch, verbose=True):
                 legacy = False
         elif m is AIFI:
             args = [ch[f], *args]
+        elif m is CrossScaleChannelGate:
+            c1_high, c1_low = (ch[x] for x in f)
+            args = [c1_high, c1_low, *args]
+            c2 = c1_high + c1_low
         elif m in frozenset({HGStem, HGBlock}):
             c1, cm, c2 = ch[f], args[0], args[1]
             args = [c1, cm, c2, *args[2:]]
