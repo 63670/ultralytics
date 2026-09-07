@@ -1,6 +1,6 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
-# YOLOv8n fabric-defect detector with P3/P4 end-to-end output
+# YOLOv8n fabric-defect detector with P4/P5 end-to-end output
 nc: 3 # horizontal defect, vertical defect, hole
 end2end: True # use one-to-one inference without NMS
 reg_max: 1 # direct box regression without DFL
@@ -22,15 +22,9 @@ backbone:
   - [-1, 3, C2f, [1024, True]]
   - [-1, 1, SPPF, [1024, 5]] # 9-P5/32
 
-# P3 and P4 detection heads
+# P4 and P5 detection heads
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
   - [[-1, 6], 1, Concat, [1]] # cat backbone P4
   - [-1, 3, C2f, [512]] # 12
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
-  - [[-1, 4], 1, Concat, [1]] # cat backbone P3
-  - [-1, 3, C2f, [256]] # 15-P3/8
-  - [-1, 1, Conv, [256, 3, 2]] # 16-P4/16
-  - [[-1, 12], 1, Concat, [1]] # cat head P4
-  - [-1, 3, C2f, [512]] # 18-P4/16
-  - [[15, 18], 1, Detect, [nc]] # Detect(P3, P4)
+  - [[-1, 9], 1, Detect, [nc]] # Detect(P4, P5)
