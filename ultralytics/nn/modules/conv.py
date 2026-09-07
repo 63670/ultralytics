@@ -202,27 +202,26 @@ class DWConv(Conv):
 
 
 class DirectionalConv(nn.Module):
-    """Recalibrate features with sequential horizontal and vertical strip convolutions."""
+    """Fuse horizontal, vertical, and local depth-wise convolution features."""
 
     def __init__(self, c1, c2, k=7):
-        """Initialize directional strip convolutions with a residual connection when channels match.
+        """Initialize directional convolutions with a residual connection when channels match.
 
         Args:
             c1 (int): Number of input channels.
             c2 (int): Number of output channels.
-            k (int): Horizontal and vertical strip kernel size.
+            k (int): Horizontal and vertical kernel size.
         """
         super().__init__()
-        self.local = DWConv(c1, c1, 5)
         self.horizontal = DWConv(c1, c1, (1, k))
         self.vertical = DWConv(c1, c1, (k, 1))
-        self.project = Conv(c1, c2, 1)
+        self.local = DWConv(c1, c1, 3)
+        self.fuse = Conv(c1 * 3, c2, 1)
         self.add = c1 == c2
 
     def forward(self, x):
-        """Apply strip attention and project the recalibrated features."""
-        attention = self.vertical(self.horizontal(self.local(x))).sigmoid()
-        y = self.project(x * attention)
+        """Apply directional convolutions and fuse their features."""
+        y = self.fuse(torch.cat((self.horizontal(x), self.vertical(x), self.local(x)), 1))
         return x + y if self.add else y
 
 

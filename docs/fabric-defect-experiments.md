@@ -39,14 +39,14 @@ yolo detect train \
   hsv_v=0.2 \
   mosaic=0.0 \
   project=/home/tkz/datasets/pingwen_paper/runs/detect \
-  name=v8n_p3_e2e
+  name=v8n_fabric
 ```
 
 Evaluate the best checkpoint on the held-out test split:
 
 ```bash
 yolo detect val \
-  model=/home/tkz/datasets/pingwen_paper/runs/detect/v8n_p3_e2e/weights/best.pt \
+  model=/home/tkz/datasets/pingwen_paper/runs/detect/v8n_fabric/weights/best.pt \
   data=/home/tkz/datasets/pingwen_paper/data.yaml \
   split=test \
   imgsz=640 \
@@ -55,7 +55,7 @@ yolo detect val \
   workers=8 \
   max_det=16 \
   project=/home/tkz/datasets/pingwen_paper/runs/detect \
-  name=v8n_p3_e2e_test
+  name=v8n_fabric_test
 ```
 
 ## Native YOLOv8n Baseline
