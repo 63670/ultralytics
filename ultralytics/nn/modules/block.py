@@ -48,7 +48,6 @@ __all__ = (
     "HGBlock",
     "HGStem",
     "ImagePoolingAttn",
-    "LocalContrastRefinement",
     "Proto",
     "RepC3",
     "RepNCSPELAN4",
@@ -293,40 +292,6 @@ class SCAM(nn.Module):
         y = self.dw(residual).permute(0, 2, 3, 1)
         y = self.fc2(self.act(self.fc1(self.norm(y)))).permute(0, 3, 1, 2)
         return self.grn(residual + y)
-
-
-class LocalContrastRefinement(nn.Module):
-    """Suppress locally repetitive background while retaining high-contrast defect responses.
-
-    A local average pool estimates the surrounding fabric texture.  The residual to that estimate is used to build a
-    lightweight spatial gate from its mean and maximum channel energy.  The gated residual is added to the original
-    feature, so the block primarily refines local anomalies rather than replacing semantic features.
-    """
-
-    def __init__(self, c1: int, c2: int, k: int = 5):
-        """Initialize the local contrast refinement block.
-
-        Args:
-            c1 (int): Input channels.
-            c2 (int): Output channels.
-            k (int): Odd local-background pooling kernel size.
-        """
-        super().__init__()
-        if k % 2 == 0:
-            raise ValueError(f"LocalContrastRefinement kernel size must be odd, but got {k}.")
-        self.project = Conv(c1, c2, 1) if c1 != c2 else nn.Identity()
-        self.background = nn.AvgPool2d(k, stride=1, padding=k // 2)
-        self.gate = nn.Conv2d(2, 1, kernel_size=3, padding=1, bias=True)
-        self.scale = nn.Parameter(torch.tensor(0.1))
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Enhance spatially gated local contrast residuals."""
-        x = self.project(x)
-        contrast = x - self.background(x)
-        energy = contrast.abs()
-        statistics = torch.cat((energy.mean(1, keepdim=True), energy.max(1, keepdim=True).values), 1)
-        gate = self.gate(statistics).sigmoid()
-        return x + self.scale * contrast * gate
 
 
 class C1(nn.Module):
