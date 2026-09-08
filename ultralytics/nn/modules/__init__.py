@@ -59,6 +59,8 @@ from .block import (
     RepVGGDW,
     ResNetLayer,
     SCAM,
+    SGAM,
+    SGAMDownsample,
     SCDown,
     TorchVision,
 )
@@ -185,6 +187,8 @@ __all__ = (
     "RepVGGDW",
     "ResNetLayer",
     "SCAM",
+    "SGAM",
+    "SGAMDownsample",
     "SCDown",
     "Segment",
     "Segment26",
