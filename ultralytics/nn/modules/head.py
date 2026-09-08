@@ -22,7 +22,6 @@ from .utils import bias_init_with_prob
 __all__ = (
     "OBB",
     "Classify",
-    "ClassGuidedDirectionalDetect",
     "Depth",
     "Detect",
     "Pose",
@@ -276,74 +275,6 @@ class Detect(nn.Module):
     def fuse(self) -> None:
         """Remove the one2many head for inference optimization."""
         self.cv2 = self.cv3 = None
-
-
-class ClassGuidedDirectionalMixer(nn.Module):
-    """Route regression features through horizontal, vertical, and local experts using class logits."""
-
-    def __init__(self, channels: int, k: int = 7):
-        super().__init__()
-        self.horizontal = DWConv(channels, channels, (1, k))
-        self.vertical = DWConv(channels, channels, (k, 1))
-        self.local = DWConv(channels, channels, 3)
-        self.scale = nn.Parameter(torch.tensor(0.1))
-
-    def forward(self, x: torch.Tensor, cls_logits: torch.Tensor) -> torch.Tensor:
-        """Use row, col, hole class probabilities to select horizontal, vertical, local regression context."""
-        if cls_logits.shape[1] != 3:
-            raise ValueError(f"ClassGuidedDirectionalMixer requires three classes, got {cls_logits.shape[1]}.")
-        gate = cls_logits.softmax(1)
-        mixed = (
-            gate[:, 0:1] * self.horizontal(x)
-            + gate[:, 1:2] * self.vertical(x)
-            + gate[:, 2:3] * self.local(x)
-        )
-        return x + self.scale * mixed
-
-
-class ClassGuidedDirectionalDetect(Detect):
-    """Detect head with class-guided directional experts before each box-regression branch."""
-
-    def __init__(self, nc: int = 3, reg_max=16, end2end=False, ch: tuple = ()):
-        super().__init__(nc, reg_max, end2end, ch)
-        if nc != 3:
-            raise ValueError(f"ClassGuidedDirectionalDetect requires nc=3 for row, col, hole routing, got {nc}.")
-        self.directional_mixer = nn.ModuleList(ClassGuidedDirectionalMixer(x) for x in ch)
-        if end2end:
-            self.one2one_directional_mixer = copy.deepcopy(self.directional_mixer)
-
-    @property
-    def one2many(self):
-        """Return one-to-many heads and their class-guided regression mixers."""
-        return {"box_head": self.cv2, "cls_head": self.cv3, "directional_mixer": self.directional_mixer}
-
-    @property
-    def one2one(self):
-        """Return one-to-one heads and their class-guided regression mixers."""
-        return {
-            "box_head": self.one2one_cv2,
-            "cls_head": self.one2one_cv3,
-            "directional_mixer": self.one2one_directional_mixer,
-        }
-
-    def forward_head(
-        self,
-        x: list[torch.Tensor],
-        box_head: nn.Module = None,
-        cls_head: nn.Module = None,
-        directional_mixer: nn.Module = None,
-    ) -> dict[str, torch.Tensor]:
-        """Predict classes first, then use their logits to guide directional box-regression features."""
-        if box_head is None or cls_head is None or directional_mixer is None:
-            return {}
-        bs = x[0].shape[0]
-        boxes, scores = [], []
-        for i, feature in enumerate(x):
-            score = cls_head[i](feature)
-            box = box_head[i](directional_mixer[i](feature, score))
-            boxes.append(box.view(bs, 4 * self.reg_max, -1))
-            scores.append(score.view(bs, self.nc, -1))
-        return {"boxes": torch.cat(boxes, 2), "scores": torch.cat(scores, 2), "feats": x}
 
 
 class Segment(Detect):
