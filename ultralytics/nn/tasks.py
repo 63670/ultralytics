@@ -447,6 +447,11 @@ def _initialize_yolo_model(model, cfg, ch, nc, verbose):
         if (class_weights <= 0).any():
             raise ValueError("class_weights values must be positive.")
         model.class_weights = class_weights / class_weights.mean()
+    directional_shape_loss = model.yaml.get("directional_shape_loss")
+    if directional_shape_loss is not None:
+        if not isinstance(directional_shape_loss, dict):
+            raise ValueError("directional_shape_loss must be a mapping.")
+        model.directional_shape_loss = directional_shape_loss
 
 
 class DetectionModel(BaseModel):

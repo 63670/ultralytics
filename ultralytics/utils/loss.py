@@ -371,6 +371,23 @@ class v8DetectionLoss:
         )
         self.bbox_loss = BboxLoss(m.reg_max).to(device)
         self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device)
+        shape_cfg = getattr(model, "directional_shape_loss", None)
+        self.directional_shape_gain = 0.0
+        self.directional_axis_weights = None
+        self.directional_ratio_weights = None
+        if shape_cfg is not None:
+            self.directional_shape_gain = float(shape_cfg.get("gain", 0.0))
+            axis_weights = torch.as_tensor(shape_cfg.get("axis_weights"), dtype=torch.float, device=device)
+            ratio_weights = torch.as_tensor(shape_cfg.get("ratio_weights"), dtype=torch.float, device=device)
+            if axis_weights.shape != (self.nc, 2) or ratio_weights.shape != (self.nc,):
+                raise ValueError(
+                    "directional_shape_loss weights must have shapes "
+                    f"({self.nc}, 2) and ({self.nc},), got {tuple(axis_weights.shape)} and {tuple(ratio_weights.shape)}."
+                )
+            if self.directional_shape_gain < 0 or (axis_weights <= 0).any() or (ratio_weights < 0).any():
+                raise ValueError("directional_shape_loss gain and weights must be non-negative, with positive axis weights.")
+            self.directional_axis_weights = axis_weights
+            self.directional_ratio_weights = ratio_weights
 
     def preprocess(self, targets: torch.Tensor, batch_size: int, scale_tensor: torch.Tensor) -> torch.Tensor:
         """Preprocess targets by converting to tensor format and scaling coordinates."""
@@ -398,6 +415,32 @@ class v8DetectionLoss:
             # pred_dist = pred_dist.view(b, a, c // 4, 4).transpose(2,3).softmax(3).matmul(self.proj.type(pred_dist.dtype))
             # pred_dist = (pred_dist.view(b, a, c // 4, 4).softmax(2) * self.proj.type(pred_dist.dtype).view(1, 1, -1, 1)).sum(2)
         return dist2bbox(pred_dist, anchor_points, xywh=False)
+
+    def directional_shape_loss(
+        self,
+        pred_bboxes: torch.Tensor,
+        target_bboxes: torch.Tensor,
+        target_labels: torch.Tensor,
+        target_scores: torch.Tensor,
+        target_scores_sum: torch.Tensor,
+        fg_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        """Penalize class-specific short-axis and aspect-ratio errors for fabric defects."""
+        if not self.directional_shape_gain or not fg_mask.any():
+            return pred_bboxes.new_zeros(())
+        pred_wh = (pred_bboxes[..., 2:] - pred_bboxes[..., :2]).clamp_min(1e-4)[fg_mask]
+        target_wh = (target_bboxes[..., 2:] - target_bboxes[..., :2]).clamp_min(1e-4)[fg_mask]
+        labels = target_labels[fg_mask].long().clamp_(0, self.nc - 1)
+        axis_error = F.smooth_l1_loss(pred_wh.log(), target_wh.log(), reduction="none")
+        axis_error = (axis_error * self.directional_axis_weights[labels]).mean(-1)
+        ratio_error = F.smooth_l1_loss(
+            (pred_wh[:, 0] / pred_wh[:, 1]).log(),
+            (target_wh[:, 0] / target_wh[:, 1]).log(),
+            reduction="none",
+        )
+        sample_weight = target_scores[fg_mask].sum(-1)
+        shape_error = axis_error + ratio_error * self.directional_ratio_weights[labels]
+        return self.directional_shape_gain * (shape_error * sample_weight).sum() / target_scores_sum
 
     def get_assigned_targets_and_loss(self, preds: dict[str, torch.Tensor], batch: dict[str, Any]) -> tuple:
         """Calculate the sum of the loss for box, cls and dfl multiplied by batch size and return foreground mask and
@@ -452,6 +495,15 @@ class v8DetectionLoss:
                 fg_mask,
                 imgsz,
                 stride_tensor,
+            )
+            assigned_labels = gt_labels.squeeze(-1).gather(1, target_gt_idx)
+            loss[0] += self.directional_shape_loss(
+                pred_bboxes,
+                target_bboxes / stride_tensor,
+                assigned_labels,
+                target_scores,
+                target_scores_sum,
+                fg_mask,
             )
         # WARNING: line below prevents Multi-GPU DDP 'unused gradient' PyTorch errors, do not remove
         else:

@@ -4,6 +4,11 @@
 nc: 3 # horizontal defect, vertical defect, hole
 # Normalized inverse-square-root frequency weights for row, col, hole. Applied to BCE classification loss only.
 class_weights: [0.725, 1.164, 1.110]
+# Class-aware box-shape supervision. Axis weights are [width, height] for row, col, hole respectively.
+directional_shape_loss:
+  gain: 0.20
+  axis_weights: [[1.0, 1.5], [1.5, 1.0], [1.0, 1.0]]
+  ratio_weights: [1.0, 1.0, 0.5]
 end2end: True # use one-to-one inference without NMS
 reg_max: 1 # direct box regression without DFL
 scales:
