@@ -71,6 +71,8 @@ from ultralytics.nn.modules import (
     RTDETRDecoder,
     SCAM,
     SCDown,
+    SemanticBottomUpFusion,
+    SemanticTopDownFusion,
     Segment,
     Segment26,
     SemanticSegment,
@@ -2175,6 +2177,12 @@ def parse_model(d, ch, verbose=True):
             args = [c1, c2, *args[1:]]
         elif m is CBFuse:
             c2 = ch[f[-1]]
+        elif m in frozenset({SemanticTopDownFusion, SemanticBottomUpFusion}):
+            if not isinstance(f, list) or len(f) != 2:
+                raise ValueError(f"{m.__name__} requires [P4, P5] feature inputs.")
+            c4, c5 = ch[f[0]], ch[f[1]]
+            c2 = c4 if m is SemanticTopDownFusion else c5
+            args = [c4, c5, *args]
         elif m in frozenset({TorchVision, Index}):
             c2 = args[0]
             c1 = ch[f]
