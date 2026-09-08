@@ -54,6 +54,7 @@ __all__ = (
     "RepVGGDW",
     "ResNetLayer",
     "SCAM",
+    "SGAM",
     "SCDown",
     "TorchVision",
 )
@@ -292,6 +293,29 @@ class SCAM(nn.Module):
         y = self.dw(residual).permute(0, 2, 3, 1)
         y = self.fc2(self.act(self.fc1(self.norm(y)))).permute(0, 3, 1, 2)
         return self.grn(residual + y)
+
+
+class SGAM(nn.Module):
+    """Spatial gated aggregation that selectively propagates informative local responses."""
+
+    def __init__(self, c1: int, c2: int):
+        """Initialize channel projection, spatial gate, and residual response normalization."""
+        super().__init__()
+        self.project_in = Conv(c1, c2, 1) if c1 != c2 else nn.Identity()
+        self.norm = ChannelRMSNorm(c2)
+        self.expand = nn.Conv2d(c2, c2 * 2, 1, bias=False)
+        self.dw = nn.Conv2d(c2, c2, 7, padding=3, groups=c2, bias=False)
+        self.project_out = nn.Conv2d(c2, c2, 1, bias=False)
+        self.scale = nn.Parameter(torch.ones(1, c2, 1, 1))
+        self.grn = GlobalResponseNorm(c2)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Produce residual features modulated by a learned spatial gate."""
+        residual = self.project_in(x)
+        normalized = self.norm(residual.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+        gate_feature, value = self.expand(normalized).chunk(2, 1)
+        gate = torch.sigmoid(self.dw(gate_feature))
+        return self.grn(residual + self.project_out(value * gate) * self.scale)
 
 
 class C1(nn.Module):
