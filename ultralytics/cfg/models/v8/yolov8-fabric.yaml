@@ -6,6 +6,8 @@ nc: 3 # horizontal defect, vertical defect, hole
 class_weights: [0.725, 1.164, 1.110]
 end2end: True # use one-to-one inference without NMS
 reg_max: 1 # direct box regression without DFL
+# Keep P4/P5 detection branch capacity when P3 becomes the first Detect input.
+detect_head_channels: [32, 128] # regression and classification hidden widths
 scales:
   # [depth, width, max_channels]
   n: [0.33, 0.25, 1024]
