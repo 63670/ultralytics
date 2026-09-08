@@ -439,6 +439,14 @@ def _initialize_yolo_model(model, cfg, ch, nc, verbose):
     model.model, model.save = parse_model(deepcopy(model.yaml), ch=ch, verbose=verbose)  # model, savelist
     model.names = {i: f"{i}" for i in range(model.yaml["nc"])}  # default names dict
     model.inplace = model.yaml.get("inplace", True)
+    class_weights = model.yaml.get("class_weights")
+    if class_weights is not None:
+        if not isinstance(class_weights, (list, tuple)) or len(class_weights) != model.yaml["nc"]:
+            raise ValueError(f"class_weights must provide one positive value for each of {model.yaml['nc']} classes.")
+        class_weights = torch.tensor(class_weights, dtype=torch.float)
+        if (class_weights <= 0).any():
+            raise ValueError("class_weights values must be positive.")
+        model.class_weights = class_weights / class_weights.mean()
 
 
 class DetectionModel(BaseModel):
