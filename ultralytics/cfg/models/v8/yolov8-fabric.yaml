@@ -25,9 +25,12 @@ backbone:
   - [-1, 1, SPPF, [1024, 5]] # 9-P5/32
   - [-1, 1, SCAM, [1024, 3]] # 10-P5 spatial correlation aggregation
 
-# P4 and P5 detection heads
+# P3, P4 and P5 detection heads
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
   - [[-1, 6], 1, Concat, [1]] # cat backbone P4
   - [-1, 3, C2f, [512]] # 13
-  - [[-1, 10], 1, Detect, [nc]] # Detect(P4, P5)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 4], 1, Concat, [1]] # cat backbone P3
+  - [-1, 3, C2f, [256]] # 16 P3 fusion
+  - [[-1, 13, 10], 1, Detect, [nc]] # Detect(P3, P4, P5)
