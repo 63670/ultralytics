@@ -29,7 +29,5 @@ backbone:
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
   - [[-1, 6], 1, Concat, [1]] # cat backbone P4
-  - [4, 1, Conv, [512, 3, 2]] # 13-P3 direct stride-2 detail alignment
-  - [[12, 13], 1, Concat, [1]] # 14-fuse aligned P3 with P5/P4 features
-  - [-1, 3, C2f, [512]] # 15-P4 fusion
+  - [-1, 3, C2f, [512]] # 13
   - [[-1, 10], 1, Detect, [nc]] # Detect(P4, P5)
