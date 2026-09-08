@@ -47,7 +47,6 @@ __all__ = (
     "GhostBottleneck",
     "HGBlock",
     "HGStem",
-    "HaarWaveletDownsample",
     "ImagePoolingAttn",
     "Proto",
     "RepC3",
@@ -293,34 +292,6 @@ class SCAM(nn.Module):
         y = self.dw(residual).permute(0, 2, 3, 1)
         y = self.fc2(self.act(self.fc1(self.norm(y)))).permute(0, 3, 1, 2)
         return self.grn(residual + y)
-
-
-class HaarWaveletDownsample(nn.Module):
-    """Preserve low- and high-frequency subbands when reducing a feature map by two.
-
-    Fixed Haar filters decompose every input channel into one low-frequency and three detail subbands.  A learnable
-    1x1 projection then selects and mixes the retained information at the target pyramid level.  The implementation
-    uses grouped convolution directly, avoiding external wavelet-library dependencies.
-    """
-
-    def __init__(self, c1: int, c2: int):
-        """Initialize fixed Haar analysis filters and the learnable subband projection."""
-        super().__init__()
-        haar = torch.tensor(
-            [
-                [[1.0, 1.0], [1.0, 1.0]],
-                [[-1.0, -1.0], [1.0, 1.0]],
-                [[-1.0, 1.0], [-1.0, 1.0]],
-                [[-1.0, 1.0], [1.0, -1.0]],
-            ]
-        ).unsqueeze(1) / 2.0
-        self.register_buffer("filters", haar.repeat(c1, 1, 1, 1))
-        self.project = Conv(c1 * 4, c2, 1)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Decompose, concatenate Haar subbands, and project them to the next pyramid level."""
-        subbands = F.conv2d(x, self.filters.to(dtype=x.dtype), stride=2, groups=x.shape[1])
-        return self.project(subbands)
 
 
 class C1(nn.Module):

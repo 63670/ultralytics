@@ -58,7 +58,6 @@ from ultralytics.nn.modules import (
     GhostConv,
     HGBlock,
     HGStem,
-    HaarWaveletDownsample,
     ImagePoolingAttn,
     Index,
     LRPCHead,
@@ -2058,7 +2057,6 @@ def parse_model(d, ch, verbose=True):
             PSA,
             SCDown,
             SCAM,
-            HaarWaveletDownsample,
             C2fCIB,
             A2C2f,
         }
