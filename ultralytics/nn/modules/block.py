@@ -55,8 +55,6 @@ __all__ = (
     "ResNetLayer",
     "SCAM",
     "SCDown",
-    "SemanticBottomUpFusion",
-    "SemanticTopDownFusion",
     "TorchVision",
 )
 
@@ -294,54 +292,6 @@ class SCAM(nn.Module):
         y = self.dw(residual).permute(0, 2, 3, 1)
         y = self.fc2(self.act(self.fc1(self.norm(y)))).permute(0, 3, 1, 2)
         return self.grn(residual + y)
-
-
-class SemanticTopDownFusion(nn.Module):
-    """Construct a P4 feature by injecting only P4-consistent P5 semantic context."""
-
-    def __init__(self, c4: int, c5: int, reduction: int = 4):
-        """Initialize P4/P5 projections, semantic agreement gate, and P4 C2f refinement."""
-        super().__init__()
-        hidden = max(min(c4, c5) // reduction, 8)
-        self.p4_local = nn.Identity()
-        self.p5_project = Conv(c5, c4, 1, act=False)
-        self.query = nn.Conv2d(c4, hidden, 1, bias=False)
-        self.key = nn.Conv2d(c4, hidden, 1, bias=False)
-        self.refine = C2f(c4, c4, n=1)
-        self.scale = nn.Parameter(torch.tensor(0.1))
-
-    def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
-        """Fuse P5 context into P4 with a per-pixel semantic agreement gate."""
-        p4, p5 = x
-        p4 = self.p4_local(p4)
-        p5 = F.interpolate(self.p5_project(p5), size=p4.shape[-2:], mode="nearest")
-        query = F.normalize(self.query(p4), p=2, dim=1, eps=1e-6)
-        key = F.normalize(self.key(p5), p=2, dim=1, eps=1e-6)
-        gate = torch.sigmoid((query * key).sum(1, keepdim=True) * math.sqrt(query.shape[1]))
-        return self.refine(p4 + self.scale * gate * p5)
-
-
-class SemanticBottomUpFusion(nn.Module):
-    """Feed P4 detail back to P5 only where it agrees with the global P5 semantic representation."""
-
-    def __init__(self, c4: int, c5: int, reduction: int = 4):
-        """Initialize lightweight P4 alignment and P5 semantic-consistency gating."""
-        super().__init__()
-        hidden = max(min(c4, c5) // reduction, 8)
-        self.p4_down = nn.Sequential(DWConv(c4, c4, 3, 2), Conv(c4, c5, 1, act=False))
-        self.query = nn.Conv2d(c5, hidden, 1, bias=False)
-        self.key = nn.Conv2d(c5, hidden, 1, bias=False)
-        self.refine = DWConv(c5, c5, 3)
-        self.scale = nn.Parameter(torch.tensor(0.1))
-
-    def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
-        """Add semantically consistent downsampled P4 detail to P5."""
-        p4, p5 = x
-        detail = self.p4_down(p4)
-        query = F.normalize(self.query(p5), p=2, dim=1, eps=1e-6)
-        key = F.normalize(self.key(detail), p=2, dim=1, eps=1e-6)
-        gate = torch.sigmoid((query * key).sum(1, keepdim=True) * math.sqrt(query.shape[1]))
-        return p5 + self.scale * gate * self.refine(detail)
 
 
 class C1(nn.Module):
