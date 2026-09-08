@@ -48,8 +48,6 @@ __all__ = (
     "HGBlock",
     "HGStem",
     "ImagePoolingAttn",
-    "DetailDownsample",
-    "PFESA",
     "Proto",
     "RepC3",
     "RepNCSPELAN4",
@@ -294,71 +292,6 @@ class SCAM(nn.Module):
         y = self.dw(residual).permute(0, 2, 3, 1)
         y = self.fc2(self.act(self.fc1(self.norm(y)))).permute(0, 3, 1, 2)
         return self.grn(residual + y)
-
-
-class PFESA(nn.Module):
-    """Parameter-free frequency edge-structure attention with residual feature calibration.
-
-    The module separates a feature map into low-frequency structure and high-frequency detail in the frequency domain.
-    Channel-wise deviation maps derived from both components form an attention map.  A residual scale keeps the input
-    dominant at initialization, which is important when it is used on the shallow P3 detail path.
-    """
-
-    def __init__(self, c1: int, c2: int, base_ratio: float = 0.1, eps: float = 1e-5):
-        """Initialize PFESA.
-
-        Args:
-            c1 (int): Input channels.
-            c2 (int): Output channels.
-            base_ratio (float): Radius ratio of the low-frequency Gaussian mask.
-            eps (float): Numerical-stability constant for variance normalization.
-        """
-        super().__init__()
-        if not 0 < base_ratio <= 1:
-            raise ValueError(f"PFESA base_ratio must be in (0, 1], but got {base_ratio}.")
-        self.project = Conv(c1, c2, 1) if c1 != c2 else nn.Identity()
-        self.base_ratio = base_ratio
-        self.eps = eps
-        self.scale = nn.Parameter(torch.tensor(0.1))
-
-    def _low_frequency_mask(self, height: int, width: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
-        """Create a centered Gaussian low-frequency mask for the current feature resolution."""
-        y = torch.linspace(-1, 1, height, device=device, dtype=dtype)
-        x = torch.linspace(-1, 1, width, device=device, dtype=dtype)
-        grid_y, grid_x = torch.meshgrid(y, x, indexing="ij")
-        ratio = self.base_ratio * min(height, width) / max(height, width)
-        return torch.exp(-(grid_y.square() + grid_x.square()) / (2 * ratio**2)).unsqueeze(0).unsqueeze(0)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Calibrate a feature map with complementary frequency-domain detail and structure cues."""
-        x = self.project(x)
-        _, _, height, width = x.shape
-        spectrum = torch.fft.fftshift(torch.fft.fftn(x, dim=(-2, -1)), dim=(-2, -1))
-        low_mask = self._low_frequency_mask(height, width, x.device, x.dtype)
-        low = torch.fft.ifftn(torch.fft.ifftshift(spectrum * low_mask, dim=(-2, -1)), dim=(-2, -1)).abs()
-        high = torch.fft.ifftn(torch.fft.ifftshift(spectrum * (1 - low_mask), dim=(-2, -1)), dim=(-2, -1)).abs()
-
-        low_energy = low.square()
-        low_mean = low_energy.mean(dim=(2, 3), keepdim=True)
-        low_attention = ((low_energy - low_mean) / (low_energy.var(dim=(2, 3), keepdim=True) + self.eps)).sigmoid()
-        high_mean = high.mean(dim=(2, 3), keepdim=True)
-        high_attention = (high - high_mean).square() / (high.var(dim=(2, 3), keepdim=True) + self.eps)
-        attention = (low_attention + high_attention).sigmoid()
-        return x + self.scale * attention * x
-
-
-class DetailDownsample(nn.Module):
-    """Align a high-resolution detail feature to the next pyramid level with depth-wise separable downsampling."""
-
-    def __init__(self, c1: int, c2: int):
-        """Initialize 3x3 depth-wise stride-2 filtering followed by 1x1 channel projection."""
-        super().__init__()
-        self.depthwise = DWConv(c1, c1, 3, 2)
-        self.project = Conv(c1, c2, 1)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Downsample and project a detail feature map."""
-        return self.project(self.depthwise(x))
 
 
 class C1(nn.Module):

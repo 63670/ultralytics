@@ -29,8 +29,5 @@ backbone:
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
   - [[-1, 6], 1, Concat, [1]] # cat backbone P4
-  - [4, 1, PFESA, [256, 0.1]] # 13-P3 parameter-free edge-structure attention
-  - [-1, 1, DetailDownsample, [512]] # 14-P3-to-P4 detail alignment
-  - [[12, 14], 1, Concat, [1]] # 15-fuse P5/P4 semantic features with P3 detail
-  - [-1, 3, C2f, [512]] # 16-P4 fusion
+  - [-1, 3, C2f, [512]] # 13
   - [[-1, 10], 1, Detect, [nc]] # Detect(P4, P5)
