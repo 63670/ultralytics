@@ -333,11 +333,8 @@ class PFESA(nn.Module):
         """Calibrate a feature map with complementary frequency-domain detail and structure cues."""
         x = self.project(x)
         _, _, height, width = x.shape
-        # CUDA FFT does not reliably support ComplexHalf under AMP/deterministic training. Keep this small P3-only
-        # spectral branch in FP32, then restore the original feature precision for the residual fusion.
-        spectral_x = x.float()
-        spectrum = torch.fft.fftshift(torch.fft.fftn(spectral_x, dim=(-2, -1)), dim=(-2, -1))
-        low_mask = self._low_frequency_mask(height, width, x.device, spectral_x.dtype)
+        spectrum = torch.fft.fftshift(torch.fft.fftn(x, dim=(-2, -1)), dim=(-2, -1))
+        low_mask = self._low_frequency_mask(height, width, x.device, x.dtype)
         low = torch.fft.ifftn(torch.fft.ifftshift(spectrum * low_mask, dim=(-2, -1)), dim=(-2, -1)).abs()
         high = torch.fft.ifftn(torch.fft.ifftshift(spectrum * (1 - low_mask), dim=(-2, -1)), dim=(-2, -1)).abs()
 
@@ -346,7 +343,7 @@ class PFESA(nn.Module):
         low_attention = ((low_energy - low_mean) / (low_energy.var(dim=(2, 3), keepdim=True) + self.eps)).sigmoid()
         high_mean = high.mean(dim=(2, 3), keepdim=True)
         high_attention = (high - high_mean).square() / (high.var(dim=(2, 3), keepdim=True) + self.eps)
-        attention = (low_attention + high_attention).sigmoid().to(dtype=x.dtype)
+        attention = (low_attention + high_attention).sigmoid()
         return x + self.scale * attention * x
 
 
