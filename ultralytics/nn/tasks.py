@@ -71,6 +71,7 @@ from ultralytics.nn.modules import (
     RTDETRDecoder,
     SCAM,
     SCDown,
+    SemanticGuidedDetailFusion,
     Segment,
     Segment26,
     SemanticSegment,
@@ -2175,6 +2176,11 @@ def parse_model(d, ch, verbose=True):
             args = [c1, c2, *args[1:]]
         elif m is CBFuse:
             c2 = ch[f[-1]]
+        elif m is SemanticGuidedDetailFusion:
+            if not isinstance(f, list) or len(f) != 2 or ch[f[0]] != ch[f[1]]:
+                raise ValueError("SemanticGuidedDetailFusion requires two same-channel feature inputs.")
+            c2 = ch[f[0]]
+            args = [c2, *args]
         elif m in frozenset({TorchVision, Index}):
             c2 = args[0]
             c1 = ch[f]

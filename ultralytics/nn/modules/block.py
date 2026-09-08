@@ -55,6 +55,7 @@ __all__ = (
     "ResNetLayer",
     "SCAM",
     "SCDown",
+    "SemanticGuidedDetailFusion",
     "TorchVision",
 )
 
@@ -292,6 +293,32 @@ class SCAM(nn.Module):
         y = self.dw(residual).permute(0, 2, 3, 1)
         y = self.fc2(self.act(self.fc1(self.norm(y)))).permute(0, 3, 1, 2)
         return self.grn(residual + y)
+
+
+class SemanticGuidedDetailFusion(nn.Module):
+    """Inject aligned shallow detail only where it agrees with the P4 semantic feature.
+
+    The first input is the P4 semantic feature and the second is an aligned P3 detail feature.  Their normalized
+    projections form a per-pixel cosine-similarity gate.  This retains the P4 residual as the primary representation
+    and prevents unrelated periodic texture in P3 from being injected into the detector.
+    """
+
+    def __init__(self, channels: int, reduction: int = 4):
+        """Initialize semantic/detail projections and residual injection scale."""
+        super().__init__()
+        hidden = max(channels // reduction, 8)
+        self.semantic_query = nn.Conv2d(channels, hidden, 1, bias=False)
+        self.detail_key = nn.Conv2d(channels, hidden, 1, bias=False)
+        self.detail_project = Conv(channels, channels, 1, act=False)
+        self.scale = nn.Parameter(torch.tensor(0.1))
+
+    def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
+        """Gate P3 detail by semantic agreement and add it to the P4 residual."""
+        semantic, detail = x
+        query = F.normalize(self.semantic_query(semantic), p=2, dim=1, eps=1e-6)
+        key = F.normalize(self.detail_key(detail), p=2, dim=1, eps=1e-6)
+        agreement = torch.sigmoid((query * key).sum(1, keepdim=True) * math.sqrt(query.shape[1]))
+        return semantic + self.scale * agreement * self.detail_project(detail)
 
 
 class C1(nn.Module):

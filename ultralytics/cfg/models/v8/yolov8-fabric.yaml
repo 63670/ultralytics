@@ -29,5 +29,7 @@ backbone:
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
   - [[-1, 6], 1, Concat, [1]] # cat backbone P4
-  - [-1, 3, C2f, [512]] # 13
+  - [-1, 3, C2f, [512]] # 13-P4 semantic feature
+  - [4, 1, Conv, [512, 3, 2]] # 14-align P3 detail to P4
+  - [[13, 14], 1, SemanticGuidedDetailFusion, [4]] # 15-semantic-guided P3 detail injection
   - [[-1, 10], 1, Detect, [nc]] # Detect(P4, P5)
