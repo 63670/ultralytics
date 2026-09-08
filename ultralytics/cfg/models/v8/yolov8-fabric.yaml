@@ -2,8 +2,6 @@
 
 # YOLOv8n fabric-defect detector with P4/P5 end-to-end output
 nc: 3 # horizontal defect, vertical defect, hole
-# Normalized inverse-square-root frequency weights for row, col, hole. Applied to BCE classification loss only.
-class_weights: [0.725, 1.164, 1.110]
 end2end: True # use one-to-one inference without NMS
 reg_max: 1 # direct box regression without DFL
 scales:
