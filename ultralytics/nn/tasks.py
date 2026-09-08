@@ -70,7 +70,6 @@ from ultralytics.nn.modules import (
     ResNetLayer,
     RTDETRDecoder,
     SCAM,
-    SGAM,
     SCDown,
     Segment,
     Segment26,
@@ -2058,7 +2057,6 @@ def parse_model(d, ch, verbose=True):
             PSA,
             SCDown,
             SCAM,
-            SGAM,
             C2fCIB,
             A2C2f,
         }
