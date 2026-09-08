@@ -1,0 +1,42 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# Experiment 2: add P5 spatial correlation aggregation to the all-directional YOLOv8n backbone.
+# The official PAN-FPN and P3/P4/P5 detection head are unchanged.
+nc: 3 # row, col, hole
+scales:
+  # [depth, width, max_channels]
+  n: [0.33, 0.25, 1024]
+
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]] # 0-P1/2
+  - [-1, 1, Conv, [128, 3, 2]] # 1-P2/4
+  - [-1, 3, C2fDirectional, [128, True]] # 2-P2 directional texture encoding
+  - [-1, 1, Conv, [256, 3, 2]] # 3-P3/8
+  - [-1, 6, C2fDirectional, [256, True]] # 4-P3 directional structural encoding
+  - [-1, 1, Conv, [512, 3, 2]] # 5-P4/16
+  - [-1, 6, C2fDirectional, [512, True]] # 6-P4 directional semantic encoding
+  - [-1, 1, Conv, [1024, 3, 2]] # 7-P5/32
+  - [-1, 3, C2fDirectional, [1024, True]] # 8-P5 global directional encoding
+  - [-1, 1, SPPF, [1024, 5]] # 9-P5/32
+  - [-1, 1, SCAM, [1024, 3]] # 10-P5 spatial correlation aggregation
+
+# Official YOLOv8 PAN-FPN and P3/P4/P5 detection head
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 6], 1, Concat, [1]] # cat backbone P4
+  - [-1, 3, C2f, [512]] # 13
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 4], 1, Concat, [1]] # cat backbone P3
+  - [-1, 3, C2f, [256]] # 16-P3/8
+
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 13], 1, Concat, [1]] # cat head P4
+  - [-1, 3, C2f, [512]] # 19-P4/16
+
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [[-1, 10], 1, Concat, [1]] # cat head P5
+  - [-1, 3, C2f, [1024]] # 22-P5/32
+
+  - [[16, 19, 22], 1, Detect, [nc]] # Detect(P3, P4, P5)
