@@ -1,7 +1,8 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # Experiment 1: directional backbone on the clean YOLOv8n fabric baseline.
-# Only P3 and P5 C2f blocks are replaced; the official PAN-FPN and P3/P4/P5 Detect head remain unchanged.
+# Every backbone C2f block is replaced so directional structure is encoded from P2 onward. The official PAN-FPN and
+# P3/P4/P5 Detect head remain unchanged.
 nc: 3 # row, col, hole
 scales:
   # [depth, width, max_channels]
@@ -11,11 +12,11 @@ backbone:
   # [from, repeats, module, args]
   - [-1, 1, Conv, [64, 3, 2]] # 0-P1/2
   - [-1, 1, Conv, [128, 3, 2]] # 1-P2/4
-  - [-1, 3, C2f, [128, True]]
+  - [-1, 3, C2fDirectional, [128, True]] # 2-P2 early directional texture encoding
   - [-1, 1, Conv, [256, 3, 2]] # 3-P3/8
   - [-1, 6, C2fDirectional, [256, True]] # 4-P3 directional structural encoding
   - [-1, 1, Conv, [512, 3, 2]] # 5-P4/16
-  - [-1, 6, C2f, [512, True]]
+  - [-1, 6, C2fDirectional, [512, True]] # 6-P4 directional semantic encoding
   - [-1, 1, Conv, [1024, 3, 2]] # 7-P5/32
   - [-1, 3, C2fDirectional, [1024, True]] # 8-P5 global directional encoding
   - [-1, 1, SPPF, [1024, 5]] # 9-P5/32
