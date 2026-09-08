@@ -103,7 +103,9 @@ class Detect(nn.Module):
         """Select index (batch, k) rows of x (batch, n, channels) along dim 1."""
         return x.gather(1, index if x.ndim == 2 else index[..., None].expand(-1, -1, x.shape[-1]))
 
-    def __init__(self, nc: int = 80, reg_max=16, end2end=False, ch: tuple = ()):
+    def __init__(
+        self, nc: int = 80, reg_max=16, end2end=False, ch: tuple = (), head_channels: tuple[int, int] | None = None
+    ):
         """Initialize the YOLO detection layer with specified number of classes and channels.
 
         Args:
@@ -111,6 +113,7 @@ class Detect(nn.Module):
             reg_max (int): Maximum number of DFL channels.
             end2end (bool): Whether to use end-to-end NMS-free detection.
             ch (tuple): Tuple of channel sizes from backbone feature maps.
+            head_channels (tuple[int, int] | None): Optional fixed (regression, classification) hidden widths.
         """
         super().__init__()
         self.nc = nc  # number of classes
@@ -118,7 +121,12 @@ class Detect(nn.Module):
         self.reg_max = reg_max  # DFL channels
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.stride = torch.zeros(self.nl)  # strides computed during build
-        c2, c3 = max((16, ch[0] // 4, self.reg_max * 4)), max(ch[0], min(self.nc, 100))  # channels
+        if head_channels is None:
+            c2, c3 = max((16, ch[0] // 4, self.reg_max * 4)), max(ch[0], min(self.nc, 100))
+        else:
+            if len(head_channels) != 2 or min(head_channels) < 1:
+                raise ValueError(f"head_channels must contain two positive widths, got {head_channels}.")
+            c2, c3 = (int(x) for x in head_channels)
         self.cv2 = nn.ModuleList(
             nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 4 * self.reg_max, 1)) for x in ch
         )
