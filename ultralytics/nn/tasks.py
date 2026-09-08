@@ -36,6 +36,7 @@ from ultralytics.nn.modules import (
     C2fAttn,
     C2fCIB,
     C2fDirectional,
+    LocalContrastRefinement,
     C2fPSA,
     C3Ghost,
     C3k2,
@@ -2057,6 +2058,7 @@ def parse_model(d, ch, verbose=True):
             PSA,
             SCDown,
             SCAM,
+            LocalContrastRefinement,
             C2fCIB,
             A2C2f,
         }
