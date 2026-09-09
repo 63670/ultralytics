@@ -26,6 +26,7 @@ __all__ = (
     "Detect",
     "Pose",
     "RTDETRDecoder",
+    "ScaleConsistentDetect",
     "Segment",
     "SemanticSegment",
     "YOLOEDetect",
@@ -275,6 +276,16 @@ class Detect(nn.Module):
     def fuse(self) -> None:
         """Remove the one2many head for inference optimization."""
         self.cv2 = self.cv3 = None
+
+
+class ScaleConsistentDetect(Detect):
+    """Native decoupled Detect head with training-only multi-scale semantic consistency metadata."""
+
+    def __init__(
+        self, nc: int = 80, consistency_weight: float = 0.05, reg_max: int = 16, end2end: bool = False, ch: tuple = ()
+    ):
+        super().__init__(nc, reg_max, end2end, ch)
+        self.consistency_weight = consistency_weight
 
 
 class Segment(Detect):

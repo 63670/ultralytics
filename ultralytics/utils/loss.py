@@ -371,6 +371,40 @@ class v8DetectionLoss:
         )
         self.bbox_loss = BboxLoss(m.reg_max).to(device)
         self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device)
+        self.scale_consistency = getattr(m, "consistency_weight", 0.0)
+
+    def classification_consistency_loss(
+        self, pred_scores: torch.Tensor, target_scores: torch.Tensor, feats: list[torch.Tensor]
+    ) -> torch.Tensor:
+        """Align adjacent-scale class probabilities only within assigned positive regions."""
+        if not self.scale_consistency:
+            return pred_scores[..., :0].sum()
+
+        sizes = [feature.shape[-2] * feature.shape[-1] for feature in feats]
+        pred_maps = [
+            score.transpose(1, 2).reshape(score.shape[0], self.nc, feature.shape[-2], feature.shape[-1])
+            for score, feature in zip(pred_scores.split(sizes, dim=1), feats)
+        ]
+        target_maps = [
+            score.transpose(1, 2).reshape(score.shape[0], self.nc, feature.shape[-2], feature.shape[-1])
+            for score, feature in zip(target_scores.split(sizes, dim=1), feats)
+        ]
+
+        consistency = pred_scores[..., :0].sum()
+        pairs = 0
+        for high_pred, low_pred, high_target, low_target in zip(
+            pred_maps[:-1], pred_maps[1:], target_maps[:-1], target_maps[1:]
+        ):
+            size = low_pred.shape[-2:]
+            high_prob = F.adaptive_max_pool2d(high_pred.sigmoid(), size)
+            low_prob = low_pred.sigmoid()
+            positive = (F.adaptive_max_pool2d(high_target.amax(1, keepdim=True), size) + low_target.amax(1, keepdim=True)) > 0
+            if positive.any():
+                consistency = consistency + F.smooth_l1_loss(high_prob * positive, low_prob * positive, reduction="sum") / (
+                    positive.sum() * self.nc
+                )
+                pairs += 1
+        return consistency / max(pairs, 1)
 
     def preprocess(self, targets: torch.Tensor, batch_size: int, scale_tensor: torch.Tensor) -> torch.Tensor:
         """Preprocess targets by converting to tensor format and scaling coordinates."""
@@ -439,6 +473,7 @@ class v8DetectionLoss:
         if self.class_weights is not None:
             bce_loss *= self.class_weights
         loss[1] = bce_loss.sum() / target_scores_sum  # BCE
+        loss[1] += self.scale_consistency * self.classification_consistency_loss(pred_scores, target_scores, preds["feats"])
 
         # Bbox loss
         if fg_mask.sum():
