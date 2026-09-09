@@ -55,7 +55,6 @@ __all__ = (
     "ResNetLayer",
     "SCAM",
     "SCDown",
-    "TextureContrastFusion",
     "TorchVision",
 )
 
@@ -293,34 +292,6 @@ class SCAM(nn.Module):
         y = self.dw(residual).permute(0, 2, 3, 1)
         y = self.fc2(self.act(self.fc1(self.norm(y)))).permute(0, 3, 1, 2)
         return self.grn(residual + y)
-
-
-class TextureContrastFusion(nn.Module):
-    """Inject P3 texture anomalies selected by upsampled P4 semantic context.
-
-    The module measures the disagreement between a local P3 feature and its
-    dilated depth-wise context.  Regular fabric texture tends to agree with its
-    neighborhood, whereas holes and texture disruptions produce a larger
-    residual.  P4 supplies semantic gating so repeated high-frequency cloth
-    patterns are not indiscriminately amplified.
-    """
-
-    def __init__(self, c_detail: int, c_semantic: int, dilation: int = 3):
-        super().__init__()
-        self.context = nn.Conv2d(
-            c_detail, c_detail, 3, padding=dilation, dilation=dilation, groups=c_detail, bias=False
-        )
-        self.detail_project = Conv(c_detail, c_detail, 1)
-        self.semantic_gate = nn.Sequential(nn.Conv2d(c_semantic, c_detail, 1, bias=True), nn.Sigmoid())
-        # Start from the unmodified PAN feature and let training introduce the anomaly residual when useful.
-        self.gamma = nn.Parameter(torch.zeros(1, c_detail, 1, 1))
-
-    def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
-        """Fuse P3 detail and P4 semantic tensors, returning a P3-resolution feature."""
-        detail, semantic = x
-        anomaly = (detail - self.context(detail)).abs()
-        gate = F.interpolate(self.semantic_gate(semantic), size=detail.shape[-2:], mode="nearest")
-        return detail + self.gamma * self.detail_project(anomaly * gate)
 
 
 class C1(nn.Module):
