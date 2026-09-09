@@ -61,7 +61,6 @@ from ultralytics.nn.modules import (
     ImagePoolingAttn,
     Index,
     LRPCHead,
-    MorphologyAdaptiveHead,
     Pose,
     Pose26,
     RepC3,
@@ -2050,7 +2049,6 @@ def parse_model(d, ch, verbose=True):
             PSA,
             SCDown,
             SCAM,
-            MorphologyAdaptiveHead,
             C2fCIB,
             A2C2f,
         }
