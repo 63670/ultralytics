@@ -37,6 +37,7 @@ __all__ = (
     "C2fAttn",
     "C2fCIB",
     "C2fDirectional",
+    "ContentAwareUpsample",
     "C2fPSA",
     "C3Ghost",
     "C3k2",
@@ -387,6 +388,36 @@ class C2fDirectional(C2f):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply C2f feature extraction followed by directional fusion."""
         return self.direction(super().forward(x))
+
+
+class ContentAwareUpsample(nn.Module):
+    """CARAFE-style content-aware feature reassembly for 2x FPN upsampling.
+
+    A compact encoder predicts a spatially varying reassembly kernel.  The
+    kernel aggregates a local source neighborhood instead of copying each
+    feature point with fixed nearest-neighbor interpolation.
+    """
+
+    def __init__(self, c1: int, kernel_size: int = 5, scale_factor: int = 2):
+        super().__init__()
+        if kernel_size % 2 == 0 or scale_factor != 2:
+            raise ValueError("ContentAwareUpsample requires an odd kernel and scale_factor=2.")
+        self.kernel_size = kernel_size
+        self.scale_factor = scale_factor
+        hidden = max(c1 // 4, 16)
+        self.compress = Conv(c1, hidden, 1)
+        self.kernel_encoder = nn.Conv2d(hidden, scale_factor**2 * kernel_size**2, 3, padding=1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Predict reassembly kernels and aggregate local source features at 2x resolution."""
+        batch, channels, height, width = x.shape
+        kernel = F.pixel_shuffle(self.kernel_encoder(self.compress(x)), self.scale_factor)
+        kernel = kernel.softmax(dim=1)
+        patches = F.unfold(x, self.kernel_size, padding=self.kernel_size // 2)
+        patches = patches.view(batch, channels * self.kernel_size**2, height, width)
+        patches = F.interpolate(patches, scale_factor=self.scale_factor, mode="nearest")
+        patches = patches.view(batch, channels, self.kernel_size**2, height * self.scale_factor, width * self.scale_factor)
+        return (patches * kernel.unsqueeze(1)).sum(dim=2)
 
 
 class C3(nn.Module):
