@@ -48,6 +48,7 @@ __all__ = (
     "HGBlock",
     "HGStem",
     "ImagePoolingAttn",
+    "MorphologyAdaptiveHead",
     "Proto",
     "RepC3",
     "RepNCSPELAN4",
@@ -292,6 +293,33 @@ class SCAM(nn.Module):
         y = self.dw(residual).permute(0, 2, 3, 1)
         y = self.fc2(self.act(self.fc1(self.norm(y)))).permute(0, 3, 1, 2)
         return self.grn(residual + y)
+
+
+class MorphologyAdaptiveHead(nn.Module):
+    """Adapt a detection feature between local-region and large-context receptive fields.
+
+    The local branch focuses on compact regions such as holes, whereas the dilated context branch complements the
+    directional backbone for spatially extended defect responses.  A spatial softmax router selects their mixture
+    without using directional kernels or modifying the feature pyramid topology.
+    """
+
+    def __init__(self, c1: int, c2: int, context_dilation: int = 2):
+        """Initialize local/context branches and the per-pixel morphology router."""
+        super().__init__()
+        self.project = Conv(c1, c2, 1) if c1 != c2 else nn.Identity()
+        self.local = DWConv(c2, c2, 3)
+        self.context = nn.Sequential(DWConv(c2, c2, 3, d=context_dilation), Conv(c2, c2, 1, act=False))
+        self.router = nn.Conv2d(c2 * 2, 2, 1, bias=True)
+        self.scale = nn.Parameter(torch.tensor(0.1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Add a spatially selected local/context enhancement to the residual detection feature."""
+        x = self.project(x)
+        local = self.local(x)
+        context = self.context(x)
+        weights = self.router(torch.cat((local, context), 1)).softmax(1)
+        enhancement = weights[:, 0:1] * local + weights[:, 1:2] * context
+        return x + self.scale * enhancement
 
 
 class C1(nn.Module):
