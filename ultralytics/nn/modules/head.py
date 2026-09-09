@@ -26,6 +26,7 @@ __all__ = (
     "Detect",
     "Pose",
     "RTDETRDecoder",
+    "TaskSpecificRoutingDetect",
     "Segment",
     "SemanticSegment",
     "YOLOEDetect",
@@ -275,6 +276,65 @@ class Detect(nn.Module):
     def fuse(self) -> None:
         """Remove the one2many head for inference optimization."""
         self.cv2 = self.cv3 = None
+
+
+class TaskSpecificRoutingDetect(Detect):
+    """Detect head with separate semantic classification and detail regression scale routing.
+
+    Classification receives only top-down semantic context from the next coarser
+    scale, while box regression receives only bottom-up detail from the next
+    finer scale.  This keeps the two YOLOv8 head tasks explicitly separated
+    after the shared FPN and makes their cross-scale information requirements
+    learnable through independent spatial gates.
+    """
+
+    def __init__(self, nc: int = 80, reg_max: int = 16, end2end: bool = False, ch: tuple = ()):
+        super().__init__(nc, reg_max, end2end, ch)
+        self.cls_project = nn.ModuleList(nn.Conv2d(ch[i + 1], ch[i], 1, bias=False) for i in range(self.nl - 1))
+        self.reg_project = nn.ModuleList(nn.Conv2d(ch[i - 1], ch[i], 1, bias=False) for i in range(1, self.nl))
+        self.cls_gate = nn.ModuleList(nn.Conv2d(channel, channel, 1) for channel in ch[:-1])
+        self.reg_gate = nn.ModuleList(nn.Conv2d(channel, channel, 1) for channel in ch[1:])
+        self.cls_scale = nn.Parameter(torch.full((self.nl - 1,), 0.01))
+        self.reg_scale = nn.Parameter(torch.full((self.nl - 1,), 0.01))
+
+    def _route_features(self, x: list[torch.Tensor]) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+        """Build task-specific features while retaining an identity path for every detection scale."""
+        cls_features = list(x)
+        reg_features = list(x)
+        for i in range(self.nl - 1):
+            semantic = F.interpolate(self.cls_project[i](x[i + 1]), size=x[i].shape[-2:], mode="nearest")
+            cls_features[i] = x[i] + self.cls_scale[i] * semantic * self.cls_gate[i](x[i]).sigmoid()
+
+            detail = F.adaptive_max_pool2d(self.reg_project[i](x[i]), x[i + 1].shape[-2:])
+            reg_features[i + 1] = x[i + 1] + self.reg_scale[i] * detail * self.reg_gate[i](x[i + 1]).sigmoid()
+        return cls_features, reg_features
+
+    def _forward_task_heads(
+        self, cls_features: list[torch.Tensor], reg_features: list[torch.Tensor], box_head: nn.Module, cls_head: nn.Module
+    ) -> dict[str, torch.Tensor]:
+        """Run the native YOLO box and class heads on their separately routed features."""
+        bs = cls_features[0].shape[0]
+        boxes = torch.cat([box_head[i](reg_features[i]).view(bs, 4 * self.reg_max, -1) for i in range(self.nl)], dim=-1)
+        scores = torch.cat([cls_head[i](cls_features[i]).view(bs, self.nc, -1) for i in range(self.nl)], dim=-1)
+        return {"boxes": boxes, "scores": scores, "feats": cls_features}
+
+    def forward(self, x: list[torch.Tensor]) -> dict[str, torch.Tensor] | torch.Tensor | tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        """Run task-specific routing before the native decoupled prediction branches."""
+        cls_features, reg_features = self._route_features(x)
+        preds = self._forward_task_heads(cls_features, reg_features, **self.one2many)
+        if self.end2end:
+            detached_cls = [feature.detach() for feature in cls_features] if self.training else cls_features
+            detached_reg = [feature.detach() for feature in reg_features] if self.training else reg_features
+            preds = {
+                "one2many": preds,
+                "one2one": self._forward_task_heads(detached_cls, detached_reg, **self.one2one),
+            }
+        if self.training:
+            return preds
+        y = self._inference(preds["one2one"] if self.end2end else preds)
+        if self.end2end:
+            y = self.postprocess(y.permute(0, 2, 1))
+        return y if self.export else (y, preds)
 
 
 class Segment(Detect):
