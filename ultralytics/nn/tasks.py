@@ -75,6 +75,7 @@ from ultralytics.nn.modules import (
     Segment26,
     SemanticSegment,
     TorchVision,
+    TextureContrastFusion,
     WorldDetect,
     YOLOEDetect,
     YOLOESegment,
@@ -2119,6 +2120,11 @@ def parse_model(d, ch, verbose=True):
                 legacy = False
         elif m is AIFI:
             args = [ch[f], *args]
+        elif m is TextureContrastFusion:
+            if not isinstance(f, list) or len(f) != 2:
+                raise ValueError("TextureContrastFusion requires [detail_feature, semantic_feature] inputs.")
+            c2 = ch[f[0]]
+            args = [ch[f[0]], ch[f[1]], *args]
         elif m in frozenset({HGStem, HGBlock}):
             c1, cm, c2 = ch[f], args[0], args[1]
             args = [c1, cm, c2, *args[2:]]

@@ -60,6 +60,7 @@ from .block import (
     ResNetLayer,
     SCAM,
     SCDown,
+    TextureContrastFusion,
     TorchVision,
 )
 from .conv import (
@@ -186,6 +187,7 @@ __all__ = (
     "ResNetLayer",
     "SCAM",
     "SCDown",
+    "TextureContrastFusion",
     "Segment",
     "Segment26",
     "SemanticSegment",
