@@ -19,6 +19,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, required=True, help="Destination COCO dataset directory.")
     parser.add_argument("--classes", type=Path, required=True, help="One class name per line, in desired category order.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for the 7:1:2 image split.")
+    parser.add_argument(
+        "--reference-yolo",
+        type=Path,
+        help="YOLO dataset root containing images/train, images/val and images/test. Uses these exact file splits.",
+    )
+    parser.add_argument(
+        "--overwrite-generated",
+        action="store_true",
+        help="Replace only generated annotations and train2017/val2017/test2017 directories in the output.",
+    )
     return parser.parse_args()
 
 
@@ -66,7 +76,24 @@ def load_records(source: Path, classes: list[str]) -> list[dict]:
     return records
 
 
-def split_records(records: list[dict], seed: int) -> dict[str, list[dict]]:
+def split_records(records: list[dict], seed: int, reference_yolo: Path | None = None) -> dict[str, list[dict]]:
+    if reference_yolo:
+        by_name = {record["image_path"].name: record for record in records}
+        splits = {}
+        for split in ("train", "val", "test"):
+            split_dir = reference_yolo / "images" / split
+            if not split_dir.is_dir():
+                raise FileNotFoundError(f"Missing YOLO split directory: {split_dir}")
+            names = [path.name for path in split_dir.iterdir() if path.suffix.lower() in IMAGE_SUFFIXES]
+            missing = sorted(set(names) - by_name.keys())
+            if missing:
+                raise FileNotFoundError(f"{len(missing)} YOLO split images are absent from the source, e.g. {missing[:3]}")
+            splits[split] = [by_name[name] for name in sorted(names)]
+        assigned = {record["image_path"].name for split in splits.values() for record in split}
+        if assigned != by_name.keys():
+            extra = sorted(by_name.keys() - assigned)
+            raise ValueError(f"YOLO split does not cover the source exactly; unassigned images: {extra[:3]}")
+        return splits
     shuffled = records.copy()
     random.Random(seed).shuffle(shuffled)
     total = len(shuffled)
@@ -108,13 +135,25 @@ def main() -> None:
         raise ValueError("Classes file is empty.")
     generated = [args.output / "annotations", *(args.output / f"{split}2017" for split in ("train", "val", "test"))]
     existing = [path for path in generated if path.exists()]
-    if existing:
+    if existing and not args.overwrite_generated:
         raise FileExistsError(f"Refusing to overwrite existing generated directories: {existing}")
+    if args.overwrite_generated:
+        for path in existing:
+            shutil.rmtree(path)
     records = load_records(args.source, classes)
     categories = [{"id": index + 1, "name": name, "supercategory": "defect"} for index, name in enumerate(classes)]
     (args.output / "annotations").mkdir(parents=True)
-    summary = {split: write_coco_split(items, split, args.output, categories) for split, items in split_records(records, args.seed).items()}
-    summary.update({"seed": args.seed, "categories": categories, "source_images": len(records)})
+    splits = split_records(records, args.seed, args.reference_yolo)
+    summary = {split: write_coco_split(items, split, args.output, categories) for split, items in splits.items()}
+    summary.update(
+        {
+            "split_method": "reference_yolo" if args.reference_yolo else "random_7_1_2",
+            "reference_yolo": str(args.reference_yolo) if args.reference_yolo else None,
+            "seed": args.seed if not args.reference_yolo else None,
+            "categories": categories,
+            "source_images": len(records),
+        }
+    )
     (args.output / "split_summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
