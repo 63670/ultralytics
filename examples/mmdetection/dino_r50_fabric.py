@@ -33,7 +33,8 @@ train_dataloader = dict(
     dataset=dict(
         data_root=data_root,
         ann_file='annotations/instances_train2017.json',
-        data_prefix=dict(img='train2017/'),
+        # COCO image `file_name` values already include e.g. `train2017/`.
+        data_prefix=dict(img=''),
         metainfo=metainfo,
         filter_cfg=dict(filter_empty_gt=False),
         pipeline=train_pipeline,
@@ -43,7 +44,7 @@ val_dataloader = dict(
     dataset=dict(
         data_root=data_root,
         ann_file='annotations/instances_val2017.json',
-        data_prefix=dict(img='val2017/'),
+        data_prefix=dict(img=''),
         metainfo=metainfo,
         pipeline=test_pipeline,
     ),
@@ -52,7 +53,7 @@ test_dataloader = dict(
     dataset=dict(
         data_root=data_root,
         ann_file='annotations/instances_test2017.json',
-        data_prefix=dict(img='test2017/'),
+        data_prefix=dict(img=''),
         metainfo=metainfo,
         pipeline=test_pipeline,
     ),
