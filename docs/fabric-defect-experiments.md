@@ -96,3 +96,37 @@ yolo detect val \
   project=/home/tkz/datasets/pingwen_paper/runs/detect \
   name=yolov8n_baseline_test
 ```
+
+## RT-DETRv2-R18 Baseline
+
+Evaluate the RT-DETRv2-R18 checkpoint on the held-out test set. Run this from the
+RT-DETRv2 PyTorch repository with the `rtdetr` Conda environment active:
+
+```bash
+conda activate rtdetr
+cd ~/code/github/RT-DETR/rtdetrv2_pytorch/
+CUDA_VISIBLE_DEVICES=1 \
+python tools/train.py \
+  -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen_test.yml \
+  -r output/rtdetrv2_r18vd_pingwen/best.pth \
+  --test-only
+```
+
+### Test Results
+
+| Metric | Value |
+| --- | ---: |
+| AP@[IoU=0.50:0.95] | 0.686 |
+| AP@0.50 | 0.958 |
+| AP@0.75 | 0.837 |
+| AP (small) | 0.620 |
+| AP (medium) | 0.717 |
+| AP (large) | 0.636 |
+| AR@[IoU=0.50:0.95], maxDets=1 | 0.688 |
+| AR@[IoU=0.50:0.95], maxDets=10 | 0.782 |
+| AR@[IoU=0.50:0.95], maxDets=100 | 0.805 |
+| AR (small), maxDets=100 | 0.644 |
+| AR (medium), maxDets=100 | 0.832 |
+| AR (large), maxDets=100 | 0.791 |
+| AR@0.50, maxDets=100 | 0.982 |
+| AR@0.75, maxDets=100 | 0.954 |
