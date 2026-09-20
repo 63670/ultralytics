@@ -383,3 +383,36 @@ The test split contains 81 images and 91 instances.
 
 Per-image latency: 1.6 ms preprocessing, 5.2 ms inference, and 9.5 ms
 postprocessing.
+
+## RT-DETR-L Baseline Test Results
+
+Evaluate the RT-DETR-L checkpoint on the held-out test set using the same
+Ultralytics evaluation pipeline:
+
+```bash
+conda activate tkz-yolo
+cd ~/datasets/pingwen_yolo
+yolo detect val \
+  model=/home/tkz/datasets/pingwen_yolo/runs/detect/rtdetr_l/weights/best.pt \
+  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+  split=test \
+  imgsz=640 \
+  batch=16 \
+  device=0 \
+  workers=8 \
+  max_det=16 \
+  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
+  name=rtdetr_l_test
+```
+
+The test split contains 81 images and 91 instances.
+
+| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| all | 81 | 91 | 0.932 | 0.968 | 0.966 | 0.660 |
+| row | 59 | 60 | 0.974 | 0.983 | 0.976 | 0.610 |
+| col | 12 | 12 | 0.921 | 0.975 | 0.983 | 0.804 |
+| hole | 18 | 19 | 0.900 | 0.945 | 0.940 | 0.567 |
+
+Per-image latency: 1.5 ms preprocessing, 17.0 ms inference, and 2.5 ms
+postprocessing.
