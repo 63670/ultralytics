@@ -191,3 +191,34 @@ python tools/test.py \
 | AR (small), maxDets=1000 | 0.594 |
 | AR (medium), maxDets=1000 | 0.694 |
 | AR (large), maxDets=1000 | 0.653 |
+
+## Faster R-CNN-R50 Baseline
+
+Evaluate the pretrained Faster R-CNN-R50 checkpoint on the held-out test set.
+Run this from the MMDetection repository with the `mmdet` Conda environment
+active:
+
+```bash
+conda activate mmdet
+cd ~/code/github/mmdetection
+python tools/test.py \
+  configs/pingwen/faster_rcnn_r50_300e.py \
+  work_dirs/faster_rcnn_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_162.pth
+```
+
+### Test Results
+
+| Metric | Value |
+| --- | ---: |
+| AP@[IoU=0.50:0.95], maxDets=100 | 0.662 |
+| AP@0.50, maxDets=1000 | 0.969 |
+| AP@0.75, maxDets=1000 | 0.779 |
+| AP (small), maxDets=1000 | 0.382 |
+| AP (medium), maxDets=1000 | 0.744 |
+| AP (large), maxDets=1000 | 0.570 |
+| AR@[IoU=0.50:0.95], maxDets=100 | 0.722 |
+| AR@[IoU=0.50:0.95], maxDets=300 | 0.722 |
+| AR@[IoU=0.50:0.95], maxDets=1000 | 0.722 |
+| AR (small), maxDets=1000 | 0.394 |
+| AR (medium), maxDets=1000 | 0.805 |
+| AR (large), maxDets=1000 | 0.592 |
