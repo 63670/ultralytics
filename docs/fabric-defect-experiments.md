@@ -130,3 +130,33 @@ python tools/train.py \
 | AR (large), maxDets=100 | 0.791 |
 | AR@0.50, maxDets=100 | 0.982 |
 | AR@0.75, maxDets=100 | 0.954 |
+
+## DETR-R50 Baseline
+
+Evaluate the pretrained DETR-R50 checkpoint on the held-out test set. Run this
+from the MMDetection repository with the `mmdet` Conda environment active:
+
+```bash
+conda activate mmdet
+cd ~/code/github/mmdetection
+python tools/test.py \
+  configs/pingwen/detr_r50_300e.py \
+  work_dirs/detr_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_280.pth
+```
+
+### Test Results
+
+| Metric | Value |
+| --- | ---: |
+| AP@[IoU=0.50:0.95], maxDets=100 | 0.536 |
+| AP@0.50, maxDets=1000 | 0.964 |
+| AP@0.75, maxDets=1000 | 0.551 |
+| AP (small), maxDets=1000 | 0.260 |
+| AP (medium), maxDets=1000 | 0.580 |
+| AP (large), maxDets=1000 | 0.497 |
+| AR@[IoU=0.50:0.95], maxDets=100 | 0.698 |
+| AR@[IoU=0.50:0.95], maxDets=300 | 0.698 |
+| AR@[IoU=0.50:0.95], maxDets=1000 | 0.698 |
+| AR (small), maxDets=1000 | 0.350 |
+| AR (medium), maxDets=1000 | 0.727 |
+| AR (large), maxDets=1000 | 0.694 |
