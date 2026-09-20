@@ -254,3 +254,35 @@ The test split contains 81 images and 91 instances.
 
 Per-image latency: 1.4 ms preprocessing, 5.8 ms inference, and 9.7 ms
 postprocessing.
+
+## YOLO11n Baseline Test Results
+
+Evaluate the YOLO11n checkpoint on the held-out test set:
+
+```bash
+conda activate tkz-yolo
+cd ~/datasets/pingwen_yolo
+yolo detect val \
+  model=/home/tkz/datasets/pingwen_yolo/runs/detect/yolo11n/weights/best.pt \
+  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+  split=test \
+  imgsz=640 \
+  batch=16 \
+  device=0 \
+  workers=8 \
+  max_det=16 \
+  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
+  name=yolo11n_test
+```
+
+The test split contains 81 images and 91 instances.
+
+| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| all | 81 | 91 | 0.919 | 0.952 | 0.947 | 0.608 |
+| row | 59 | 60 | 0.983 | 0.962 | 0.993 | 0.611 |
+| col | 12 | 12 | 0.908 | 1.000 | 0.925 | 0.602 |
+| hole | 18 | 19 | 0.866 | 0.895 | 0.923 | 0.611 |
+
+Per-image latency: 1.6 ms preprocessing, 2.9 ms inference, and 9.5 ms
+postprocessing.
