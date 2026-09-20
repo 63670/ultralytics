@@ -160,3 +160,34 @@ python tools/test.py \
 | AR (small), maxDets=1000 | 0.350 |
 | AR (medium), maxDets=1000 | 0.727 |
 | AR (large), maxDets=1000 | 0.694 |
+
+## Deformable DETR-R50 Baseline
+
+Evaluate the pretrained Deformable DETR-R50 checkpoint on the held-out test
+set. Run this from the MMDetection repository with the `mmdet` Conda
+environment active:
+
+```bash
+conda activate mmdet
+cd ~/code/github/mmdetection
+python tools/test.py \
+  configs/pingwen/deformable_detr_r50_300e.py \
+  work_dirs/deformable_detr_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_96.pth
+```
+
+### Test Results
+
+| Metric | Value |
+| --- | ---: |
+| AP@[IoU=0.50:0.95], maxDets=100 | 0.643 |
+| AP@0.50, maxDets=1000 | 0.968 |
+| AP@0.75, maxDets=1000 | 0.781 |
+| AP (small), maxDets=1000 | 0.464 |
+| AP (medium), maxDets=1000 | 0.650 |
+| AP (large), maxDets=1000 | 0.546 |
+| AR@[IoU=0.50:0.95], maxDets=100 | 0.703 |
+| AR@[IoU=0.50:0.95], maxDets=300 | 0.703 |
+| AR@[IoU=0.50:0.95], maxDets=1000 | 0.703 |
+| AR (small), maxDets=1000 | 0.594 |
+| AR (medium), maxDets=1000 | 0.694 |
+| AR (large), maxDets=1000 | 0.653 |
