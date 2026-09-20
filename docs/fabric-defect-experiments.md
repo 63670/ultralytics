@@ -222,3 +222,35 @@ python tools/test.py \
 | AR (small), maxDets=1000 | 0.394 |
 | AR (medium), maxDets=1000 | 0.805 |
 | AR (large), maxDets=1000 | 0.592 |
+
+## YOLOv8n Baseline Test Results
+
+Evaluate the YOLOv8n checkpoint on the held-out test set:
+
+```bash
+conda activate tkz-yolo
+cd ~/datasets/pingwen_yolo
+yolo detect val \
+  model=/home/tkz/datasets/pingwen_yolo/runs/detect/yolov8n/weights/best.pt \
+  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+  split=test \
+  imgsz=640 \
+  batch=16 \
+  device=0 \
+  workers=8 \
+  max_det=16 \
+  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
+  name=yolov8n_test
+```
+
+The test split contains 81 images and 91 instances.
+
+| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| all | 81 | 91 | 0.901 | 0.939 | 0.938 | 0.597 |
+| row | 59 | 60 | 0.967 | 0.970 | 0.990 | 0.633 |
+| col | 12 | 12 | 0.919 | 0.952 | 0.931 | 0.561 |
+| hole | 18 | 19 | 0.816 | 0.895 | 0.893 | 0.597 |
+
+Per-image latency: 1.4 ms preprocessing, 5.8 ms inference, and 9.7 ms
+postprocessing.
