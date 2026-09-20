@@ -350,3 +350,36 @@ The test split contains 81 images and 91 instances.
 
 Per-image latency: 1.6 ms preprocessing, 2.9 ms inference, and 2.6 ms
 postprocessing.
+
+## DACP-Net Test Results
+
+Evaluate the proposed Directional-Aware and Content-Aware Pyramid Network
+(DACP-Net) checkpoint on the held-out test set:
+
+```bash
+conda activate tkz-yolo
+cd ~/datasets/pingwen_yolo
+yolo detect val \
+  model=/home/tkz/datasets/pingwen_yolo/runs/detect/DACP-Net/weights/best.pt \
+  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+  split=test \
+  imgsz=640 \
+  batch=16 \
+  device=0 \
+  workers=8 \
+  max_det=16 \
+  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
+  name=DACP-Net_test
+```
+
+The test split contains 81 images and 91 instances.
+
+| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| all | 81 | 91 | 0.958 | 0.923 | 0.969 | 0.663 |
+| row | 59 | 60 | 0.973 | 0.967 | 0.988 | 0.617 |
+| col | 12 | 12 | 1.000 | 0.906 | 0.995 | 0.738 |
+| hole | 18 | 19 | 0.901 | 0.895 | 0.922 | 0.634 |
+
+Per-image latency: 1.6 ms preprocessing, 5.2 ms inference, and 9.5 ms
+postprocessing.
