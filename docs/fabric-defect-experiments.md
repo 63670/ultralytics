@@ -65,6 +65,137 @@ over LTFR alone, indicating that local feature reassembly is effective when
 applied to DATE-enhanced features rather than as a standalone substitution for
 the original upsampling path.
 
+## Pretrained-Initialization Rerun Commands
+
+Use the commands in this section to rerun every benchmark from pretrained
+weights without overwriting the previously recorded outputs. All commands use
+the current dataset locations supplied for each framework. Keep the image size,
+batch size, epochs, augmentation, and seed fixed within a framework.
+
+### RT-DETRv2-R18
+
+The verified dataset directory is `/home/tkz/datasets/pingwen_coco_rtdetr`.
+Copy the config to preserve prior outputs, then change only its `output_dir`.
+`-t` initializes the full detector from the local COCO-pretrained RT-DETRv2-R18
+checkpoint; it is not a resume.
+
+```bash
+conda activate rtdetr
+cd /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch
+cp configs/rtdetrv2/rtdetrv2_r18vd_pingwen.yml \
+  configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain.yml
+sed -i 's#output/rtdetrv2_r18vd_pingwen#output/rtdetrv2_r18vd_pingwen_retrain#' \
+  configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain.yml
+CUDA_VISIBLE_DEVICES=1 \
+python tools/train.py \
+  -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain.yml \
+  -t pretrained/rtdetrv2_r18vd_120e_coco_rerun_48.1.pth \
+  --seed 0
+```
+
+The source config already points to
+`/home/tkz/datasets/pingwen_coco_rtdetr` and uses the matching R18 RT-DETRv2
+architecture.
+
+### MMDetection Baselines
+
+Each verified custom config already sets `load_from` to its exact COCO-pretrained
+OpenMMLab model-zoo checkpoint. Use a new work directory and do not override
+`load_from` with a previous Pingwen checkpoint.
+
+```bash
+conda activate mmdet
+cd /home/tkz/code/github/mmdetection
+
+python tools/train.py \
+  configs/pingwen/detr_r50_300e.py \
+  --work-dir work_dirs/retrain_detr_r50_300e \
+  --seed 0
+
+python tools/train.py \
+  configs/pingwen/deformable_detr_r50_300e.py \
+  --work-dir work_dirs/retrain_deformable_detr_r50_300e \
+  --seed 0
+
+python tools/train.py \
+  configs/pingwen/faster_rcnn_r50_300e.py \
+  --work-dir work_dirs/retrain_faster_rcnn_r50_300e \
+  --seed 0
+```
+
+The custom MMDetection configs must use
+`/home/tkz/datasets/pingwen_coco` for their dataset and annotation paths.
+
+### Ultralytics Benchmarks and DACP-Net Ablations
+
+Run all commands from the Ultralytics repository in the `tkz-yolo`
+environment. The official `.pt` model argument initializes each standard model
+from its corresponding pretrained checkpoint. The custom YAML models initialize
+from `yolov8n.pt`, keeping the backbone initialization consistent with their
+YOLOv8n base architecture.
+
+```bash
+conda activate tkz-yolo
+cd /home/tkz/code/github/ultralytics
+```
+
+Define the following Bash array once. It supplies identical data, training, and
+augmentation settings to every Ultralytics run:
+
+```bash
+common_args=(
+  data=/home/tkz/datasets/pingwen_yolo/data.yaml
+  imgsz=640 epochs=300 patience=80 batch=16 device=0 workers=8 max_det=16
+  hsv_h=0 hsv_s=0 hsv_v=0.2 mosaic=0.0 seed=0 deterministic=True
+  project=/home/tkz/datasets/pingwen_yolo/runs/detect
+)
+```
+
+Run each command below after defining `common_args`:
+
+```bash
+yolo detect train model=yolov8n.pt name=retrain_yolov8n "${common_args[@]}"
+yolo detect train model=yolo11n.pt name=retrain_yolo11n "${common_args[@]}"
+yolo detect train model=yolo12n.pt name=retrain_yolo12n "${common_args[@]}"
+yolo detect train model=yolo26n.pt name=retrain_yolo26n "${common_args[@]}"
+yolo detect train model=rtdetr-l.pt name=retrain_rtdetr_l "${common_args[@]}"
+
+yolo detect train \
+  model=ultralytics/cfg/models/v8/yolov8n-fabric-baseline.yaml \
+  pretrained=yolov8n.pt name=retrain_ablation_baseline "${common_args[@]}"
+yolo detect train \
+  model=ultralytics/cfg/models/v8/yolov8n-fabric-directional.yaml \
+  pretrained=yolov8n.pt name=retrain_ablation_directional "${common_args[@]}"
+yolo detect train \
+  model=ultralytics/cfg/models/v8/yolov8n-fabric-content-aware.yaml \
+  pretrained=yolov8n.pt name=retrain_ablation_content_aware "${common_args[@]}"
+yolo detect train \
+  model=ultralytics/cfg/models/v8/yolov8n-fabric-directional-carafe.yaml \
+  pretrained=yolov8n.pt name=retrain_dacp_net "${common_args[@]}"
+```
+
+### Original YOLOv5n
+
+Run the original anchor-based YOLOv5n from its official repository. The
+`yolov5n.pt` argument initializes from the COCO-pretrained model.
+
+```bash
+conda activate tkz-yolo
+cd /home/tkz/code/github/yolov5
+python train.py \
+  --weights yolov5n.pt \
+  --data /home/tkz/datasets/pingwen_yolo/data.yaml \
+  --img 640 \
+  --epochs 300 \
+  --batch-size 16 \
+  --device 0 \
+  --workers 8 \
+  --patience 80 \
+  --seed 0 \
+  --project /home/tkz/datasets/pingwen_yolo/runs/detect \
+  --name retrain_yolov5n
+```
+
 ## Custom End-to-End YOLOv8n
 
 Train the single-P3 fabric model with directional P5 context, direct box regression, and no NMS:
