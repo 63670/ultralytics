@@ -56,6 +56,16 @@ deviation are calculated across the six seeds. The `*_test` directories contain
 visualizations but do not persist machine-readable metrics, so they are not
 used in this table.
 
+### Per-Seed mAP@0.50:0.95
+
+| Model | Seed 0 | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 | Mean |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| YOLOv8n | 0.5883 | 0.6331 | 0.5800 | 0.6312 | 0.5945 | 0.5684 | 0.5993 |
+| YOLO11n | 0.6136 | 0.5698 | 0.5677 | 0.5838 | 0.5981 | 0.6072 | 0.5900 |
+| YOLO12n | 0.6210 | 0.6037 | 0.5909 | 0.5759 | 0.5770 | 0.5549 | 0.5872 |
+| YOLO26n | 0.6363 | 0.5792 | 0.5987 | 0.5652 | 0.5949 | 0.5765 | 0.5918 |
+| **DACP-Net** | 0.6263 | **0.6495** | **0.6404** | 0.6048 | **0.6205** | **0.6438** | **0.6309** |
+
 | Model | Seeds | Precision (mean) | Recall (mean) | mAP@0.50 (mean) | mAP@0.50:0.95 (mean ± std) | Range |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | YOLOv8n | 6 | 0.8799 | 0.8897 | 0.9348 | 0.5993 ± 0.0269 | 0.5684–0.6331 |
