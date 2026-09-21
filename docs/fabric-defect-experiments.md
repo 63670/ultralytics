@@ -97,6 +97,50 @@ yolo detect val \
   name=yolov8n_baseline_test
 ```
 
+## Content-Aware Pyramid Ablation
+
+This ablation retains the clean YOLOv8n backbone and replaces only the two
+top-down nearest-neighbor upsampling operations with content-aware feature
+reassembly. Train it with the same settings as the other ablations:
+
+```bash
+yolo detect train \
+  model=ultralytics/cfg/models/v8/yolov8n-fabric-content-aware.yaml \
+  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+  pretrained=yolov8n.pt \
+  imgsz=640 \
+  epochs=300 \
+  patience=80 \
+  batch=16 \
+  device=0 \
+  workers=8 \
+  max_det=16 \
+  hsv_h=0 \
+  hsv_s=0 \
+  hsv_v=0.2 \
+  mosaic=0.0 \
+  seed=0 \
+  deterministic=True \
+  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
+  name=ablation_content_aware
+```
+
+Evaluate the best checkpoint on the held-out test split:
+
+```bash
+yolo detect val \
+  model=/home/tkz/datasets/pingwen_yolo/runs/detect/ablation_content_aware/weights/best.pt \
+  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+  split=test \
+  imgsz=640 \
+  batch=16 \
+  device=0 \
+  workers=8 \
+  max_det=16 \
+  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
+  name=ablation_content_aware_test
+```
+
 ## RT-DETRv2-R18 Baseline
 
 Evaluate the RT-DETRv2-R18 checkpoint on the held-out test set. Run this from the
