@@ -93,8 +93,7 @@ sed -i 's#output/rtdetrv2_r18vd_pingwen#output/rtdetrv2_r18vd_pingwen_retrain#' 
 CUDA_VISIBLE_DEVICES=1 \
 python tools/train.py \
   -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain.yml \
-  -t pretrained/rtdetrv2_r18vd_120e_coco_rerun_48.1.pth \
-  --seed 0
+  -t pretrained/rtdetrv2_r18vd_120e_coco_rerun_48.1.pth
 ```
 
 The source config already points to
@@ -113,18 +112,15 @@ cd /home/tkz/code/github/mmdetection
 
 python tools/train.py \
   configs/pingwen/detr_r50_300e.py \
-  --work-dir work_dirs/retrain_detr_r50_300e \
-  --seed 0
+  --work-dir work_dirs/retrain_detr_r50_300e
 
 python tools/train.py \
   configs/pingwen/deformable_detr_r50_300e.py \
-  --work-dir work_dirs/retrain_deformable_detr_r50_300e \
-  --seed 0
+  --work-dir work_dirs/retrain_deformable_detr_r50_300e
 
 python tools/train.py \
   configs/pingwen/faster_rcnn_r50_300e.py \
-  --work-dir work_dirs/retrain_faster_rcnn_r50_300e \
-  --seed 0
+  --work-dir work_dirs/retrain_faster_rcnn_r50_300e
 ```
 
 The custom MMDetection configs must use
@@ -150,7 +146,6 @@ augmentation settings to every Ultralytics run:
 common_args=(
   data=/home/tkz/datasets/pingwen_yolo/data.yaml
   imgsz=640 epochs=300 patience=80 batch=16 device=0 workers=8 max_det=16
-  hsv_h=0 hsv_s=0 hsv_v=0.2 mosaic=0.0 seed=0 deterministic=True
   project=/home/tkz/code/github/ultralytics/runs/detect
 )
 ```
@@ -195,7 +190,6 @@ python train.py \
   --device 0 \
   --workers 8 \
   --patience 80 \
-  --seed 0 \
   --project /home/tkz/code/github/yolov5/runs/train \
   --name retrain_yolov5n
 ```
@@ -216,10 +210,6 @@ yolo detect train \
   device=0 \
   workers=8 \
   max_det=16 \
-  hsv_h=0 \
-  hsv_s=0 \
-  hsv_v=0.2 \
-  mosaic=0.0 \
   project=/home/tkz/datasets/pingwen_paper/runs/detect \
   name=v8n_fabric
 ```
@@ -255,10 +245,6 @@ yolo detect train \
   device=0 \
   workers=8 \
   max_det=16 \
-  hsv_h=0 \
-  hsv_s=0 \
-  hsv_v=0.2 \
-  mosaic=0.0 \
   project=/home/tkz/datasets/pingwen_paper/runs/detect \
   name=yolov8n_baseline
 ```
@@ -297,12 +283,6 @@ yolo detect train \
   device=0 \
   workers=8 \
   max_det=16 \
-  hsv_h=0 \
-  hsv_s=0 \
-  hsv_v=0.2 \
-  mosaic=0.0 \
-  seed=0 \
-  deterministic=True \
   project=/home/tkz/datasets/pingwen_yolo/runs/detect \
   name=ablation_content_aware
 ```
