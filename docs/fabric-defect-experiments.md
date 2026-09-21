@@ -526,3 +526,37 @@ The test split contains 81 images and 91 instances.
 
 Per-image latency: 1.8 ms preprocessing, 2.8 ms inference, and 9.6 ms
 postprocessing.
+
+## YOLOv5n Baseline Test Results
+
+Evaluate the original anchor-based YOLOv5n checkpoint using the official
+YOLOv5 repository:
+
+```bash
+conda activate tkz-yolo
+cd ~/code/github/yolov5
+python val.py \
+  --weights /home/tkz/datasets/pingwen_yolo/runs/detect/yolov5n/weights/best.pt \
+  --data /home/tkz/datasets/pingwen_yolo/data.yaml \
+  --task test \
+  --img 640 \
+  --batch-size 16 \
+  --device 0 \
+  --workers 8 \
+  --max-det 16 \
+  --project /home/tkz/datasets/pingwen_yolo/runs/detect \
+  --name yolov5n_test
+```
+
+The test split contains 81 images and 91 instances. The official YOLOv5
+evaluator reports each class over all 81 images.
+
+| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| all | 81 | 91 | 0.891 | 0.921 | 0.940 | 0.611 |
+| row | 81 | 60 | 0.954 | 1.000 | 0.995 | 0.673 |
+| col | 81 | 12 | 0.915 | 0.894 | 0.911 | 0.584 |
+| hole | 81 | 19 | 0.805 | 0.867 | 0.914 | 0.576 |
+
+Model complexity: 1,763,224 parameters and 4.1 GFLOPs. Per-image latency: 0.2
+ms preprocessing, 1.7 ms inference, and 1.4 ms NMS postprocessing.
