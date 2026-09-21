@@ -194,6 +194,105 @@ python train.py \
   --name retrain_yolov5n
 ```
 
+### Test-Set Evaluation After Rerunning
+
+Evaluate each newly trained `best` checkpoint on its test split using the
+commands below. The test outputs also remain inside the corresponding
+repository.
+
+#### RT-DETRv2-R18
+
+Create a test config that includes the rerun training config, then test its
+best checkpoint:
+
+```bash
+conda activate rtdetr
+cd /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch
+cp configs/rtdetrv2/rtdetrv2_r18vd_pingwen_test.yml \
+  configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain_test.yml
+sed -i 's#rtdetrv2_r18vd_pingwen.yml#rtdetrv2_r18vd_pingwen_retrain.yml#' \
+  configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain_test.yml
+CUDA_VISIBLE_DEVICES=1 \
+python tools/train.py \
+  -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain_test.yml \
+  -r output/rtdetrv2_r18vd_pingwen_retrain/best.pth \
+  --test-only
+```
+
+#### MMDetection
+
+Each config is configured to save a `best_coco_bbox_mAP_*.pth` checkpoint.
+Resolve that file from the corresponding rerun directory before testing:
+
+```bash
+conda activate mmdet
+cd /home/tkz/code/github/mmdetection
+
+ckpt=$(find work_dirs/retrain_detr_r50_300e -maxdepth 1 -name 'best_coco_bbox_mAP_*.pth' -print -quit)
+python tools/test.py \
+  configs/pingwen/detr_r50_300e.py "$ckpt" \
+  --work-dir work_dirs/retrain_detr_r50_300e_test
+
+ckpt=$(find work_dirs/retrain_deformable_detr_r50_300e -maxdepth 1 -name 'best_coco_bbox_mAP_*.pth' -print -quit)
+python tools/test.py \
+  configs/pingwen/deformable_detr_r50_300e.py "$ckpt" \
+  --work-dir work_dirs/retrain_deformable_detr_r50_300e_test
+
+ckpt=$(find work_dirs/retrain_faster_rcnn_r50_300e -maxdepth 1 -name 'best_coco_bbox_mAP_*.pth' -print -quit)
+python tools/test.py \
+  configs/pingwen/faster_rcnn_r50_300e.py "$ckpt" \
+  --work-dir work_dirs/retrain_faster_rcnn_r50_300e_test
+```
+
+#### Ultralytics Benchmarks and Ablations
+
+```bash
+conda activate tkz-yolo
+cd /home/tkz/code/github/ultralytics
+
+for run_name in \
+  retrain_yolov8n \
+  retrain_yolo11n \
+  retrain_yolo12n \
+  retrain_yolo26n \
+  retrain_rtdetr_l \
+  retrain_ablation_baseline \
+  retrain_ablation_directional \
+  retrain_ablation_content_aware \
+  retrain_dacp_net
+do
+  yolo detect val \
+    model="/home/tkz/code/github/ultralytics/runs/detect/${run_name}/weights/best.pt" \
+    data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+    split=test \
+    imgsz=640 \
+    batch=16 \
+    device=0 \
+    workers=8 \
+    max_det=16 \
+    project=/home/tkz/code/github/ultralytics/runs/detect \
+    name="${run_name}_test"
+done
+```
+
+#### Original YOLOv5n
+
+```bash
+conda activate tkz-yolo
+cd /home/tkz/code/github/yolov5
+python val.py \
+  --weights /home/tkz/code/github/yolov5/runs/train/retrain_yolov5n/weights/best.pt \
+  --data /home/tkz/datasets/pingwen_yolo/data.yaml \
+  --task test \
+  --img 640 \
+  --batch-size 16 \
+  --device 0 \
+  --workers 8 \
+  --max-det 16 \
+  --project /home/tkz/code/github/yolov5/runs/val \
+  --name retrain_yolov5n_test
+```
+
 ## Custom End-to-End YOLOv8n
 
 Train the single-P3 fabric model with directional P5 context, direct box regression, and no NMS:
