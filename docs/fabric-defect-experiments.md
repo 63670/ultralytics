@@ -47,6 +47,27 @@ rows preserve the evaluator-reported values; their AP@0.50 values use
 RT-DETRv2-R18, whereas their mAP@0.50:0.95 values use the values reported in
 the corresponding test logs.
 
+## Multi-Seed Validation Summary
+
+The following results summarize six training seeds (`0`--`5`) per model from
+`/home/tkz/code/github/ultralytics/runs/detect`. Each value is the best
+validation metric recorded in that seed's `results.csv`; mean and standard
+deviation are calculated across the six seeds. The `*_test` directories contain
+visualizations but do not persist machine-readable metrics, so they are not
+used in this table.
+
+| Model | Seeds | Precision (mean) | Recall (mean) | mAP@0.50 (mean) | mAP@0.50:0.95 (mean ± std) | Range |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| YOLOv8n | 6 | 0.8799 | 0.8897 | 0.9348 | 0.5993 ± 0.0269 | 0.5684–0.6331 |
+| YOLO11n | 6 | 0.8579 | **0.9016** | **0.9397** | 0.5900 ± 0.0193 | 0.5677–0.6136 |
+| YOLO12n | 6 | 0.8211 | 0.8444 | 0.8867 | 0.5872 ± 0.0232 | 0.5549–0.6210 |
+| YOLO26n | 6 | 0.8631 | 0.8468 | 0.9200 | 0.5918 ± 0.0250 | 0.5652–0.6363 |
+| **DACP-Net** | **6** | **0.8848** | 0.8758 | 0.9349 | **0.6309 ± 0.0168** | **0.6048–0.6495** |
+
+DACP-Net has the highest mean mAP@0.50:0.95 and the lowest across-seed
+standard deviation. Its mean gain over the YOLOv8n base detector is 0.0316
+mAP@0.50:0.95.
+
 ## DACP-Net Ablation Summary
 
 All four variants use the YOLOv8n-based architecture, the same test split, and
