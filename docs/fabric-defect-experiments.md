@@ -204,6 +204,25 @@ yolo detect train \
   pretrained=yolov8n.pt name=retrain_dacp_net "${common_args[@]}"
 ```
 
+For multi-seed training with automatic test-set evaluation, use
+[`scripts/train_and_test.sh`](../scripts/train_and_test.sh). It stores test
+artifacts in `<training-run>/test/` and saves the complete metric log as
+`<training-run>/test_metrics.log`, so each seed remains self-contained. For
+example:
+
+```bash
+chmod +x scripts/train_and_test.sh
+
+for seed in 0 1 2 3 4 5
+do
+  scripts/train_and_test.sh \
+    ultralytics/cfg/models/v8/yolov8n-fabric-directional-carafe.yaml \
+    "dacp_net-${seed}" \
+    pretrained=yolov8n.pt \
+    "seed=${seed}"
+done
+```
+
 ### Original YOLOv5n
 
 Run the original anchor-based YOLOv5n from its official repository. The
