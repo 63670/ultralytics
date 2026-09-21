@@ -96,7 +96,7 @@ over LTFR alone, indicating that local feature reassembly is effective when
 applied to DATE-enhanced features rather than as a standalone substitution for
 the original upsampling path.
 
-## Pretrained-Initialization Rerun Commands
+## Repository-Wise Training and Test Commands
 
 Use the commands in this section to rerun every benchmark from pretrained
 weights without overwriting the previously recorded outputs. All commands use
@@ -107,55 +107,59 @@ The rerun outputs are stored inside their respective repositories:
 `rtdetrv2_pytorch/output/`, `mmdetection/work_dirs/`,
 `ultralytics/runs/detect/`, and `yolov5/runs/train/`.
 
-### RT-DETRv2-R18
+### RT-DETRv2 Repository
 
 The verified dataset directory is `/home/tkz/datasets/pingwen_coco_rtdetr`.
-Copy the config to preserve prior outputs, then change only its `output_dir`.
-`-t` initializes the full detector from the local COCO-pretrained RT-DETRv2-R18
-checkpoint; it is not a resume.
+The RT-DETRv2 experiment runner trains from the full COCO-pretrained checkpoint
+and automatically evaluates `best.pth` on the test split in the same output
+directory.
 
 ```bash
 conda activate rtdetr
 cd /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch
-CUDA_VISIBLE_DEVICES=1 \
-python tools/train.py \
-  -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen.yml \
-  -t pretrained/rtdetrv2_r18vd_120e_coco_rerun_48.1.pth \
-  --seed 5 \
-  --output-dir output/rtdetrv2_r18vd_pingwen_seed5
+python tools/run_experiment.py \
+  configs/rtdetrv2/rtdetrv2_r18vd_pingwen.yml \
+  --pretrained pretrained/rtdetrv2_r18vd_120e_coco_rerun_48.1.pth \
+  --output-dir output/rtdetrv2_r18vd_pingwen_seed5 \
+  --device 1 \
+  --seed 5
 ```
 
-The source config already points to
-`/home/tkz/datasets/pingwen_coco_rtdetr` and uses the matching R18 RT-DETRv2
-architecture.
+The test log is saved as `output/rtdetrv2_r18vd_pingwen_seed5/test_metrics.log`.
 
-### MMDetection Baselines
+### MMDetection Repository
 
-Each verified custom config already sets `load_from` to its exact COCO-pretrained
-OpenMMLab model-zoo checkpoint. Use a new work directory and do not override
-`load_from` with a previous Pingwen checkpoint.
+Each verified custom config sets `load_from` to its exact COCO-pretrained
+OpenMMLab model-zoo checkpoint. The runner selects the best checkpoint and runs
+the test split automatically in the same `work_dir`.
 
 ```bash
 conda activate mmdet
 cd /home/tkz/code/github/mmdetection
 
-python tools/train.py \
+python tools/run_experiment.py \
   configs/pingwen/detr_r50_300e.py \
-  --work-dir work_dirs/retrain_detr_r50_300e
+  --work-dir work_dirs/retrain_detr_r50_300e \
+  --device 1 \
+  --seed 5
 
-python tools/train.py \
+python tools/run_experiment.py \
   configs/pingwen/deformable_detr_r50_300e.py \
-  --work-dir work_dirs/retrain_deformable_detr_r50_300e
+  --work-dir work_dirs/retrain_deformable_detr_r50_300e \
+  --device 1 \
+  --seed 5
 
-python tools/train.py \
+python tools/run_experiment.py \
   configs/pingwen/faster_rcnn_r50_300e.py \
-  --work-dir work_dirs/retrain_faster_rcnn_r50_300e
+  --work-dir work_dirs/retrain_faster_rcnn_r50_300e \
+  --device 1 \
+  --seed 5
 ```
 
 The custom MMDetection configs must use
 `/home/tkz/datasets/pingwen_coco` for their dataset and annotation paths.
 
-### Ultralytics Benchmarks and DACP-Net Ablations
+### Ultralytics Repository
 
 Run all commands from the Ultralytics repository in the `tkz-yolo`
 environment. The official `.pt` model argument initializes each standard model
@@ -168,51 +172,41 @@ conda activate tkz-yolo
 cd /home/tkz/code/github/ultralytics
 ```
 
-Define the following Bash array once. It supplies identical data, training, and
-augmentation settings to every Ultralytics run:
-
-```bash
-common_args=(
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml
-  imgsz=640 epochs=300 patience=80 batch=16 device=0 workers=8 max_det=16
-  project=/home/tkz/code/github/ultralytics/runs/detect
-)
-```
-
-Run each command below after defining `common_args`:
-
-```bash
-yolo detect train model=yolov8n.pt name=retrain_yolov8n "${common_args[@]}"
-yolo detect train model=yolo11n.pt name=retrain_yolo11n "${common_args[@]}"
-yolo detect train model=yolo12n.pt name=retrain_yolo12n "${common_args[@]}"
-yolo detect train model=yolo26n.pt name=retrain_yolo26n "${common_args[@]}"
-yolo detect train model=rtdetr-l.pt name=retrain_rtdetr_l "${common_args[@]}"
-
-yolo detect train \
-  model=ultralytics/cfg/models/v8/yolov8n-fabric-baseline.yaml \
-  pretrained=yolov8n.pt name=retrain_ablation_baseline "${common_args[@]}"
-yolo detect train \
-  model=ultralytics/cfg/models/v8/yolov8n-fabric-directional.yaml \
-  pretrained=yolov8n.pt name=retrain_ablation_directional "${common_args[@]}"
-yolo detect train \
-  model=ultralytics/cfg/models/v8/yolov8n-fabric-content-aware.yaml \
-  pretrained=yolov8n.pt name=retrain_ablation_content_aware "${common_args[@]}"
-yolo detect train \
-  model=ultralytics/cfg/models/v8/yolov8n-fabric-directional-carafe.yaml \
-  pretrained=yolov8n.pt name=retrain_dacp_net "${common_args[@]}"
-```
-
-For multi-seed training with automatic test-set evaluation, use
-[`scripts/run_experiment.sh`](../scripts/run_experiment.sh). It stores test
+Use [`scripts/run_experiment.sh`](../scripts/run_experiment.sh) for every
+Ultralytics benchmark. It trains each model and then automatically tests its
+`best.pt`; it stores test
 artifacts in `<training-run>/test/` and saves the complete metric log as
 `<training-run>/test_metrics.log`, so each seed remains self-contained. After
 the test succeeds, it deletes every weight in `<training-run>/weights/` except
-`best.pt` and records removed filenames in `deleted_checkpoints.log`. For
-example:
+`best.pt` and records removed filenames in `deleted_checkpoints.log`.
 
 ```bash
 chmod +x scripts/run_experiment.sh
 
+scripts/run_experiment.sh --device 1 yolov8n.pt retrain_yolov8n seed=5
+scripts/run_experiment.sh --device 1 yolo11n.pt retrain_yolo11n seed=5
+scripts/run_experiment.sh --device 1 yolo12n.pt retrain_yolo12n seed=5
+scripts/run_experiment.sh --device 1 yolo26n.pt retrain_yolo26n seed=5
+scripts/run_experiment.sh --device 1 rtdetr-l.pt retrain_rtdetr_l seed=5
+
+scripts/run_experiment.sh --device 1 \
+  ultralytics/cfg/models/v8/yolov8n-fabric-baseline.yaml \
+  retrain_ablation_baseline pretrained=yolov8n.pt seed=5
+scripts/run_experiment.sh --device 1 \
+  ultralytics/cfg/models/v8/yolov8n-fabric-directional.yaml \
+  retrain_ablation_directional pretrained=yolov8n.pt seed=5
+scripts/run_experiment.sh --device 1 \
+  ultralytics/cfg/models/v8/yolov8n-fabric-content-aware.yaml \
+  retrain_ablation_content_aware pretrained=yolov8n.pt seed=5
+scripts/run_experiment.sh --device 1 \
+  ultralytics/cfg/models/v8/yolov8n-fabric-directional-carafe.yaml \
+  retrain_dacp_net pretrained=yolov8n.pt seed=5
+```
+
+For multiple seeds, use the same runner in a loop. For
+example:
+
+```bash
 for seed in 0 1 2 3 4 5
 do
   scripts/run_experiment.sh --device 1 \
@@ -223,7 +217,7 @@ do
 done
 ```
 
-### Original YOLOv5n
+### YOLOv5 Repository
 
 Run the original anchor-based YOLOv5n from its official repository. The
 `yolov5n.pt` argument initializes from the COCO-pretrained model.
@@ -242,94 +236,7 @@ python train.py \
   --patience 80 \
   --project /home/tkz/code/github/yolov5/runs/train \
   --name retrain_yolov5n
-```
 
-### Test-Set Evaluation After Rerunning
-
-Evaluate each newly trained `best` checkpoint on its test split using the
-commands below. The test outputs also remain inside the corresponding
-repository.
-
-#### RT-DETRv2-R18
-
-Create a test config that includes the rerun training config, then test its
-best checkpoint:
-
-```bash
-conda activate rtdetr
-cd /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch
-cp configs/rtdetrv2/rtdetrv2_r18vd_pingwen_test.yml \
-  configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain_test.yml
-sed -i 's#rtdetrv2_r18vd_pingwen.yml#rtdetrv2_r18vd_pingwen_retrain.yml#' \
-  configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain_test.yml
-CUDA_VISIBLE_DEVICES=1 \
-python tools/train.py \
-  -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain_test.yml \
-  -r output/rtdetrv2_r18vd_pingwen_retrain/best.pth \
-  --test-only
-```
-
-#### MMDetection
-
-Each config is configured to save a `best_coco_bbox_mAP_*.pth` checkpoint.
-Resolve that file from the corresponding rerun directory before testing:
-
-```bash
-conda activate mmdet
-cd /home/tkz/code/github/mmdetection
-
-ckpt=$(find work_dirs/retrain_detr_r50_300e -maxdepth 1 -name 'best_coco_bbox_mAP_*.pth' -print -quit)
-python tools/test.py \
-  configs/pingwen/detr_r50_300e.py "$ckpt" \
-  --work-dir work_dirs/retrain_detr_r50_300e_test
-
-ckpt=$(find work_dirs/retrain_deformable_detr_r50_300e -maxdepth 1 -name 'best_coco_bbox_mAP_*.pth' -print -quit)
-python tools/test.py \
-  configs/pingwen/deformable_detr_r50_300e.py "$ckpt" \
-  --work-dir work_dirs/retrain_deformable_detr_r50_300e_test
-
-ckpt=$(find work_dirs/retrain_faster_rcnn_r50_300e -maxdepth 1 -name 'best_coco_bbox_mAP_*.pth' -print -quit)
-python tools/test.py \
-  configs/pingwen/faster_rcnn_r50_300e.py "$ckpt" \
-  --work-dir work_dirs/retrain_faster_rcnn_r50_300e_test
-```
-
-#### Ultralytics Benchmarks and Ablations
-
-```bash
-conda activate tkz-yolo
-cd /home/tkz/code/github/ultralytics
-
-for run_name in \
-  retrain_yolov8n \
-  retrain_yolo11n \
-  retrain_yolo12n \
-  retrain_yolo26n \
-  retrain_rtdetr_l \
-  retrain_ablation_baseline \
-  retrain_ablation_directional \
-  retrain_ablation_content_aware \
-  retrain_dacp_net
-do
-  yolo detect val \
-    model="/home/tkz/code/github/ultralytics/runs/detect/${run_name}/weights/best.pt" \
-    data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-    split=test \
-    imgsz=640 \
-    batch=16 \
-    device=0 \
-    workers=8 \
-    max_det=16 \
-    project=/home/tkz/code/github/ultralytics/runs/detect \
-    name="${run_name}_test"
-done
-```
-
-#### Original YOLOv5n
-
-```bash
-conda activate tkz-yolo
-cd /home/tkz/code/github/yolov5
 python val.py \
   --weights /home/tkz/code/github/yolov5/runs/train/retrain_yolov5n/weights/best.pt \
   --data /home/tkz/datasets/pingwen_yolo/data.yaml \
@@ -339,8 +246,8 @@ python val.py \
   --device 0 \
   --workers 8 \
   --max-det 16 \
-  --project /home/tkz/code/github/yolov5/runs/val \
-  --name retrain_yolov5n_test
+  --project /home/tkz/code/github/yolov5/runs/train/retrain_yolov5n \
+  --name test
 ```
 
 ## Custom End-to-End YOLOv8n
