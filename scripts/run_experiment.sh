@@ -4,8 +4,18 @@
 
 set -Eeuo pipefail
 
+device=0
+if [[ ${1:-} == "--device" ]]; then
+  if (( $# < 2 )); then
+    echo "Missing value for --device" >&2
+    exit 2
+  fi
+  device="$2"
+  shift 2
+fi
+
 if (( $# < 2 )); then
-  echo "Usage: $0 MODEL RUN_NAME [additional yolo key=value arguments]" >&2
+  echo "Usage: $0 [--device DEVICE] MODEL RUN_NAME [additional yolo key=value arguments]" >&2
   exit 2
 fi
 
@@ -29,7 +39,7 @@ common_args=(
   epochs=300
   patience=80
   batch=16
-  device=0
+  "device=${device}"
   workers=8
   max_det=16
   "project=${runs_dir}"
@@ -51,7 +61,7 @@ yolo detect val \
   split=test \
   imgsz=640 \
   batch=16 \
-  device=0 \
+  "device=${device}" \
   workers=8 \
   max_det=16 \
   "project=${run_dir}" \

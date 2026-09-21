@@ -205,17 +205,17 @@ yolo detect train \
 ```
 
 For multi-seed training with automatic test-set evaluation, use
-[`scripts/train_and_test.sh`](../scripts/train_and_test.sh). It stores test
+[`scripts/run_experiment.sh`](../scripts/run_experiment.sh). It stores test
 artifacts in `<training-run>/test/` and saves the complete metric log as
 `<training-run>/test_metrics.log`, so each seed remains self-contained. For
 example:
 
 ```bash
-chmod +x scripts/train_and_test.sh
+chmod +x scripts/run_experiment.sh
 
 for seed in 0 1 2 3 4 5
 do
-  scripts/train_and_test.sh \
+  scripts/run_experiment.sh --device 1 \
     ultralytics/cfg/models/v8/yolov8n-fabric-directional-carafe.yaml \
     "dacp_net-${seed}" \
     pretrained=yolov8n.pt \
