@@ -127,6 +127,19 @@ python tools/run_experiment.py \
 
 The test log is saved as `output/rtdetrv2_r18vd_pingwen_seed5/test_metrics.log`.
 
+For an existing trained checkpoint, run only the test step:
+
+```bash
+conda activate rtdetr
+cd /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch
+CUDA_VISIBLE_DEVICES=1 \
+python tools/train.py \
+  -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen_test.yml \
+  -r output/rtdetrv2_r18vd_pingwen_seed5/best.pth \
+  --output-dir output/rtdetrv2_r18vd_pingwen_seed5 \
+  --test-only
+```
+
 ### MMDetection Repository
 
 Each verified custom config sets `load_from` to its exact COCO-pretrained
@@ -158,6 +171,18 @@ python tools/run_experiment.py \
 
 The custom MMDetection configs must use
 `/home/tkz/datasets/pingwen_coco` for their dataset and annotation paths.
+
+For an existing trained checkpoint, run only the test step. Substitute the
+matching config, checkpoint, and work directory for each model:
+
+```bash
+conda activate mmdet
+cd /home/tkz/code/github/mmdetection
+python tools/test.py \
+  configs/pingwen/detr_r50_300e.py \
+  work_dirs/retrain_detr_r50_300e/best_coco_bbox_mAP_epoch_280.pth \
+  --work-dir work_dirs/retrain_detr_r50_300e
+```
 
 ### Ultralytics Repository
 
@@ -217,6 +242,27 @@ do
 done
 ```
 
+For an existing trained checkpoint, run only the test step. The test artifacts
+and `test_metrics.log` remain inside that training run directory:
+
+```bash
+conda activate tkz-yolo
+cd /home/tkz/code/github/ultralytics
+yolo detect val \
+  model=/home/tkz/code/github/ultralytics/runs/detect/dacp_net-0/weights/best.pt \
+  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+  split=test \
+  imgsz=640 \
+  batch=16 \
+  device=1 \
+  workers=8 \
+  max_det=16 \
+  project=/home/tkz/code/github/ultralytics/runs/detect/dacp_net-0 \
+  name=test \
+  exist_ok=True \
+  2>&1 | tee /home/tkz/code/github/ultralytics/runs/detect/dacp_net-0/test_metrics.log
+```
+
 ### YOLOv5 Repository
 
 Run the original anchor-based YOLOv5n from its official repository. The
@@ -249,6 +295,9 @@ python val.py \
   --project /home/tkz/code/github/yolov5/runs/train/retrain_yolov5n \
   --name test
 ```
+
+For an existing YOLOv5n checkpoint, use the `python val.py ...` command above
+and replace only the `--weights` path and its containing `--project` directory.
 
 ## Custom End-to-End YOLOv8n
 
