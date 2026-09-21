@@ -117,14 +117,12 @@ checkpoint; it is not a resume.
 ```bash
 conda activate rtdetr
 cd /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch
-cp configs/rtdetrv2/rtdetrv2_r18vd_pingwen.yml \
-  configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain.yml
-sed -i 's#output/rtdetrv2_r18vd_pingwen#output/rtdetrv2_r18vd_pingwen_retrain#' \
-  configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain.yml
 CUDA_VISIBLE_DEVICES=1 \
 python tools/train.py \
-  -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen_retrain.yml \
-  -t pretrained/rtdetrv2_r18vd_120e_coco_rerun_48.1.pth
+  -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen.yml \
+  -t pretrained/rtdetrv2_r18vd_120e_coco_rerun_48.1.pth \
+  --seed 5 \
+  --output-dir output/rtdetrv2_r18vd_pingwen_seed5
 ```
 
 The source config already points to
@@ -207,7 +205,9 @@ yolo detect train \
 For multi-seed training with automatic test-set evaluation, use
 [`scripts/run_experiment.sh`](../scripts/run_experiment.sh). It stores test
 artifacts in `<training-run>/test/` and saves the complete metric log as
-`<training-run>/test_metrics.log`, so each seed remains self-contained. For
+`<training-run>/test_metrics.log`, so each seed remains self-contained. After
+the test succeeds, it deletes every weight in `<training-run>/weights/` except
+`best.pt` and records removed filenames in `deleted_checkpoints.log`. For
 example:
 
 ```bash
@@ -530,7 +530,8 @@ conda activate mmdet
 cd ~/code/github/mmdetection
 python tools/test.py \
   configs/pingwen/detr_r50_300e.py \
-  work_dirs/detr_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_280.pth
+  work_dirs/detr_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_280.pth \
+  --cfg-options randomness.seed=5
 ```
 
 ### Test Results
@@ -561,7 +562,8 @@ conda activate mmdet
 cd ~/code/github/mmdetection
 python tools/test.py \
   configs/pingwen/deformable_detr_r50_300e.py \
-  work_dirs/deformable_detr_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_96.pth
+  work_dirs/deformable_detr_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_96.pth \
+  --cfg-options randomness.seed=5
 ```
 
 ### Test Results
@@ -590,9 +592,10 @@ active:
 ```bash
 conda activate mmdet
 cd ~/code/github/mmdetection
-python tools/test.py \
+CUDA_VISIBLE_DEVICES=1 python tools/test.py \
   configs/pingwen/faster_rcnn_r50_300e.py \
-  work_dirs/faster_rcnn_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_162.pth
+  work_dirs/faster_rcnn_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_162.pth \
+  --cfg-options randomness.seed=5
 ```
 
 ### Test Results

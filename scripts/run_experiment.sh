@@ -68,3 +68,6 @@ yolo detect val \
   name=test \
   exist_ok=True \
   2>&1 | tee "${run_dir}/test_metrics.log"
+
+find "${run_dir}/weights" -maxdepth 1 -type f -name '*.pt' ! -name 'best.pt' -print -delete \
+  | tee "${run_dir}/deleted_checkpoints.log"
