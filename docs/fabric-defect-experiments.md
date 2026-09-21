@@ -30,7 +30,6 @@ Ultralytics rows.
 | Model | Evaluator | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 | Parameters | GFLOPs | Inference / image | Postprocess / image |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | YOLOv5n | Official YOLOv5 | 0.891 | 0.921 | 0.940 | 0.611 | 1.76M | 4.1 | 1.7 ms | 1.4 ms NMS |
-| YOLOv5nu | Ultralytics | 0.937 | 0.944 | 0.967 | 0.602 | — | — | 2.8 ms | 9.6 ms |
 | YOLOv8n | Ultralytics | 0.901 | 0.939 | 0.938 | 0.597 | — | — | 5.8 ms | 9.7 ms |
 | YOLO11n | Ultralytics | 0.919 | 0.952 | 0.947 | 0.608 | — | — | 2.9 ms | 9.5 ms |
 | YOLO12n | Ultralytics | 0.902 | 0.914 | 0.943 | 0.609 | — | — | 4.1 ms | 9.6 ms |
@@ -541,38 +540,6 @@ The test split contains 81 images and 91 instances.
 | hole | 18 | 19 | 0.900 | 0.945 | 0.940 | 0.567 |
 
 Per-image latency: 1.5 ms preprocessing, 17.0 ms inference, and 2.5 ms
-postprocessing.
-
-## YOLOv5nu Baseline Test Results
-
-Evaluate the YOLOv5nu checkpoint on the held-out test set:
-
-```bash
-conda activate tkz-yolo
-cd ~/datasets/pingwen_yolo
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_yolo/runs/detect/yolov5nu/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
-  name=yolov5nu_test
-```
-
-The test split contains 81 images and 91 instances.
-
-| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| all | 81 | 91 | 0.937 | 0.944 | 0.967 | 0.602 |
-| row | 59 | 60 | 1.000 | 0.996 | 0.995 | 0.612 |
-| col | 12 | 12 | 0.921 | 0.971 | 0.989 | 0.591 |
-| hole | 18 | 19 | 0.892 | 0.867 | 0.917 | 0.604 |
-
-Per-image latency: 1.8 ms preprocessing, 2.8 ms inference, and 9.6 ms
 postprocessing.
 
 ## YOLOv5n Baseline Test Results
