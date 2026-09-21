@@ -141,6 +141,40 @@ yolo detect val \
   name=ablation_content_aware_test
 ```
 
+### Ablation Test Results
+
+The directional-only and content-aware-only variants were evaluated on the
+same held-out test split (81 images and 91 instances). The full DACP-Net result
+is included to show the interaction between the two modules.
+
+The directional-only checkpoint was evaluated with:
+
+```bash
+yolo detect val \
+  model=/home/tkz/datasets/pingwen_yolo/runs/detect/ablation_directional/weights/best.pt \
+  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+  split=test \
+  imgsz=640 \
+  batch=16 \
+  device=0 \
+  workers=8 \
+  max_det=16 \
+  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
+  name=ablation_directional_test
+```
+
+| Variant | Dual-axis texture encoding | Local feature reassembly | Parameters | GFLOPs | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
+| --- | :---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| YOLOv8n baseline | No | No | — | — | 0.901 | 0.939 | 0.938 | 0.597 |
+| Directional-only | Yes | No | 3,280,313 | 8.8 | 0.951 | 0.914 | 0.955 | 0.609 |
+| Content-aware-only | No | Yes | 3,113,409 | 8.2 | 0.896 | 0.816 | 0.900 | 0.551 |
+| DACP-Net | Yes | Yes | — | — | 0.958 | 0.923 | 0.969 | 0.663 |
+
+The directional-only variant has 1.7 ms preprocessing, 1.9 ms inference, and
+0.4 ms postprocessing latency per image. The content-aware-only variant has
+1.2 ms preprocessing, 2.2 ms inference, and 0.3 ms postprocessing latency per
+image.
+
 ## RT-DETRv2-R18 Baseline
 
 Evaluate the RT-DETRv2-R18 checkpoint on the held-out test set. Run this from the
