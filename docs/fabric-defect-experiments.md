@@ -18,6 +18,54 @@ names:
   2: hole
 ```
 
+## Overall Test-Set Comparison
+
+All results below use the held-out test split (81 images and 91 instances).
+Rows labeled `Ultralytics` use the same Ultralytics evaluator; their comparison
+is the most direct. The `Official YOLOv5` row uses the official YOLOv5
+evaluator. The remaining rows use their native COCO evaluators, whose P/R,
+speed, and `maxDets` settings are not directly interchangeable with the
+Ultralytics rows.
+
+| Model | Evaluator | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 | Parameters | GFLOPs | Inference / image | Postprocess / image |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| YOLOv5n | Official YOLOv5 | 0.891 | 0.921 | 0.940 | 0.611 | 1.76M | 4.1 | 1.7 ms | 1.4 ms NMS |
+| YOLOv5nu | Ultralytics | 0.937 | 0.944 | 0.967 | 0.602 | — | — | 2.8 ms | 9.6 ms |
+| YOLOv8n | Ultralytics | 0.901 | 0.939 | 0.938 | 0.597 | — | — | 5.8 ms | 9.7 ms |
+| YOLO11n | Ultralytics | 0.919 | 0.952 | 0.947 | 0.608 | — | — | 2.9 ms | 9.5 ms |
+| YOLO12n | Ultralytics | 0.902 | 0.914 | 0.943 | 0.609 | — | — | 4.1 ms | 9.6 ms |
+| YOLO26n | Ultralytics | 0.948 | 0.903 | 0.952 | 0.632 | — | — | 2.9 ms | 2.6 ms |
+| RT-DETR-L | Ultralytics | 0.932 | 0.968 | 0.966 | 0.660 | — | — | 17.0 ms | 2.5 ms |
+| **DACP-Net** | **Ultralytics** | **0.958** | 0.923 | **0.969** | **0.663** | — | — | 5.2 ms | 9.5 ms |
+| DETR-R50 | Native COCO | — | — | 0.964 | 0.536 | — | — | — | — |
+| Deformable DETR-R50 | Native COCO | — | — | 0.968 | 0.643 | — | — | — | — |
+| Faster R-CNN-R50 | Native COCO | — | — | 0.969 | 0.662 | — | — | — | — |
+| RT-DETRv2-R18 | Native COCO | — | — | 0.958 | 0.686 | — | — | — | — |
+
+`mAP@0.50:0.95` is COCO-style AP averaged over IoU thresholds. Native COCO
+rows preserve the evaluator-reported values; their AP@0.50 values use
+`maxDets=1000` for MMDetection DETR/Faster R-CNN and `maxDets=100` for
+RT-DETRv2-R18, whereas their mAP@0.50:0.95 values use the values reported in
+the corresponding test logs.
+
+## DACP-Net Ablation Summary
+
+All four variants use the YOLOv8n-based architecture, the same test split, and
+the Ultralytics evaluator. DATE denotes dual-axis texture encoding; LTFR
+denotes local texture-guided feature reassembly.
+
+| Variant | DATE | LTFR | Parameters | GFLOPs | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 | Change vs. baseline |
+| --- | :---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| YOLOv8n baseline | No | No | — | — | 0.901 | 0.939 | 0.938 | 0.597 | — |
+| Baseline + DATE | Yes | No | 3.28M | 8.8 | 0.951 | 0.914 | 0.955 | 0.609 | +0.012 |
+| Baseline + LTFR | No | Yes | 3.11M | 8.2 | 0.896 | 0.816 | 0.900 | 0.551 | -0.046 |
+| **DACP-Net** | **Yes** | **Yes** | — | — | **0.958** | 0.923 | **0.969** | **0.663** | **+0.066** |
+
+The full model improves by 0.054 mAP@0.50:0.95 over DATE alone and by 0.112
+over LTFR alone, indicating that local feature reassembly is effective when
+applied to DATE-enhanced features rather than as a standalone substitution for
+the original upsampling path.
+
 ## Custom End-to-End YOLOv8n
 
 Train the single-P3 fabric model with directional P5 context, direct box regression, and no NMS:
