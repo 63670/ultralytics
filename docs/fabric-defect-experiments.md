@@ -72,6 +72,10 @@ weights without overwriting the previously recorded outputs. All commands use
 the current dataset locations supplied for each framework. Keep the image size,
 batch size, epochs, augmentation, and seed fixed within a framework.
 
+The rerun outputs are stored inside their respective repositories:
+`rtdetrv2_pytorch/output/`, `mmdetection/work_dirs/`,
+`ultralytics/runs/detect/`, and `yolov5/runs/train/`.
+
 ### RT-DETRv2-R18
 
 The verified dataset directory is `/home/tkz/datasets/pingwen_coco_rtdetr`.
@@ -147,7 +151,7 @@ common_args=(
   data=/home/tkz/datasets/pingwen_yolo/data.yaml
   imgsz=640 epochs=300 patience=80 batch=16 device=0 workers=8 max_det=16
   hsv_h=0 hsv_s=0 hsv_v=0.2 mosaic=0.0 seed=0 deterministic=True
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect
+  project=/home/tkz/code/github/ultralytics/runs/detect
 )
 ```
 
@@ -192,7 +196,7 @@ python train.py \
   --workers 8 \
   --patience 80 \
   --seed 0 \
-  --project /home/tkz/datasets/pingwen_yolo/runs/detect \
+  --project /home/tkz/code/github/yolov5/runs/train \
   --name retrain_yolov5n
 ```
 
