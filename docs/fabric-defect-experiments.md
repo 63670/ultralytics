@@ -59,7 +59,7 @@ Mean and sample standard deviation are calculated across seeds.
 
 | Model | Seed 0 | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 | mAP@0.50:0.95 (mean ± std) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| YOLOv5n | 0.611 | 0.624 | 0.631 | 0.633 | — | — | **0.6247 ± 0.0099** |
+| YOLOv5n | 0.611 | 0.624 | 0.631 | 0.633 | 0.643 | 0.614 | 0.6260 ± 0.0121 |
 | YOLOv8n | 0.600 | 0.615 | 0.602 | 0.606 | 0.627 | 0.543 | 0.5988 ± 0.0291 |
 | YOLO11n | 0.604 | 0.520 | 0.595 | 0.640 | 0.629 | 0.597 | 0.5975 ± 0.0421 |
 | YOLO12n | 0.609 | 0.616 | 0.586 | 0.606 | 0.566 | 0.574 | 0.5928 ± 0.0205 |
@@ -68,7 +68,7 @@ Mean and sample standard deviation are calculated across seeds.
 
 | Model | Seeds | Precision (mean ± std) | Recall (mean ± std) | mAP@0.50 (mean ± std) | mAP@0.50:0.95 (mean ± std) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| YOLOv5n | 4 | 0.9343 ± 0.0386 | 0.9263 ± 0.0398 | **0.9480 ± 0.0195** | **0.6247 ± 0.0099** |
+| YOLOv5n | 6 | **0.9393 ± 0.0309** | 0.9167 ± 0.0347 | 0.9452 ± 0.0159 | 0.6260 ± 0.0121 |
 | YOLOv8n | 6 | **0.9370 ± 0.0496** | 0.9242 ± 0.0322 | 0.9447 ± 0.0272 | 0.5988 ± 0.0291 |
 | YOLO11n | 6 | 0.9333 ± 0.0295 | **0.9352 ± 0.0154** | 0.9467 ± 0.0139 | 0.5975 ± 0.0421 |
 | YOLO12n | 6 | 0.9088 ± 0.0347 | 0.9153 ± 0.0234 | 0.9298 ± 0.0289 | 0.5928 ± 0.0205 |
@@ -77,7 +77,7 @@ Mean and sample standard deviation are calculated across seeds.
 
 DACP-Net has the highest mean test mAP@0.50:0.95 (0.6387), improving on its
 matched YOLOv8n baseline by 0.0398. It also exceeds the YOLOv5n mean by
-0.0140. YOLOv5n remains an external classical baseline rather than an
+0.0127. YOLOv5n remains an external classical baseline rather than an
 architecture-only controlled comparison because its official training and
 evaluation implementation differs from the Ultralytics pipeline.
 
