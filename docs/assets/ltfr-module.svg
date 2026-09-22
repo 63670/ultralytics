@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="840" viewBox="0 0 1600 840" role="img" aria-labelledby="title desc">
+  <title id="title">LTFR module architecture</title>
+  <desc id="desc">The Local Texture-Guided Feature Reassembly module predicts local dynamic kernels and uses them to reassemble unfolded input features into a two-times upsampled output.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker>
+    <style>
+      .title { font: 700 34px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 16px Arial, sans-serif; fill: #475569; }
+      .section { font: 700 18px Arial, sans-serif; fill: #334155; letter-spacing: 1px; }
+      .label { font: 700 16px Arial, sans-serif; fill: #172554; }
+      .small { font: 14px Arial, sans-serif; fill: #334155; }
+      .tiny { font: 12px Arial, sans-serif; fill: #475569; }
+      .flow { fill: none; stroke: #334155; stroke-width: 2.5; marker-end: url(#arrow); }
+      .node { stroke: #334155; stroke-width: 1.5; rx: 13; }
+    </style>
+  </defs>
+  <rect width="1600" height="840" fill="#fff"/>
+  <text x="800" y="52" text-anchor="middle" class="title">LTFR: Local Texture-Guided Feature Reassembly</text>
+  <text x="800" y="80" text-anchor="middle" class="subtitle">Dynamic 5 × 5 local-kernel reassembly for 2× feature upsampling</text>
+
+  <rect x="30" y="116" width="1540" height="644" rx="20" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="64" y="365" width="142" height="92" class="node" fill="#dbeafe"/>
+  <text x="135" y="400" text-anchor="middle" class="label">Input feature</text>
+  <text x="135" y="425" text-anchor="middle" class="small">X ∈ Rᶜˣᴴˣᵂ</text>
+  <path d="M206 411 L272 411" class="flow"/>
+
+  <rect x="282" y="152" width="590" height="224" rx="16" fill="#ecfdf5" stroke="#86efac" stroke-width="1.5"/>
+  <text x="310" y="184" class="section">KERNEL-PREDICTION BRANCH</text>
+  <rect x="316" y="229" width="144" height="84" class="node" fill="#dcfce7"/>
+  <text x="388" y="260" text-anchor="middle" class="label">1 × 1 Conv</text>
+  <text x="388" y="284" text-anchor="middle" class="small">channel compression</text>
+  <text x="388" y="303" text-anchor="middle" class="tiny">C → C / 4</text>
+  <rect x="530" y="229" width="144" height="84" class="node" fill="#bbf7d0"/>
+  <text x="602" y="260" text-anchor="middle" class="label">3 × 3 Conv</text>
+  <text x="602" y="284" text-anchor="middle" class="small">kernel encoder</text>
+  <text x="602" y="303" text-anchor="middle" class="tiny">4 × K² channels</text>
+  <rect x="730" y="229" width="112" height="84" class="node" fill="#a7f3d0"/>
+  <text x="786" y="260" text-anchor="middle" class="label">Pixel</text>
+  <text x="786" y="282" text-anchor="middle" class="label">Shuffle ×2</text>
+  <text x="786" y="303" text-anchor="middle" class="tiny">K² × 2H × 2W</text>
+  <path d="M272 411 L272 271 L316 271" class="flow"/>
+  <path d="M460 271 L530 271" class="flow"/>
+  <path d="M674 271 L730 271" class="flow"/>
+
+  <rect x="282" y="482" width="590" height="224" rx="16" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+  <text x="310" y="514" class="section">LOCAL-FEATURE BRANCH</text>
+  <rect x="316" y="559" width="144" height="84" class="node" fill="#ffedd5"/>
+  <text x="388" y="590" text-anchor="middle" class="label">Unfold</text>
+  <text x="388" y="614" text-anchor="middle" class="small">local K × K patches</text>
+  <text x="388" y="633" text-anchor="middle" class="tiny">C × K² × H × W</text>
+  <rect x="530" y="559" width="144" height="84" class="node" fill="#fed7aa"/>
+  <text x="602" y="590" text-anchor="middle" class="label">Nearest</text>
+  <text x="602" y="614" text-anchor="middle" class="small">interpolation ×2</text>
+  <text x="602" y="633" text-anchor="middle" class="tiny">C × K² × 2H × 2W</text>
+  <rect x="730" y="559" width="112" height="84" class="node" fill="#fdba74"/>
+  <text x="786" y="590" text-anchor="middle" class="label">Reshape</text>
+  <text x="786" y="614" text-anchor="middle" class="small">patch tensor</text>
+  <path d="M272 411 L272 601 L316 601" class="flow"/>
+  <path d="M460 601 L530 601" class="flow"/>
+  <path d="M674 601 L730 601" class="flow"/>
+
+  <rect x="938" y="223" width="182" height="92" class="node" fill="#ccfbf1"/>
+  <text x="1029" y="255" text-anchor="middle" class="label">Softmax over K²</text>
+  <text x="1029" y="280" text-anchor="middle" class="small">spatially varying</text>
+  <text x="1029" y="301" text-anchor="middle" class="tiny">reassembly kernels</text>
+  <path d="M842 271 L938 271" class="flow"/>
+
+  <rect x="1190" y="366" width="154" height="102" class="node" fill="#e0e7ff"/>
+  <text x="1267" y="400" text-anchor="middle" class="label">⊙</text>
+  <text x="1267" y="425" text-anchor="middle" class="small">element-wise</text>
+  <text x="1267" y="446" text-anchor="middle" class="small">kernel weighting</text>
+  <path d="M1120 271 L1150 271 L1150 395 L1190 395" class="flow"/>
+  <path d="M842 601 L1150 601 L1150 439 L1190 439" class="flow"/>
+
+  <rect x="1394" y="366" width="140" height="102" class="node" fill="#ddd6fe"/>
+  <text x="1464" y="399" text-anchor="middle" class="label">Σ over K²</text>
+  <text x="1464" y="424" text-anchor="middle" class="small">local reassembly</text>
+  <text x="1464" y="447" text-anchor="middle" class="small">Y ∈ Rᶜˣ²ᴴˣ²ᵂ</text>
+  <path d="M1344 417 L1394 417" class="flow"/>
+
+  <rect x="938" y="524" width="560" height="102" rx="14" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="1218" y="554" text-anchor="middle" class="label">Texture-guided dynamic reassembly</text>
+  <text x="1218" y="579" text-anchor="middle" class="small">At every upsampled position, LTFR predicts K² normalized weights from local texture,</text>
+  <text x="1218" y="602" text-anchor="middle" class="small">then aggregates the corresponding K × K neighborhood from the input feature.</text>
+  <text x="800" y="798" text-anchor="middle" class="subtitle">K = 5 and scale factor = 2 in DACP-Net.</text>
+</svg>
