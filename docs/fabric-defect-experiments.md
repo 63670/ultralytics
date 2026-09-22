@@ -81,6 +81,26 @@ matched YOLOv8n baseline by 0.0398. It also exceeds the YOLOv5n mean by
 architecture-only controlled comparison because its official training and
 evaluation implementation differs from the Ultralytics pipeline.
 
+## RT-DETRv2-R18 Multi-Seed Test Summary
+
+Nine completed RT-DETRv2-R18 test runs were found under
+`/home/tkz/code/github/RT-DETR/rtdetrv2_pytorch/output`. These are native
+COCO test metrics using `maxDets=100`; seed 5 has no completed output
+directory and is therefore not included.
+
+| Seed | AP | AP50 | AP75 | APs | APm | APl | AR100 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.677 | 0.952 | 0.823 | 0.688 | 0.667 | 0.608 | 0.794 |
+| 2 | 0.702 | **0.977** | **0.864** | 0.657 | 0.698 | 0.669 | 0.803 |
+| 3 | 0.673 | 0.952 | 0.822 | 0.658 | 0.627 | 0.568 | 0.771 |
+| 4 | 0.680 | 0.950 | 0.791 | 0.689 | 0.643 | 0.632 | 0.802 |
+| 6 | 0.702 | 0.966 | 0.853 | **0.697** | 0.707 | 0.629 | **0.815** |
+| 7 | 0.676 | 0.970 | 0.763 | 0.570 | 0.690 | 0.649 | 0.784 |
+| 8 | 0.687 | 0.961 | 0.792 | 0.693 | 0.673 | 0.669 | 0.814 |
+| 9 | **0.703** | 0.974 | 0.816 | 0.664 | **0.711** | 0.660 | 0.782 |
+| 10 | 0.697 | 0.969 | 0.838 | 0.642 | 0.699 | **0.671** | 0.791 |
+| Mean ± std | **0.6886 ± 0.0125** | **0.9634 ± 0.0102** | **0.8180 ± 0.0320** | **0.6620 ± 0.0395** | **0.6794 ± 0.0293** | **0.6394 ± 0.0345** | **0.7951 ± 0.0148** |
+
 ## Multi-Seed Validation Summary
 
 The following results summarize six training seeds (`0`--`5`) per model from
