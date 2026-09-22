@@ -83,10 +83,10 @@ evaluation implementation differs from the Ultralytics pipeline.
 
 ## RT-DETRv2-R18 Multi-Seed Test Summary
 
-Nine completed RT-DETRv2-R18 test runs were found under
-`/home/tkz/code/github/RT-DETR/rtdetrv2_pytorch/output`. These are native
-COCO test metrics using `maxDets=100`; seed 5 has no completed output
-directory and is therefore not included.
+Ten RT-DETRv2-R18 test results are summarized below. Nine corresponding logs
+are stored under `/home/tkz/code/github/RT-DETR/rtdetrv2_pytorch/output`; the
+seed-5 metric was supplied from its completed test output. These are native
+COCO test metrics using `maxDets=100`.
 
 | Seed | AP | AP50 | AP75 | APs | APm | APl | AR100 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -94,43 +94,13 @@ directory and is therefore not included.
 | 2 | 0.702 | **0.977** | **0.864** | 0.657 | 0.698 | 0.669 | 0.803 |
 | 3 | 0.673 | 0.952 | 0.822 | 0.658 | 0.627 | 0.568 | 0.771 |
 | 4 | 0.680 | 0.950 | 0.791 | 0.689 | 0.643 | 0.632 | 0.802 |
+| 5 | 0.669 | 0.964 | 0.824 | 0.624 | 0.668 | 0.613 | 0.791 |
 | 6 | 0.702 | 0.966 | 0.853 | **0.697** | 0.707 | 0.629 | **0.815** |
 | 7 | 0.676 | 0.970 | 0.763 | 0.570 | 0.690 | 0.649 | 0.784 |
 | 8 | 0.687 | 0.961 | 0.792 | 0.693 | 0.673 | 0.669 | 0.814 |
 | 9 | **0.703** | 0.974 | 0.816 | 0.664 | **0.711** | 0.660 | 0.782 |
 | 10 | 0.697 | 0.969 | 0.838 | 0.642 | 0.699 | **0.671** | 0.791 |
-| Mean ± std | **0.6886 ± 0.0125** | **0.9634 ± 0.0102** | **0.8180 ± 0.0320** | **0.6620 ± 0.0395** | **0.6794 ± 0.0293** | **0.6394 ± 0.0345** | **0.7951 ± 0.0148** |
-
-## Multi-Seed Validation Summary
-
-The following results summarize six training seeds (`0`--`5`) per model from
-`/home/tkz/code/github/ultralytics/runs/detect`. Each value is the best
-validation metric recorded in that seed's `results.csv`; mean and standard
-deviation are calculated across the six seeds. The `*_test` directories contain
-visualizations but do not persist machine-readable metrics, so they are not
-used in this table.
-
-### Per-Seed mAP@0.50:0.95
-
-| Model | Seed 0 | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 | Mean |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| YOLOv8n | 0.5883 | 0.6331 | 0.5800 | 0.6312 | 0.5945 | 0.5684 | 0.5993 |
-| YOLO11n | 0.6136 | 0.5698 | 0.5677 | 0.5838 | 0.5981 | 0.6072 | 0.5900 |
-| YOLO12n | 0.6210 | 0.6037 | 0.5909 | 0.5759 | 0.5770 | 0.5549 | 0.5872 |
-| YOLO26n | 0.6363 | 0.5792 | 0.5987 | 0.5652 | 0.5949 | 0.5765 | 0.5918 |
-| **DACP-Net** | 0.6263 | **0.6495** | **0.6404** | 0.6048 | **0.6205** | **0.6438** | **0.6309** |
-
-| Model | Seeds | Precision (mean) | Recall (mean) | mAP@0.50 (mean) | mAP@0.50:0.95 (mean ± std) | Range |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| YOLOv8n | 6 | 0.8799 | 0.8897 | 0.9348 | 0.5993 ± 0.0269 | 0.5684–0.6331 |
-| YOLO11n | 6 | 0.8579 | **0.9016** | **0.9397** | 0.5900 ± 0.0193 | 0.5677–0.6136 |
-| YOLO12n | 6 | 0.8211 | 0.8444 | 0.8867 | 0.5872 ± 0.0232 | 0.5549–0.6210 |
-| YOLO26n | 6 | 0.8631 | 0.8468 | 0.9200 | 0.5918 ± 0.0250 | 0.5652–0.6363 |
-| **DACP-Net** | **6** | **0.8848** | 0.8758 | 0.9349 | **0.6309 ± 0.0168** | **0.6048–0.6495** |
-
-DACP-Net has the highest mean mAP@0.50:0.95 and the lowest across-seed
-standard deviation. Its mean gain over the YOLOv8n base detector is 0.0316
-mAP@0.50:0.95.
+| Mean ± std | **0.6866 ± 0.0133** | **0.9635 ± 0.0096** | **0.8186 ± 0.0303** | **0.6582 ± 0.0392** | **0.6783 ± 0.0279** | **0.6368 ± 0.0336** | **0.7947 ± 0.0140** |
 
 ## DACP-Net Ablation Summary
 
