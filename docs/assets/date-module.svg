@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="820" viewBox="0 0 1600 820" role="img" aria-labelledby="title desc">
+  <title id="title">DATE module architecture</title>
+  <desc id="desc">The Dual-Axis Texture Encoding module extracts horizontal, vertical, and local features with depth-wise convolutions, concatenates and fuses them with a one-by-one convolution, then adds a residual connection.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker>
+    <style>
+      .title { font: 700 34px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 16px Arial, sans-serif; fill: #475569; }
+      .section { font: 700 18px Arial, sans-serif; fill: #334155; letter-spacing: 1px; }
+      .label { font: 700 16px Arial, sans-serif; fill: #172554; }
+      .small { font: 14px Arial, sans-serif; fill: #334155; }
+      .tiny { font: 12px Arial, sans-serif; fill: #475569; }
+      .flow { fill: none; stroke: #334155; stroke-width: 2.5; marker-end: url(#arrow); }
+      .skip { fill: none; stroke: #64748b; stroke-width: 2; stroke-dasharray: 7 5; marker-end: url(#arrow); }
+      .node { stroke: #334155; stroke-width: 1.5; rx: 13; }
+    </style>
+  </defs>
+  <rect width="1600" height="820" fill="#fff"/>
+  <text x="800" y="52" text-anchor="middle" class="title">DATE: Dual-Axis Texture Encoding</text>
+  <text x="800" y="80" text-anchor="middle" class="subtitle">DirectionalConv used after each C2f block in the DACP-Net backbone</text>
+  <rect x="30" y="116" width="1540" height="620" rx="20" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <rect x="70" y="373" width="150" height="88" class="node" fill="#dbeafe"/>
+  <text x="145" y="407" text-anchor="middle" class="label">Input feature</text>
+  <text x="145" y="432" text-anchor="middle" class="small">X ∈ Rᶜˣᴴˣᵂ</text>
+  <path d="M220 417 L306 417" class="flow"/>
+
+  <rect x="318" y="158" width="330" height="126" rx="16" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="346" y="190" class="section">HORIZONTAL BRANCH</text>
+  <rect x="375" y="211" width="216" height="50" class="node" fill="#dbeafe"/>
+  <text x="483" y="241" text-anchor="middle" class="label">DWConv (1 × K)</text>
+  <text x="483" y="257" text-anchor="middle" class="tiny">horizontal texture cues</text>
+
+  <rect x="318" y="354" width="330" height="126" rx="16" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+  <text x="346" y="386" class="section">LOCAL BRANCH</text>
+  <rect x="375" y="407" width="216" height="50" class="node" fill="#dcfce7"/>
+  <text x="483" y="437" text-anchor="middle" class="label">DWConv (3 × 3)</text>
+  <text x="483" y="453" text-anchor="middle" class="tiny">local texture cues</text>
+
+  <rect x="318" y="550" width="330" height="126" rx="16" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+  <text x="346" y="582" class="section">VERTICAL BRANCH</text>
+  <rect x="375" y="603" width="216" height="50" class="node" fill="#ffedd5"/>
+  <text x="483" y="633" text-anchor="middle" class="label">DWConv (K × 1)</text>
+  <text x="483" y="649" text-anchor="middle" class="tiny">vertical texture cues</text>
+
+  <path d="M306 417 L306 236 L375 236" class="flow"/>
+  <path d="M306 417 L375 432" class="flow"/>
+  <path d="M306 417 L306 628 L375 628" class="flow"/>
+
+  <rect x="746" y="344" width="164" height="142" class="node" fill="#fef3c7"/>
+  <text x="828" y="382" text-anchor="middle" class="label">Concatenate</text>
+  <text x="828" y="409" text-anchor="middle" class="small">[H(X), L(X), V(X)]</text>
+  <text x="828" y="435" text-anchor="middle" class="tiny">3C × H × W</text>
+  <text x="828" y="459" text-anchor="middle" class="tiny">channel dimension</text>
+  <path d="M591 236 L686 236 L686 374 L746 374" class="flow"/>
+  <path d="M591 432 L746 416" class="flow"/>
+  <path d="M591 628 L686 628 L686 456 L746 456" class="flow"/>
+
+  <rect x="1000" y="366" width="174" height="98" class="node" fill="#e0e7ff"/>
+  <text x="1087" y="401" text-anchor="middle" class="label">1 × 1 Conv</text>
+  <text x="1087" y="427" text-anchor="middle" class="small">channel fusion</text>
+  <text x="1087" y="448" text-anchor="middle" class="tiny">3C → C</text>
+  <path d="M910 416 L1000 416" class="flow"/>
+
+  <circle cx="1290" cy="416" r="42" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="1290" y="427" text-anchor="middle" style="font:700 36px Arial;fill:#5b21b6;">+</text>
+  <path d="M1174 416 L1248 416" class="flow"/>
+  <path d="M220 417 L270 417 L270 704 L1290 704 L1290 458" class="skip"/>
+  <text x="736" y="696" text-anchor="middle" class="tiny">residual shortcut (when Cinput = Coutput)</text>
+
+  <rect x="1400" y="373" width="132" height="88" class="node" fill="#fce7f3"/>
+  <text x="1466" y="407" text-anchor="middle" class="label">Output</text>
+  <text x="1466" y="432" text-anchor="middle" class="small">Y = X + F(X)</text>
+  <path d="M1332 416 L1400 416" class="flow"/>
+
+  <rect x="800" y="544" width="650" height="102" rx="14" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="1125" y="575" text-anchor="middle" class="label">Directional texture fusion</text>
+  <text x="1125" y="600" text-anchor="middle" class="small">The horizontal and vertical strip convolutions capture anisotropic fabric structures,</text>
+  <text x="1125" y="623" text-anchor="middle" class="small">while the 3 × 3 branch retains local texture; their fused response refines the residual feature.</text>
+  <text x="800" y="782" text-anchor="middle" class="subtitle">K = 7 in the current DATE implementation; all three branches are depth-wise convolutions.</text>
+</svg>
