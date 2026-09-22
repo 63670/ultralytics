@@ -47,6 +47,41 @@ rows preserve the evaluator-reported values; their AP@0.50 values use
 RT-DETRv2-R18, whereas their mAP@0.50:0.95 values use the values reported in
 the corresponding test logs.
 
+## Multi-Seed Test Summary (Unified Evaluation)
+
+This is the table to use for the paper's main YOLO comparison. All listed
+checkpoints were evaluated on the held-out test split (81 images, 91 objects),
+not on validation data, with `imgsz=640`, `batch=16`, `conf=0.001`, NMS
+`iou=0.6`, and `max_det=16`. YOLOv5n was evaluated with its official
+repository; the other models were evaluated with Ultralytics. Raw output is
+saved as `test_iou06_metrics.log` in every corresponding training directory.
+Mean and sample standard deviation are calculated across seeds.
+
+| Model | Seed 0 | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 | mAP@0.50:0.95 (mean ± std) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| YOLOv5n | 0.611 | 0.624 | 0.631 | 0.633 | — | — | **0.6247 ± 0.0099** |
+| YOLOv8n | 0.600 | 0.615 | 0.602 | 0.606 | 0.627 | 0.543 | 0.5988 ± 0.0291 |
+| YOLO11n | 0.604 | 0.520 | 0.595 | 0.640 | 0.629 | 0.597 | 0.5975 ± 0.0421 |
+| YOLO12n | 0.609 | 0.616 | 0.586 | 0.606 | 0.566 | 0.574 | 0.5928 ± 0.0205 |
+| YOLO26n | 0.632 | 0.630 | 0.582 | 0.505 | 0.507 | 0.634 | 0.5817 ± 0.0617 |
+
+| Model | Seeds | Precision (mean ± std) | Recall (mean ± std) | mAP@0.50 (mean ± std) | mAP@0.50:0.95 (mean ± std) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| YOLOv5n | 4 | 0.9343 ± 0.0386 | 0.9263 ± 0.0398 | **0.9480 ± 0.0195** | **0.6247 ± 0.0099** |
+| YOLOv8n | 6 | **0.9370 ± 0.0496** | 0.9242 ± 0.0322 | 0.9447 ± 0.0272 | 0.5988 ± 0.0291 |
+| YOLO11n | 6 | 0.9333 ± 0.0295 | **0.9352 ± 0.0154** | 0.9467 ± 0.0139 | 0.5975 ± 0.0421 |
+| YOLO12n | 6 | 0.9088 ± 0.0347 | 0.9153 ± 0.0234 | 0.9298 ± 0.0289 | 0.5928 ± 0.0205 |
+| YOLO26n | 6 | 0.8613 ± 0.1039 | 0.8495 ± 0.0712 | 0.8940 ± 0.0629 | 0.5817 ± 0.0617 |
+
+These results confirm that YOLOv5n has the highest mean test mAP@0.50:0.95
+among the five baseline families currently evaluated. This is a result to
+report, not evidence of an evaluation error. However, its four-seed result is
+not a fully controlled architecture-only comparison with the six-seed
+Ultralytics runs: the training implementations and their default optimizers,
+augmentation pipelines, and evaluators differ. DACP-Net should therefore be
+positioned primarily against its matched YOLOv8n baseline under the same
+Ultralytics pipeline, while YOLOv5n remains an external classical baseline.
+
 ## Multi-Seed Validation Summary
 
 The following results summarize six training seeds (`0`--`5`) per model from
