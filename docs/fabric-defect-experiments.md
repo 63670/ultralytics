@@ -1,824 +1,107 @@
 # Fabric Defect Experiments
 
-This guide records repeatable training and evaluation commands for the fabric-defect dataset.
+This document records the latest retained test-set results for the fabric-defect
+experiments. Historical validation results, earlier test runs, and removed run
+directories are intentionally excluded.
 
-## Dataset
+## Evaluation Scope
 
-The dataset configuration is expected at `/home/tkz/datasets/pingwen_paper/data.yaml`:
+The YOLO results below use the held-out test split with 81 images and 91
+instances. Metrics are read from the current result directories:
 
-```yaml
-path: /home/tkz/datasets/pingwen_paper
-train: images/train
-val: images/val
-test: images/test
+- Ultralytics: `/home/tkz/code/github/ultralytics/runs/detect`
+- RT-DETRv2: `/home/tkz/code/github/RT-DETR/rtdetrv2_pytorch/output`
+- MMDetection: `/home/tkz/code/github/mmdetection/work_dirs`
 
-names:
-  0: row
-  1: col
-  2: hole
+Each current directory contains one retained test result only. These are
+single-run values, not multi-seed means; do not report a standard deviation
+unless the corresponding seed runs and test logs are preserved.
+
+## Latest Overall Test-Set Comparison
+
+| Model | Framework | Parameters | GFLOPs | Precision | Recall | AP50 | AP75 | AP / mAP50-95 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| YOLOv5n | Ultralytics | 2.50M | 7.1 | 0.917 | 0.858 | 0.931 | — | 0.584 |
+| YOLOv8n | Ultralytics | 3.01M | 8.1 | 0.884 | 0.911 | 0.941 | — | 0.593 |
+| YOLO11n | Ultralytics | 2.58M | 6.4 | 0.917 | 0.936 | 0.950 | — | 0.596 |
+| YOLO12n | Ultralytics | 2.56M | 7.3 | 0.902 | 0.914 | 0.943 | — | 0.609 |
+| YOLO26n | Ultralytics | 2.38M | 5.3 | 0.916 | **0.945** | 0.965 | — | 0.614 |
+| **DACP-Net** | **Ultralytics** | **3.39M** | **8.9** | 0.958 | 0.923 | **0.969** | — | **0.663** |
+| RT-DETRv2-R18 | Native COCO | — | — | — | — | 0.952 | 0.823 | **0.677** |
+| DETR-R50 | Native COCO | — | — | — | — | 0.964 | 0.551 | 0.536 |
+| Deformable DETR-R50 | Native COCO | — | — | — | — | **0.968** | **0.781** | 0.643 |
+| Faster R-CNN-R50 | Native COCO | — | — | — | — | 0.961 | 0.773 | 0.647 |
+
+The native COCO rows use AP@[IoU=0.50:0.95] with `maxDets=100`. Their AP50,
+AP75, and scale-specific AP values are reported by MMDetection with
+`maxDets=1000`; do not treat those columns as directly interchangeable with
+the Ultralytics metrics.
+
+## DACP-Net Ablation on the Latest Test Set
+
+WWTE denotes Warp–Weft Texture Encoding (the current implementation class is
+`C2fDirectional`). LTFR denotes Local Texture-Guided Feature Reassembly.
+All four variants use the same YOLOv8n training pipeline and the Ultralytics
+test evaluator.
+
+| Variant | WWTE | LTFR | Parameters | GFLOPs | Precision | Recall | mAP50 | mAP50-95 | Change vs. YOLOv8n |
+| --- | :---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| YOLOv8n baseline | No | No | 3.01M | 8.1 | 0.884 | 0.911 | 0.941 | 0.593 | — |
+| Baseline + WWTE | Yes | No | 3.28M | 8.8 | **0.969** | 0.935 | 0.942 | 0.641 | +0.048 |
+| Baseline + LTFR | No | Yes | 3.11M | 8.2 | 0.907 | 0.932 | 0.943 | 0.609 | +0.016 |
+| **DACP-Net** | **Yes** | **Yes** | **3.39M** | **8.9** | 0.958 | 0.923 | **0.969** | **0.663** | **+0.070** |
+
+## Native COCO Test Details
+
+| Model | AP-small | AP-medium | AP-large | AR100 |
+| --- | ---: | ---: | ---: | ---: |
+| RT-DETRv2-R18 | 0.688 | 0.667 | 0.608 | 0.794 |
+| DETR-R50 | 0.260 | 0.580 | 0.497 | 0.698 |
+| Deformable DETR-R50 | 0.464 | 0.650 | 0.546 | 0.703 |
+| Faster R-CNN-R50 | **0.702** | **0.691** | 0.545 | **0.707** |
+
+## Reproducible Commands
+
+### Ultralytics
+
+Train and automatically evaluate a model with the repository runner:
+
+```bash
+conda activate tkz-yolo
+cd /home/tkz/code/github/ultralytics
+scripts/run_experiment.sh --device 0 MODEL RUN_NAME
 ```
 
-## Overall Test-Set Comparison
+Evaluate an existing checkpoint on the held-out test split:
 
-All results below use the held-out test split (81 images and 91 instances).
-Rows labeled `Ultralytics` use the same Ultralytics evaluator; their comparison
-is the most direct. The `Official YOLOv5` row uses the official YOLOv5
-evaluator. The remaining rows use their native COCO evaluators, whose P/R,
-speed, and `maxDets` settings are not directly interchangeable with the
-Ultralytics rows.
+```bash
+yolo detect val \
+  model=/home/tkz/code/github/ultralytics/runs/detect/RUN_NAME/weights/best.pt \
+  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+  split=test imgsz=640 batch=16 device=0 workers=8 max_det=16 \
+  project=/home/tkz/code/github/ultralytics/runs/detect/RUN_NAME name=test
+```
 
-| Model | Evaluator | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 | Parameters | GFLOPs | Inference / image | Postprocess / image |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| YOLOv5n | Official YOLOv5 | 0.891 | 0.921 | 0.940 | 0.611 | 1.76M | 4.1 | 1.7 ms | 1.4 ms NMS |
-| YOLOv8n | Ultralytics | 0.901 | 0.939 | 0.938 | 0.597 | — | — | 5.8 ms | 9.7 ms |
-| YOLO11n | Ultralytics | 0.919 | 0.952 | 0.947 | 0.608 | — | — | 2.9 ms | 9.5 ms |
-| YOLO12n | Ultralytics | 0.902 | 0.914 | 0.943 | 0.609 | — | — | 4.1 ms | 9.6 ms |
-| YOLO26n | Ultralytics | 0.948 | 0.903 | 0.952 | 0.632 | — | — | 2.9 ms | 2.6 ms |
-| RT-DETR-L | Ultralytics | 0.932 | 0.968 | 0.966 | 0.660 | — | — | 17.0 ms | 2.5 ms |
-| **DACP-Net** | **Ultralytics** | **0.958** | 0.923 | **0.969** | **0.663** | — | — | 5.2 ms | 9.5 ms |
-| DETR-R50 | Native COCO | — | — | 0.964 | 0.536 | — | — | — | — |
-| Deformable DETR-R50 | Native COCO | — | — | 0.968 | 0.643 | — | — | — | — |
-| Faster R-CNN-R50 | Native COCO | — | — | 0.969 | 0.662 | — | — | — | — |
-| RT-DETRv2-R18 | Native COCO | — | — | 0.958 | 0.686 | — | — | — | — |
-
-`mAP@0.50:0.95` is COCO-style AP averaged over IoU thresholds. Native COCO
-rows preserve the evaluator-reported values; their AP@0.50 values use
-`maxDets=1000` for MMDetection DETR/Faster R-CNN and `maxDets=100` for
-RT-DETRv2-R18, whereas their mAP@0.50:0.95 values use the values reported in
-the corresponding test logs.
-
-## Multi-Seed Test Summary (Unified Evaluation)
-
-This is the table to use for the paper's main YOLO comparison. All listed
-checkpoints were evaluated on the held-out test split (81 images, 91 objects),
-not on validation data, with `imgsz=640`, `batch=16`, `conf=0.001`, NMS
-`iou=0.6`, and `max_det=16`. YOLOv5n was evaluated with its official
-repository; the other models were evaluated with Ultralytics. Raw output is
-saved as `test_iou06_metrics.log` in every corresponding training directory.
-Mean and sample standard deviation are calculated across seeds.
-
-| Model | Seed 0 | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 | mAP@0.50:0.95 (mean ± std) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| YOLOv5n | 0.611 | 0.624 | 0.631 | 0.633 | 0.643 | 0.614 | 0.6260 ± 0.0121 |
-| YOLOv8n | 0.600 | 0.615 | 0.602 | 0.606 | 0.627 | 0.543 | 0.5988 ± 0.0291 |
-| YOLO11n | 0.604 | 0.520 | 0.595 | 0.640 | 0.629 | 0.597 | 0.5975 ± 0.0421 |
-| YOLO12n | 0.609 | 0.616 | 0.586 | 0.606 | 0.566 | 0.574 | 0.5928 ± 0.0205 |
-| YOLO26n | 0.632 | 0.630 | 0.582 | 0.505 | 0.507 | 0.634 | 0.5817 ± 0.0617 |
-| **DACP-Net** | 0.660 | **0.667** | 0.631 | 0.609 | 0.600 | **0.665** | **0.6387 ± 0.0296** |
-
-| Model | Seeds | Precision (mean ± std) | Recall (mean ± std) | mAP@0.50 (mean ± std) | mAP@0.50:0.95 (mean ± std) |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| YOLOv5n | 6 | **0.9393 ± 0.0309** | 0.9167 ± 0.0347 | 0.9452 ± 0.0159 | 0.6260 ± 0.0121 |
-| YOLOv8n | 6 | **0.9370 ± 0.0496** | 0.9242 ± 0.0322 | 0.9447 ± 0.0272 | 0.5988 ± 0.0291 |
-| YOLO11n | 6 | 0.9333 ± 0.0295 | **0.9352 ± 0.0154** | 0.9467 ± 0.0139 | 0.5975 ± 0.0421 |
-| YOLO12n | 6 | 0.9088 ± 0.0347 | 0.9153 ± 0.0234 | 0.9298 ± 0.0289 | 0.5928 ± 0.0205 |
-| YOLO26n | 6 | 0.8613 ± 0.1039 | 0.8495 ± 0.0712 | 0.8940 ± 0.0629 | 0.5817 ± 0.0617 |
-| **DACP-Net** | **6** | 0.9393 ± 0.0195 | 0.9228 ± 0.0166 | **0.9558 ± 0.0059** | **0.6387 ± 0.0296** |
-
-DACP-Net has the highest mean test mAP@0.50:0.95 (0.6387), improving on its
-matched YOLOv8n baseline by 0.0398. It also exceeds the YOLOv5n mean by
-0.0127. YOLOv5n remains an external classical baseline rather than an
-architecture-only controlled comparison because its official training and
-evaluation implementation differs from the Ultralytics pipeline.
-
-## RT-DETRv2-R18 Multi-Seed Test Summary
-
-Ten RT-DETRv2-R18 test results are summarized below. Nine corresponding logs
-are stored under `/home/tkz/code/github/RT-DETR/rtdetrv2_pytorch/output`; the
-seed-5 metric was supplied from its completed test output. These are native
-COCO test metrics using `maxDets=100`.
-
-| Seed | AP | AP50 | AP75 | APs | APm | APl | AR100 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 0.677 | 0.952 | 0.823 | 0.688 | 0.667 | 0.608 | 0.794 |
-| 2 | 0.702 | **0.977** | **0.864** | 0.657 | 0.698 | 0.669 | 0.803 |
-| 3 | 0.673 | 0.952 | 0.822 | 0.658 | 0.627 | 0.568 | 0.771 |
-| 4 | 0.680 | 0.950 | 0.791 | 0.689 | 0.643 | 0.632 | 0.802 |
-| 5 | 0.669 | 0.964 | 0.824 | 0.624 | 0.668 | 0.613 | 0.791 |
-| 6 | 0.702 | 0.966 | 0.853 | **0.697** | 0.707 | 0.629 | **0.815** |
-| 7 | 0.676 | 0.970 | 0.763 | 0.570 | 0.690 | 0.649 | 0.784 |
-| 8 | 0.687 | 0.961 | 0.792 | 0.693 | 0.673 | 0.669 | 0.814 |
-| 9 | **0.703** | 0.974 | 0.816 | 0.664 | **0.711** | 0.660 | 0.782 |
-| 10 | 0.697 | 0.969 | 0.838 | 0.642 | 0.699 | **0.671** | 0.791 |
-| Mean ± std | **0.6866 ± 0.0133** | **0.9635 ± 0.0096** | **0.8186 ± 0.0303** | **0.6582 ± 0.0392** | **0.6783 ± 0.0279** | **0.6368 ± 0.0336** | **0.7947 ± 0.0140** |
-
-## DACP-Net Ablation Summary
-
-All four variants use the YOLOv8n-based architecture, the same test split, and
-the Ultralytics evaluator. DATE denotes dual-axis texture encoding; LTFR
-denotes local texture-guided feature reassembly.
-
-| Variant | DATE | LTFR | Parameters | GFLOPs | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 | Change vs. baseline |
-| --- | :---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| YOLOv8n baseline | No | No | — | — | 0.901 | 0.939 | 0.938 | 0.597 | — |
-| Baseline + DATE | Yes | No | 3.28M | 8.8 | 0.951 | 0.914 | 0.955 | 0.609 | +0.012 |
-| Baseline + LTFR | No | Yes | 3.11M | 8.2 | 0.896 | 0.816 | 0.900 | 0.551 | -0.046 |
-| **DACP-Net** | **Yes** | **Yes** | — | — | **0.958** | 0.923 | **0.969** | **0.663** | **+0.066** |
-
-The full model improves by 0.054 mAP@0.50:0.95 over DATE alone and by 0.112
-over LTFR alone, indicating that local feature reassembly is effective when
-applied to DATE-enhanced features rather than as a standalone substitution for
-the original upsampling path.
-
-## Repository-Wise Training and Test Commands
-
-Use the commands in this section to rerun every benchmark from pretrained
-weights without overwriting the previously recorded outputs. All commands use
-the current dataset locations supplied for each framework. Keep the image size,
-batch size, epochs, augmentation, and seed fixed within a framework.
-
-The rerun outputs are stored inside their respective repositories:
-`rtdetrv2_pytorch/output/`, `mmdetection/work_dirs/`,
-`ultralytics/runs/detect/`, and `yolov5/runs/train/`.
-
-### RT-DETRv2 Repository
-
-The verified dataset directory is `/home/tkz/datasets/pingwen_coco_rtdetr`.
-The RT-DETRv2 experiment runner trains from the full COCO-pretrained checkpoint
-and automatically evaluates `best.pth` on the test split in the same output
-directory.
+### RT-DETRv2
 
 ```bash
 conda activate rtdetr
 cd /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch
 python tools/run_experiment.py \
   configs/rtdetrv2/rtdetrv2_r18vd_pingwen.yml \
-  --pretrained pretrained/rtdetrv2_r18vd_120e_coco_rerun_48.1.pth \
-  --output-dir output/rtdetrv2_r18vd_pingwen_seed5 \
-  --device 1 \
-  --seed 5
+  --pretrained rtdetrv2_r18vd_6x_coco_from_paddle.pth \
+  --output-dir output/RUN_NAME --device 0 --seed 0
 ```
 
-The test log is saved as `output/rtdetrv2_r18vd_pingwen_seed5/test_metrics.log`.
-
-For an existing trained checkpoint, run only the test step:
-
-```bash
-conda activate rtdetr
-cd /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch
-CUDA_VISIBLE_DEVICES=1 \
-python tools/train.py \
-  -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen_test.yml \
-  -r output/rtdetrv2_r18vd_pingwen_seed5/best.pth \
-  --output-dir output/rtdetrv2_r18vd_pingwen_seed5 \
-  --test-only
-```
-
-### MMDetection Repository
-
-Each verified custom config sets `load_from` to its exact COCO-pretrained
-OpenMMLab model-zoo checkpoint. The runner selects the best checkpoint and runs
-the test split automatically in the same `work_dir`.
+### MMDetection
 
 ```bash
 conda activate mmdet
 cd /home/tkz/code/github/mmdetection
-
-python tools/run_experiment.py \
-  configs/pingwen/detr_r50_300e.py \
-  --work-dir work_dirs/retrain_detr_r50_300e \
-  --device 1 \
-  --seed 5
-
-python tools/run_experiment.py \
-  configs/pingwen/deformable_detr_r50_300e.py \
-  --work-dir work_dirs/retrain_deformable_detr_r50_300e \
-  --device 1 \
-  --seed 5
-
-python tools/run_experiment.py \
-  configs/pingwen/faster_rcnn_r50_300e.py \
-  --work-dir work_dirs/retrain_faster_rcnn_r50_300e \
-  --device 1 \
-  --seed 5
+python tools/run_experiment.py configs/pingwen/MODEL.py \
+  --work-dir work_dirs/RUN_NAME --device 0 --seed 0
 ```
 
-The custom MMDetection configs must use
-`/home/tkz/datasets/pingwen_coco` for their dataset and annotation paths.
-
-For an existing trained checkpoint, run only the test step. Substitute the
-matching config, checkpoint, and work directory for each model:
-
-```bash
-conda activate mmdet
-cd /home/tkz/code/github/mmdetection
-python tools/test.py \
-  configs/pingwen/detr_r50_300e.py \
-  work_dirs/retrain_detr_r50_300e/best_coco_bbox_mAP_epoch_280.pth \
-  --work-dir work_dirs/retrain_detr_r50_300e
-```
-
-### Ultralytics Repository
-
-Run all commands from the Ultralytics repository in the `tkz-yolo`
-environment. The official `.pt` model argument initializes each standard model
-from its corresponding pretrained checkpoint. The custom YAML models initialize
-from `yolov8n.pt`, keeping the backbone initialization consistent with their
-YOLOv8n base architecture.
-
-```bash
-conda activate tkz-yolo
-cd /home/tkz/code/github/ultralytics
-```
-
-Use [`scripts/run_experiment.sh`](../scripts/run_experiment.sh) for every
-Ultralytics benchmark. It trains each model and then automatically tests its
-`best.pt`; it stores test
-artifacts in `<training-run>/test/` and saves the complete metric log as
-`<training-run>/test_metrics.log`, so each seed remains self-contained. After
-the test succeeds, it deletes every weight in `<training-run>/weights/` except
-`best.pt` and records removed filenames in `deleted_checkpoints.log`.
-
-```bash
-chmod +x scripts/run_experiment.sh
-
-scripts/run_experiment.sh --device 1 yolov8n.pt retrain_yolov8n seed=5
-scripts/run_experiment.sh --device 1 yolo11n.pt retrain_yolo11n seed=5
-scripts/run_experiment.sh --device 1 yolo12n.pt retrain_yolo12n seed=5
-scripts/run_experiment.sh --device 1 yolo26n.pt retrain_yolo26n seed=5
-scripts/run_experiment.sh --device 1 rtdetr-l.pt retrain_rtdetr_l seed=5
-
-scripts/run_experiment.sh --device 1 \
-  ultralytics/cfg/models/v8/yolov8n-fabric-baseline.yaml \
-  retrain_ablation_baseline pretrained=yolov8n.pt seed=5
-scripts/run_experiment.sh --device 1 \
-  ultralytics/cfg/models/v8/yolov8n-fabric-directional.yaml \
-  retrain_ablation_directional pretrained=yolov8n.pt seed=5
-scripts/run_experiment.sh --device 1 \
-  ultralytics/cfg/models/v8/yolov8n-fabric-content-aware.yaml \
-  retrain_ablation_content_aware pretrained=yolov8n.pt seed=5
-scripts/run_experiment.sh --device 1 \
-  ultralytics/cfg/models/v8/yolov8n-fabric-directional-carafe.yaml \
-  retrain_dacp_net pretrained=yolov8n.pt seed=5
-```
-
-For multiple seeds, use the same runner in a loop. For
-example:
-
-```bash
-for seed in 0 1 2 3 4 5
-do
-  scripts/run_experiment.sh --device 1 \
-    ultralytics/cfg/models/v8/yolov8n-fabric-directional-carafe.yaml \
-    "dacp_net-${seed}" \
-    pretrained=yolov8n.pt \
-    "seed=${seed}"
-done
-```
-
-For an existing trained checkpoint, run only the test step. The test artifacts
-and `test_metrics.log` remain inside that training run directory:
-
-```bash
-conda activate tkz-yolo
-cd /home/tkz/code/github/ultralytics
-yolo detect val \
-  model=/home/tkz/code/github/ultralytics/runs/detect/dacp_net-0/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=1 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/code/github/ultralytics/runs/detect/dacp_net-0 \
-  name=test \
-  exist_ok=True \
-  2>&1 | tee /home/tkz/code/github/ultralytics/runs/detect/dacp_net-0/test_metrics.log
-```
-
-### YOLOv5 Repository
-
-Run the original anchor-based YOLOv5n from its official repository. The
-`yolov5n.pt` argument initializes from the COCO-pretrained model.
-
-```bash
-conda activate tkz-yolo
-cd /home/tkz/code/github/yolov5
-python train.py \
-  --weights yolov5n.pt \
-  --data /home/tkz/datasets/pingwen_yolo/data.yaml \
-  --img 640 \
-  --epochs 300 \
-  --batch-size 16 \
-  --device 0 \
-  --workers 8 \
-  --patience 80 \
-  --project /home/tkz/code/github/yolov5/runs/train \
-  --name retrain_yolov5n
-
-python val.py \
-  --weights /home/tkz/code/github/yolov5/runs/train/retrain_yolov5n/weights/best.pt \
-  --data /home/tkz/datasets/pingwen_yolo/data.yaml \
-  --task test \
-  --img 640 \
-  --batch-size 16 \
-  --device 0 \
-  --workers 8 \
-  --max-det 16 \
-  --project /home/tkz/code/github/yolov5/runs/train/retrain_yolov5n \
-  --name test
-```
-
-For an existing YOLOv5n checkpoint, use the `python val.py ...` command above
-and replace only the `--weights` path and its containing `--project` directory.
-
-## Custom End-to-End YOLOv8n
-
-Train the single-P3 fabric model with directional P5 context, direct box regression, and no NMS:
-
-```bash
-yolo detect train \
-  model=ultralytics/cfg/models/v8/yolov8-fabric.yaml \
-  data=/home/tkz/datasets/pingwen_paper/data.yaml \
-  pretrained=yolov8n.pt \
-  imgsz=640 \
-  epochs=300 \
-  patience=80 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_paper/runs/detect \
-  name=v8n_fabric
-```
-
-Evaluate the best checkpoint on the held-out test split:
-
-```bash
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_paper/runs/detect/v8n_fabric/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_paper/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_paper/runs/detect \
-  name=v8n_fabric_test
-```
-
-## Native YOLOv8n Baseline
-
-Train the unmodified YOLOv8n baseline with identical data and hyperparameters:
-
-```bash
-yolo detect train \
-  model=yolov8n.pt \
-  data=/home/tkz/datasets/pingwen_paper/data.yaml \
-  imgsz=640 \
-  epochs=300 \
-  patience=80 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_paper/runs/detect \
-  name=yolov8n_baseline
-```
-
-Evaluate the baseline on the same test split:
-
-```bash
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_paper/runs/detect/yolov8n_baseline/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_paper/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_paper/runs/detect \
-  name=yolov8n_baseline_test
-```
-
-## Content-Aware Pyramid Ablation
-
-This ablation retains the clean YOLOv8n backbone and replaces only the two
-top-down nearest-neighbor upsampling operations with content-aware feature
-reassembly. Train it with the same settings as the other ablations:
-
-```bash
-yolo detect train \
-  model=ultralytics/cfg/models/v8/yolov8n-fabric-content-aware.yaml \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  pretrained=yolov8n.pt \
-  imgsz=640 \
-  epochs=300 \
-  patience=80 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
-  name=ablation_content_aware
-```
-
-Evaluate the best checkpoint on the held-out test split:
-
-```bash
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_yolo/runs/detect/ablation_content_aware/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
-  name=ablation_content_aware_test
-```
-
-### Ablation Test Results
-
-The directional-only and content-aware-only variants were evaluated on the
-same held-out test split (81 images and 91 instances). The full DACP-Net result
-is included to show the interaction between the two modules.
-
-The directional-only checkpoint was evaluated with:
-
-```bash
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_yolo/runs/detect/ablation_directional/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
-  name=ablation_directional_test
-```
-
-| Variant | Dual-axis texture encoding | Local feature reassembly | Parameters | GFLOPs | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
-| --- | :---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| YOLOv8n baseline | No | No | — | — | 0.901 | 0.939 | 0.938 | 0.597 |
-| Directional-only | Yes | No | 3,280,313 | 8.8 | 0.951 | 0.914 | 0.955 | 0.609 |
-| Content-aware-only | No | Yes | 3,113,409 | 8.2 | 0.896 | 0.816 | 0.900 | 0.551 |
-| DACP-Net | Yes | Yes | — | — | 0.958 | 0.923 | 0.969 | 0.663 |
-
-The directional-only variant has 1.7 ms preprocessing, 1.9 ms inference, and
-0.4 ms postprocessing latency per image. The content-aware-only variant has
-1.2 ms preprocessing, 2.2 ms inference, and 0.3 ms postprocessing latency per
-image.
-
-## RT-DETRv2-R18 Baseline
-
-Evaluate the RT-DETRv2-R18 checkpoint on the held-out test set. Run this from the
-RT-DETRv2 PyTorch repository with the `rtdetr` Conda environment active:
-
-```bash
-conda activate rtdetr
-cd ~/code/github/RT-DETR/rtdetrv2_pytorch/
-CUDA_VISIBLE_DEVICES=1 \
-python tools/train.py \
-  -c configs/rtdetrv2/rtdetrv2_r18vd_pingwen_test.yml \
-  -r output/rtdetrv2_r18vd_pingwen/best.pth \
-  --test-only
-```
-
-### Test Results
-
-| Metric | Value |
-| --- | ---: |
-| AP@[IoU=0.50:0.95] | 0.686 |
-| AP@0.50 | 0.958 |
-| AP@0.75 | 0.837 |
-| AP (small) | 0.620 |
-| AP (medium) | 0.717 |
-| AP (large) | 0.636 |
-| AR@[IoU=0.50:0.95], maxDets=1 | 0.688 |
-| AR@[IoU=0.50:0.95], maxDets=10 | 0.782 |
-| AR@[IoU=0.50:0.95], maxDets=100 | 0.805 |
-| AR (small), maxDets=100 | 0.644 |
-| AR (medium), maxDets=100 | 0.832 |
-| AR (large), maxDets=100 | 0.791 |
-| AR@0.50, maxDets=100 | 0.982 |
-| AR@0.75, maxDets=100 | 0.954 |
-
-## DETR-R50 Baseline
-
-Evaluate the pretrained DETR-R50 checkpoint on the held-out test set. Run this
-from the MMDetection repository with the `mmdet` Conda environment active:
-
-```bash
-conda activate mmdet
-cd ~/code/github/mmdetection
-python tools/test.py \
-  configs/pingwen/detr_r50_300e.py \
-  work_dirs/detr_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_280.pth \
-  --cfg-options randomness.seed=5
-```
-
-### Test Results
-
-| Metric | Value |
-| --- | ---: |
-| AP@[IoU=0.50:0.95], maxDets=100 | 0.536 |
-| AP@0.50, maxDets=1000 | 0.964 |
-| AP@0.75, maxDets=1000 | 0.551 |
-| AP (small), maxDets=1000 | 0.260 |
-| AP (medium), maxDets=1000 | 0.580 |
-| AP (large), maxDets=1000 | 0.497 |
-| AR@[IoU=0.50:0.95], maxDets=100 | 0.698 |
-| AR@[IoU=0.50:0.95], maxDets=300 | 0.698 |
-| AR@[IoU=0.50:0.95], maxDets=1000 | 0.698 |
-| AR (small), maxDets=1000 | 0.350 |
-| AR (medium), maxDets=1000 | 0.727 |
-| AR (large), maxDets=1000 | 0.694 |
-
-## Deformable DETR-R50 Baseline
-
-Evaluate the pretrained Deformable DETR-R50 checkpoint on the held-out test
-set. Run this from the MMDetection repository with the `mmdet` Conda
-environment active:
-
-```bash
-conda activate mmdet
-cd ~/code/github/mmdetection
-python tools/test.py \
-  configs/pingwen/deformable_detr_r50_300e.py \
-  work_dirs/deformable_detr_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_96.pth \
-  --cfg-options randomness.seed=5
-```
-
-### Test Results
-
-| Metric | Value |
-| --- | ---: |
-| AP@[IoU=0.50:0.95], maxDets=100 | 0.643 |
-| AP@0.50, maxDets=1000 | 0.968 |
-| AP@0.75, maxDets=1000 | 0.781 |
-| AP (small), maxDets=1000 | 0.464 |
-| AP (medium), maxDets=1000 | 0.650 |
-| AP (large), maxDets=1000 | 0.546 |
-| AR@[IoU=0.50:0.95], maxDets=100 | 0.703 |
-| AR@[IoU=0.50:0.95], maxDets=300 | 0.703 |
-| AR@[IoU=0.50:0.95], maxDets=1000 | 0.703 |
-| AR (small), maxDets=1000 | 0.594 |
-| AR (medium), maxDets=1000 | 0.694 |
-| AR (large), maxDets=1000 | 0.653 |
-
-## Faster R-CNN-R50 Baseline
-
-Evaluate the pretrained Faster R-CNN-R50 checkpoint on the held-out test set.
-Run this from the MMDetection repository with the `mmdet` Conda environment
-active:
-
-```bash
-conda activate mmdet
-cd ~/code/github/mmdetection
-CUDA_VISIBLE_DEVICES=1 python tools/test.py \
-  configs/pingwen/faster_rcnn_r50_300e.py \
-  work_dirs/faster_rcnn_r50_pingwen_pretrained_300e/best_coco_bbox_mAP_epoch_162.pth \
-  --cfg-options randomness.seed=5
-```
-
-### Test Results
-
-| Metric | Value |
-| --- | ---: |
-| AP@[IoU=0.50:0.95], maxDets=100 | 0.662 |
-| AP@0.50, maxDets=1000 | 0.969 |
-| AP@0.75, maxDets=1000 | 0.779 |
-| AP (small), maxDets=1000 | 0.382 |
-| AP (medium), maxDets=1000 | 0.744 |
-| AP (large), maxDets=1000 | 0.570 |
-| AR@[IoU=0.50:0.95], maxDets=100 | 0.722 |
-| AR@[IoU=0.50:0.95], maxDets=300 | 0.722 |
-| AR@[IoU=0.50:0.95], maxDets=1000 | 0.722 |
-| AR (small), maxDets=1000 | 0.394 |
-| AR (medium), maxDets=1000 | 0.805 |
-| AR (large), maxDets=1000 | 0.592 |
-
-## YOLOv8n Baseline Test Results
-
-Evaluate the YOLOv8n checkpoint on the held-out test set:
-
-```bash
-conda activate tkz-yolo
-cd ~/datasets/pingwen_yolo
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_yolo/runs/detect/yolov8n/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
-  name=yolov8n_test
-```
-
-The test split contains 81 images and 91 instances.
-
-| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| all | 81 | 91 | 0.901 | 0.939 | 0.938 | 0.597 |
-| row | 59 | 60 | 0.967 | 0.970 | 0.990 | 0.633 |
-| col | 12 | 12 | 0.919 | 0.952 | 0.931 | 0.561 |
-| hole | 18 | 19 | 0.816 | 0.895 | 0.893 | 0.597 |
-
-Per-image latency: 1.4 ms preprocessing, 5.8 ms inference, and 9.7 ms
-postprocessing.
-
-## YOLO11n Baseline Test Results
-
-Evaluate the YOLO11n checkpoint on the held-out test set:
-
-```bash
-conda activate tkz-yolo
-cd ~/datasets/pingwen_yolo
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_yolo/runs/detect/yolo11n/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
-  name=yolo11n_test
-```
-
-The test split contains 81 images and 91 instances.
-
-| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| all | 81 | 91 | 0.919 | 0.952 | 0.947 | 0.608 |
-| row | 59 | 60 | 0.983 | 0.962 | 0.993 | 0.611 |
-| col | 12 | 12 | 0.908 | 1.000 | 0.925 | 0.602 |
-| hole | 18 | 19 | 0.866 | 0.895 | 0.923 | 0.611 |
-
-Per-image latency: 1.6 ms preprocessing, 2.9 ms inference, and 9.5 ms
-postprocessing.
-
-## YOLO12n Baseline Test Results
-
-Evaluate the YOLO12n checkpoint on the held-out test set:
-
-```bash
-conda activate tkz-yolo
-cd ~/datasets/pingwen_yolo
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_yolo/runs/detect/yolo12n/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
-  name=yolo12n_test
-```
-
-The test split contains 81 images and 91 instances.
-
-| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| all | 81 | 91 | 0.902 | 0.914 | 0.943 | 0.609 |
-| row | 59 | 60 | 0.939 | 0.983 | 0.989 | 0.611 |
-| col | 12 | 12 | 0.894 | 0.917 | 0.969 | 0.652 |
-| hole | 18 | 19 | 0.873 | 0.842 | 0.871 | 0.564 |
-
-Per-image latency: 1.5 ms preprocessing, 4.1 ms inference, and 9.6 ms
-postprocessing.
-
-## YOLO26n Baseline Test Results
-
-Evaluate the YOLO26n checkpoint on the held-out test set:
-
-```bash
-conda activate tkz-yolo
-cd ~/datasets/pingwen_yolo
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_yolo/runs/detect/yolo26n/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
-  name=yolo26n_test
-```
-
-The test split contains 81 images and 91 instances.
-
-| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| all | 81 | 91 | 0.948 | 0.903 | 0.952 | 0.632 |
-| row | 59 | 60 | 0.921 | 0.950 | 0.975 | 0.658 |
-| col | 12 | 12 | 0.984 | 0.917 | 0.971 | 0.660 |
-| hole | 18 | 19 | 0.939 | 0.842 | 0.911 | 0.579 |
-
-Per-image latency: 1.6 ms preprocessing, 2.9 ms inference, and 2.6 ms
-postprocessing.
-
-## DACP-Net Test Results
-
-Evaluate the proposed Directional-Aware and Content-Aware Pyramid Network
-(DACP-Net) checkpoint on the held-out test set:
-
-```bash
-conda activate tkz-yolo
-cd ~/datasets/pingwen_yolo
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_yolo/runs/detect/DACP-Net/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
-  name=DACP-Net_test
-```
-
-The test split contains 81 images and 91 instances.
-
-| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| all | 81 | 91 | 0.958 | 0.923 | 0.969 | 0.663 |
-| row | 59 | 60 | 0.973 | 0.967 | 0.988 | 0.617 |
-| col | 12 | 12 | 1.000 | 0.906 | 0.995 | 0.738 |
-| hole | 18 | 19 | 0.901 | 0.895 | 0.922 | 0.634 |
-
-Per-image latency: 1.6 ms preprocessing, 5.2 ms inference, and 9.5 ms
-postprocessing.
-
-## RT-DETR-L Baseline Test Results
-
-Evaluate the RT-DETR-L checkpoint on the held-out test set using the same
-Ultralytics evaluation pipeline:
-
-```bash
-conda activate tkz-yolo
-cd ~/datasets/pingwen_yolo
-yolo detect val \
-  model=/home/tkz/datasets/pingwen_yolo/runs/detect/rtdetr_l/weights/best.pt \
-  data=/home/tkz/datasets/pingwen_yolo/data.yaml \
-  split=test \
-  imgsz=640 \
-  batch=16 \
-  device=0 \
-  workers=8 \
-  max_det=16 \
-  project=/home/tkz/datasets/pingwen_yolo/runs/detect \
-  name=rtdetr_l_test
-```
-
-The test split contains 81 images and 91 instances.
-
-| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| all | 81 | 91 | 0.932 | 0.968 | 0.966 | 0.660 |
-| row | 59 | 60 | 0.974 | 0.983 | 0.976 | 0.610 |
-| col | 12 | 12 | 0.921 | 0.975 | 0.983 | 0.804 |
-| hole | 18 | 19 | 0.900 | 0.945 | 0.940 | 0.567 |
-
-Per-image latency: 1.5 ms preprocessing, 17.0 ms inference, and 2.5 ms
-postprocessing.
-
-## YOLOv5n Baseline Test Results
-
-Evaluate the original anchor-based YOLOv5n checkpoint using the official
-YOLOv5 repository:
-
-```bash
-conda activate tkz-yolo
-cd ~/code/github/yolov5
-python val.py \
-  --weights /home/tkz/datasets/pingwen_yolo/runs/detect/yolov5n/weights/best.pt \
-  --data /home/tkz/datasets/pingwen_yolo/data.yaml \
-  --task test \
-  --img 640 \
-  --batch-size 16 \
-  --device 0 \
-  --workers 8 \
-  --max-det 16 \
-  --project /home/tkz/datasets/pingwen_yolo/runs/detect \
-  --name yolov5n_test
-```
-
-The test split contains 81 images and 91 instances. The official YOLOv5
-evaluator reports each class over all 81 images.
-
-| Class | Images | Instances | Precision | Recall | mAP@0.50 | mAP@0.50:0.95 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| all | 81 | 91 | 0.891 | 0.921 | 0.940 | 0.611 |
-| row | 81 | 60 | 0.954 | 1.000 | 0.995 | 0.673 |
-| col | 81 | 12 | 0.915 | 0.894 | 0.911 | 0.584 |
-| hole | 81 | 19 | 0.805 | 0.867 | 0.914 | 0.576 |
-
-Model complexity: 1,763,224 parameters and 4.1 GFLOPs. Per-image latency: 0.2
-ms preprocessing, 1.7 ms inference, and 1.4 ms NMS postprocessing.
+Use the repository-specific READMEs for complete options:
+`RT-DETR/rtdetrv2_pytorch/configs/rtdetrv2/README.md` and
+`mmdetection/configs/pingwen/README.md`.
