@@ -64,6 +64,7 @@ Mean and sample standard deviation are calculated across seeds.
 | YOLO11n | 0.604 | 0.520 | 0.595 | 0.640 | 0.629 | 0.597 | 0.5975 ± 0.0421 |
 | YOLO12n | 0.609 | 0.616 | 0.586 | 0.606 | 0.566 | 0.574 | 0.5928 ± 0.0205 |
 | YOLO26n | 0.632 | 0.630 | 0.582 | 0.505 | 0.507 | 0.634 | 0.5817 ± 0.0617 |
+| **DACP-Net** | 0.660 | **0.667** | 0.631 | 0.609 | 0.600 | **0.665** | **0.6387 ± 0.0296** |
 
 | Model | Seeds | Precision (mean ± std) | Recall (mean ± std) | mAP@0.50 (mean ± std) | mAP@0.50:0.95 (mean ± std) |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -72,15 +73,13 @@ Mean and sample standard deviation are calculated across seeds.
 | YOLO11n | 6 | 0.9333 ± 0.0295 | **0.9352 ± 0.0154** | 0.9467 ± 0.0139 | 0.5975 ± 0.0421 |
 | YOLO12n | 6 | 0.9088 ± 0.0347 | 0.9153 ± 0.0234 | 0.9298 ± 0.0289 | 0.5928 ± 0.0205 |
 | YOLO26n | 6 | 0.8613 ± 0.1039 | 0.8495 ± 0.0712 | 0.8940 ± 0.0629 | 0.5817 ± 0.0617 |
+| **DACP-Net** | **6** | 0.9393 ± 0.0195 | 0.9228 ± 0.0166 | **0.9558 ± 0.0059** | **0.6387 ± 0.0296** |
 
-These results confirm that YOLOv5n has the highest mean test mAP@0.50:0.95
-among the five baseline families currently evaluated. This is a result to
-report, not evidence of an evaluation error. However, its four-seed result is
-not a fully controlled architecture-only comparison with the six-seed
-Ultralytics runs: the training implementations and their default optimizers,
-augmentation pipelines, and evaluators differ. DACP-Net should therefore be
-positioned primarily against its matched YOLOv8n baseline under the same
-Ultralytics pipeline, while YOLOv5n remains an external classical baseline.
+DACP-Net has the highest mean test mAP@0.50:0.95 (0.6387), improving on its
+matched YOLOv8n baseline by 0.0398. It also exceeds the YOLOv5n mean by
+0.0140. YOLOv5n remains an external classical baseline rather than an
+architecture-only controlled comparison because its official training and
+evaluation implementation differs from the Ultralytics pipeline.
 
 ## Multi-Seed Validation Summary
 
