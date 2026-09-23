@@ -7,18 +7,18 @@ All values are the latest retained single-run results on the held-out test set
 
 ## Comparison Experiments
 
-| Model | Framework | Parameters | GFLOPs | AP50 (%) | AP / mAP50-95 (%) |
-| --- | --- | ---: | ---: | ---: | ---: |
-| YOLOv5n | Ultralytics | 2.50M | 7.1 | 93.1 | 58.4 |
-| YOLOv8n | Ultralytics | 3.01M | 8.1 | 94.1 | 59.3 |
-| YOLO11n | Ultralytics | 2.58M | 6.4 | 95.0 | 59.6 |
-| YOLO12n | Ultralytics | 2.56M | 7.3 | 94.3 | 60.9 |
-| YOLO26n | Ultralytics | 2.38M | 5.3 | 96.5 | 61.4 |
-| RT-DETRv2-R18 | Native COCO | 20.09M | 60.72 | 95.2 | **67.7** |
-| DETR-R50 | Native COCO | 41.28M | 77.25 | 96.4 | 53.6 |
-| Deformable DETR-R50 | Native COCO | 39.82M | 158.66 | **96.8** | 64.3 |
-| Faster R-CNN-R50 | Native COCO | 41.13M | 181.45 | 96.1 | 64.7 |
-| **DACP-Net** | **Ultralytics** | **3.39M** | **8.9** | **96.9** | 66.3 |
+| Model | Parameters | GFLOPs | AP50 (%) | AP / mAP50-95 (%) |
+| --- | ---: | ---: | ---: | ---: |
+| YOLOv5n | 2.50M | 7.1 | 93.1 | 58.4 |
+| YOLOv8n | 3.01M | 8.1 | 94.1 | 59.3 |
+| YOLO11n | 2.58M | 6.4 | 95.0 | 59.6 |
+| YOLO12n | 2.56M | 7.3 | 94.3 | 60.9 |
+| YOLO26n | 2.38M | 5.3 | 96.5 | 61.4 |
+| RT-DETRv2-R18 | 20.09M | 60.72 | 95.2 | **67.7** |
+| DETR-R50 | 41.28M | 77.25 | 96.4 | 53.6 |
+| Deformable DETR-R50 | 39.82M | 158.66 | **96.8** | 64.3 |
+| Faster R-CNN-R50 | 41.13M | 181.45 | 96.1 | 64.7 |
+| **DACP-Net** | **3.39M** | **8.9** | **96.9** | 66.3 |
 
 ## Ablation Experiments
 
