@@ -39,6 +39,8 @@ def parse_args() -> argparse.Namespace:
                         help="Opacity at zero activation; with this option, opacity rises continuously to --alpha.")
     parser.add_argument("--alpha-gamma", type=float, default=1.0,
                         help="Exponent for activation-dependent opacity; values above 1 suppress mid-level responses.")
+    parser.add_argument("--color-gamma", type=float, default=1.0,
+                        help="Exponent before color mapping; values above 1 shift weak responses toward blue.")
     parser.add_argument("--method", choices=("gradcam", "gradcampp", "layercam"), default="layercam",
                         help="CAM variant; Grad-CAM++ is suited to a selected target detection.")
     parser.add_argument("--conf", type=float, default=0.25)
@@ -220,7 +222,9 @@ def main() -> None:
                 cam = np.asarray(Image.fromarray(cam).resize(original.size, Image.Resampling.BILINEAR))
                 cams.append(normalize(cam))
             combined_cam = np.maximum.reduce(cams) if cams else np.zeros((original.height, original.width), dtype=np.float32)
-            heatmap = (color_map(combined_cam)[..., :3] * 255).astype(np.uint8)
+            if args.color_gamma <= 0:
+                raise ValueError("--color-gamma must be > 0.")
+            heatmap = (color_map(combined_cam**args.color_gamma)[..., :3] * 255).astype(np.uint8)
             original_array = np.asarray(original)
             overlay = overlay_image(original_array, heatmap, combined_cam, args.alpha, args.activation_threshold,
                                     args.low_alpha, args.alpha_gamma)
@@ -238,7 +242,7 @@ def main() -> None:
                                  "confidence": f"{confidence:.6f}",
                                  "x1": f"{box[0]:.2f}", "y1": f"{box[1]:.2f}",
                                  "x2": f"{box[2]:.2f}", "y2": f"{box[3]:.2f}"})
-                single_heatmap = (color_map(cams[detection_index - 1])[..., :3] * 255).astype(np.uint8)
+                single_heatmap = (color_map(cams[detection_index - 1]**args.color_gamma)[..., :3] * 255).astype(np.uint8)
                 single_overlay = overlay_image(original_array, single_heatmap, cams[detection_index - 1],
                                                args.alpha, args.activation_threshold, args.low_alpha, args.alpha_gamma)
                 single_rendered = Image.fromarray(single_overlay)
