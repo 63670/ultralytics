@@ -49,8 +49,8 @@ def place_labels(ax, labels: list[tuple[str, float, float, bool]], figure) -> No
         force_pull=(0.02, 0.03), expand=(1.15, 1.25),
         max_move=(12, 14), iter_lim=500,
         ensure_inside_axes=True, prevent_crossings=True,
-        arrowprops=dict(arrowstyle="-", color="#555555", lw=0.75,
-                       shrinkA=3, shrinkB=5, connectionstyle="arc3,rad=0.06"),
+        arrowprops=dict(arrowstyle="->", color="#666666", lw=0.65,
+                       shrinkA=3, shrinkB=5),
     )
 
 
@@ -73,10 +73,16 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
     if not soft_compress:
         ax.set_xscale("log")
     if soft_compress:
-        max_value = 50 if x_key == "params_m" else 250
-        ax.set_xlim(-0.12, math.sqrt(math.log10(max_value)) + 0.06)
-        ax.set_xticks((0, 0.4, 0.8, 1.2))
-        ax.tick_params(axis="x", bottom=False, labelbottom=False)
+        values = [float(row[x_key]) for row in rows]
+        minimum, maximum = min(values), max(values)
+        compress = lambda value: math.sqrt(math.log10(max(value, 1)))
+        ax.set_xlim(compress(minimum) - 0.03, compress(maximum) + 0.22)
+        candidate_ticks = ((2.5, 5, 10, 20, 40) if x_key == "params_m"
+                           else (5, 10, 20, 50, 100, 200))
+        visible_ticks = [value for value in candidate_ticks
+                         if minimum * 0.94 <= value <= maximum * 1.06]
+        ax.set_xticks([compress(value) for value in visible_ticks])
+        ax.set_xticklabels([f"{value:g}" for value in visible_ticks])
     elif xlim is None:
         if x_key == "params_m":
             xlim, ticks = (1.2, 50), (2, 5, 10, 20, 50)
