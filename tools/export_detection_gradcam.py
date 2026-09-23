@@ -16,6 +16,7 @@ import torch
 from matplotlib import colormaps
 from PIL import Image, ImageDraw
 from ultralytics import YOLO
+from ultralytics.utils.nms import non_max_suppression
 
 
 IMAGE_SUFFIXES = {".bmp", ".jpeg", ".jpg", ".png", ".tif", ".tiff", ".webp"}
@@ -64,56 +65,19 @@ def normalize(cam: np.ndarray) -> np.ndarray:
     return np.clip((cam - low) / (high - low), 0, 1).astype(np.float32)
 
 
-def original_box(xywh: np.ndarray, pad: tuple[int, int, int, int], original_size: tuple[int, int]) -> tuple[float, float, float, float]:
+def original_box(xyxy: np.ndarray, pad: tuple[int, int, int, int], original_size: tuple[int, int]) -> tuple[float, float, float, float]:
     pad_x, pad_y, resized_w, resized_h = pad
     original_w, original_h = original_size
     scale_x, scale_y = original_w / resized_w, original_h / resized_h
-    x, y, width, height = xywh
-    x1 = (x - width / 2 - pad_x) * scale_x
-    y1 = (y - height / 2 - pad_y) * scale_y
-    x2 = (x + width / 2 - pad_x) * scale_x
-    y2 = (y + height / 2 - pad_y) * scale_y
+    x1, y1, x2, y2 = xyxy
+    x1 = (x1 - pad_x) * scale_x
+    y1 = (y1 - pad_y) * scale_y
+    x2 = (x2 - pad_x) * scale_x
+    y2 = (y2 - pad_y) * scale_y
     return (
         float(np.clip(x1, 0, original_w - 1)), float(np.clip(y1, 0, original_h - 1)),
         float(np.clip(x2, 0, original_w - 1)), float(np.clip(y2, 0, original_h - 1)),
     )
-
-
-def xywh_to_xyxy(boxes: torch.Tensor) -> torch.Tensor:
-    x, y, width, height = boxes.unbind(dim=1)
-    return torch.stack((x - width / 2, y - height / 2, x + width / 2, y + height / 2), dim=1)
-
-
-def box_iou(one_box: torch.Tensor, boxes: torch.Tensor) -> torch.Tensor:
-    top_left = torch.maximum(one_box[:2], boxes[:, :2])
-    bottom_right = torch.minimum(one_box[2:], boxes[:, 2:])
-    intersection = (bottom_right - top_left).clamp(min=0).prod(dim=1)
-    one_area = (one_box[2] - one_box[0]) * (one_box[3] - one_box[1])
-    areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
-    return intersection / (one_area + areas - intersection + 1e-7)
-
-
-def select_detections(prediction: torch.Tensor, conf: float, iou: float, max_det: int) -> list[tuple[int, int, float, np.ndarray]]:
-    """Run lightweight class-aware NMS while retaining raw candidate indices."""
-    class_scores = prediction[4:, :]
-    scores, class_ids = class_scores.max(dim=0)
-    candidate_ids = torch.nonzero(scores >= conf, as_tuple=False).flatten()
-    if not len(candidate_ids):
-        return []
-    boxes = xywh_to_xyxy(prediction[:4, :].T)
-    order = candidate_ids[scores[candidate_ids].argsort(descending=True)]
-    retained: list[int] = []
-    while len(order) and len(retained) < max_det:
-        selected = int(order[0])
-        retained.append(selected)
-        remaining = order[1:]
-        if not len(remaining):
-            break
-        overlap = box_iou(boxes[selected], boxes[remaining])
-        same_class = class_ids[remaining] == class_ids[selected]
-        order = remaining[~(same_class & (overlap > iou))]
-    return [(candidate, int(class_ids[candidate]), float(scores[candidate]),
-             prediction[:4, candidate].cpu().numpy()) for candidate in retained]
 
 
 def main() -> None:
@@ -172,7 +136,13 @@ def main() -> None:
             captured.clear()
             model.zero_grad(set_to_none=True)
             prediction = model(tensor)[0]
-            detections = select_detections(prediction[0].detach(), args.conf, args.iou, args.max_det)
+            nms_detections, kept_indices = non_max_suppression(
+                prediction.detach(), conf_thres=args.conf, iou_thres=args.iou, max_det=args.max_det, return_idxs=True
+            )
+            detections = [
+                (int(candidate), int(detection[5]), float(detection[4]), detection[:4].cpu().numpy())
+                for detection, candidate in zip(nms_detections[0], kept_indices[0])
+            ]
             if args.layer == "detect":
                 features = captured["features"]
                 assert isinstance(features, list)
@@ -217,8 +187,8 @@ def main() -> None:
             rendered = Image.fromarray(overlay)
             drawer = ImageDraw.Draw(rendered)
             labels: list[str] = []
-            for candidate_id, class_id, confidence, xywh in detections:
-                box = original_box(xywh, pad, original.size)
+            for detection_index, (candidate_id, class_id, confidence, xyxy) in enumerate(detections, 1):
+                box = original_box(xyxy, pad, original.size)
                 label = names[int(class_id)] if isinstance(names, dict) else names[int(class_id)]
                 labels.append(f"{label} {confidence:.3f}")
                 if not args.no_box:
@@ -228,6 +198,15 @@ def main() -> None:
                                  "confidence": f"{confidence:.6f}",
                                  "x1": f"{box[0]:.2f}", "y1": f"{box[1]:.2f}",
                                  "x2": f"{box[2]:.2f}", "y2": f"{box[3]:.2f}"})
+                single_heatmap = (color_map(cams[detection_index - 1])[..., :3] * 255).astype(np.uint8)
+                single_overlay = (np.asarray(original, dtype=np.float32) * (1 - args.alpha)
+                                  + single_heatmap * args.alpha).astype(np.uint8)
+                single_rendered = Image.fromarray(single_overlay)
+                if not args.no_box:
+                    ImageDraw.Draw(single_rendered).rectangle(box, outline="white", width=3)
+                single_rendered.save(
+                    args.output / f"{path.stem}__det{detection_index:02d}_{label}_{confidence:.2f}_cam.jpg", quality=95
+                )
             rendered.save(args.output / f"{path.stem}_gradcam.jpg", quality=95)
             print(f"[{index}/{len(images)}] {path.name}: {', '.join(labels) or 'no detections'}")
     finally:
