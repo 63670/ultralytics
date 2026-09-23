@@ -41,6 +41,8 @@ def parse_args() -> argparse.Namespace:
                         help="Exponent for activation-dependent opacity; values above 1 suppress mid-level responses.")
     parser.add_argument("--color-gamma", type=float, default=1.0,
                         help="Exponent before color mapping; values above 1 shift weak responses toward blue.")
+    parser.add_argument("--blue-threshold", type=float, default=None,
+                        help="Values at or below this activation use a fixed transparent blue; higher values are remapped.")
     parser.add_argument("--method", choices=("gradcam", "gradcampp", "layercam"), default="layercam",
                         help="CAM variant; Grad-CAM++ is suited to a selected target detection.")
     parser.add_argument("--conf", type=float, default=0.25)
@@ -91,6 +93,15 @@ def overlay_image(image: np.ndarray, heatmap: np.ndarray, cam: np.ndarray, alpha
         activation = np.clip((cam - threshold) / (1 - threshold), 0, 1)
         strength = (alpha * activation)[..., None]
     return (image.astype(np.float32) * (1 - strength) + heatmap * strength).astype(np.uint8)
+
+
+def display_activation(cam: np.ndarray, blue_threshold: float | None) -> np.ndarray:
+    """Map a CAM to display range, reserving zero for a constant low-response blue."""
+    if blue_threshold is None:
+        return cam
+    if not 0 <= blue_threshold < 1:
+        raise ValueError("--blue-threshold must be in [0, 1).")
+    return np.clip((cam - blue_threshold) / (1 - blue_threshold), 0, 1)
 
 
 def original_box(xyxy: np.ndarray, pad: tuple[int, int, int, int], original_size: tuple[int, int]) -> tuple[float, float, float, float]:
@@ -224,9 +235,10 @@ def main() -> None:
             combined_cam = np.maximum.reduce(cams) if cams else np.zeros((original.height, original.width), dtype=np.float32)
             if args.color_gamma <= 0:
                 raise ValueError("--color-gamma must be > 0.")
-            heatmap = (color_map(combined_cam**args.color_gamma)[..., :3] * 255).astype(np.uint8)
+            combined_display = display_activation(combined_cam, args.blue_threshold)
+            heatmap = (color_map(combined_display**args.color_gamma)[..., :3] * 255).astype(np.uint8)
             original_array = np.asarray(original)
-            overlay = overlay_image(original_array, heatmap, combined_cam, args.alpha, args.activation_threshold,
+            overlay = overlay_image(original_array, heatmap, combined_display, args.alpha, args.activation_threshold,
                                     args.low_alpha, args.alpha_gamma)
             rendered = Image.fromarray(overlay)
             drawer = ImageDraw.Draw(rendered)
@@ -242,8 +254,9 @@ def main() -> None:
                                  "confidence": f"{confidence:.6f}",
                                  "x1": f"{box[0]:.2f}", "y1": f"{box[1]:.2f}",
                                  "x2": f"{box[2]:.2f}", "y2": f"{box[3]:.2f}"})
-                single_heatmap = (color_map(cams[detection_index - 1]**args.color_gamma)[..., :3] * 255).astype(np.uint8)
-                single_overlay = overlay_image(original_array, single_heatmap, cams[detection_index - 1],
+                single_display = display_activation(cams[detection_index - 1], args.blue_threshold)
+                single_heatmap = (color_map(single_display**args.color_gamma)[..., :3] * 255).astype(np.uint8)
+                single_overlay = overlay_image(original_array, single_heatmap, single_display,
                                                args.alpha, args.activation_threshold, args.low_alpha, args.alpha_gamma)
                 single_rendered = Image.fromarray(single_overlay)
                 if not args.no_box:
