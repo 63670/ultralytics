@@ -37,6 +37,8 @@ def parse_args() -> argparse.Namespace:
                         help="Suppress weak CAM regions in overlays; e.g. 0.35 keeps the original image there.")
     parser.add_argument("--low-alpha", type=float, default=None,
                         help="Opacity at zero activation; with this option, opacity rises continuously to --alpha.")
+    parser.add_argument("--alpha-gamma", type=float, default=1.0,
+                        help="Exponent for activation-dependent opacity; values above 1 suppress mid-level responses.")
     parser.add_argument("--method", choices=("gradcam", "gradcampp", "layercam"), default="layercam",
                         help="CAM variant; Grad-CAM++ is suited to a selected target detection.")
     parser.add_argument("--conf", type=float, default=0.25)
@@ -73,12 +75,12 @@ def normalize(cam: np.ndarray) -> np.ndarray:
 
 
 def overlay_image(image: np.ndarray, heatmap: np.ndarray, cam: np.ndarray, alpha: float, threshold: float | None,
-                  low_alpha: float | None) -> np.ndarray:
+                  low_alpha: float | None, gamma: float) -> np.ndarray:
     """Blend a heatmap uniformly, by a cutoff, or with activation-dependent opacity."""
     if low_alpha is not None:
-        if not 0 <= low_alpha <= alpha <= 1:
-            raise ValueError("--low-alpha and --alpha must satisfy 0 <= low-alpha <= alpha <= 1.")
-        strength = (low_alpha + (alpha - low_alpha) * cam)[..., None]
+        if not 0 <= low_alpha <= alpha <= 1 or gamma <= 0:
+            raise ValueError("Require 0 <= low-alpha <= alpha <= 1 and --alpha-gamma > 0.")
+        strength = (low_alpha + (alpha - low_alpha) * cam**gamma)[..., None]
     elif threshold is None:
         strength = np.full((*cam.shape, 1), alpha, dtype=np.float32)
     else:
@@ -221,7 +223,7 @@ def main() -> None:
             heatmap = (color_map(combined_cam)[..., :3] * 255).astype(np.uint8)
             original_array = np.asarray(original)
             overlay = overlay_image(original_array, heatmap, combined_cam, args.alpha, args.activation_threshold,
-                                    args.low_alpha)
+                                    args.low_alpha, args.alpha_gamma)
             rendered = Image.fromarray(overlay)
             drawer = ImageDraw.Draw(rendered)
             labels: list[str] = []
@@ -238,7 +240,7 @@ def main() -> None:
                                  "x2": f"{box[2]:.2f}", "y2": f"{box[3]:.2f}"})
                 single_heatmap = (color_map(cams[detection_index - 1])[..., :3] * 255).astype(np.uint8)
                 single_overlay = overlay_image(original_array, single_heatmap, cams[detection_index - 1],
-                                               args.alpha, args.activation_threshold, args.low_alpha)
+                                               args.alpha, args.activation_threshold, args.low_alpha, args.alpha_gamma)
                 single_rendered = Image.fromarray(single_overlay)
                 if not args.no_box:
                     ImageDraw.Draw(single_rendered).rectangle(box, outline="white", width=3)
