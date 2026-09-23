@@ -20,6 +20,8 @@ def parse_args() -> argparse.Namespace:
                         help="Hide model annotations, titles, and axis titles for manual typesetting.")
     parser.add_argument("--compress-gap", action="store_true",
                         help="Use visibly broken x-axes to compress empty parameter/FLOPs ranges.")
+    parser.add_argument("--soft-compress", action="store_true",
+                        help="Continuously compress empty x-axis ranges without a visible axis break.")
     return parser.parse_args()
 
 
@@ -44,7 +46,8 @@ LABEL_OFFSETS = {
 
 def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: str,
                no_text: bool, xlim: tuple[float, float] | None = None,
-               ticks: tuple[float, ...] | None = None, show_y: bool = True) -> None:
+               ticks: tuple[float, ...] | None = None, show_y: bool = True,
+               soft_compress: bool = False) -> None:
     colors = plt.get_cmap("tab10").colors
     for index, row in enumerate(rows):
         x, y = float(row[x_key]), float(row["map50_95"])
@@ -58,12 +61,16 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
             offset = LABEL_OFFSETS.get(x_key, {}).get(row["model"], (5, 5))
             ax.annotate(row["model"], (x, y), xytext=offset, textcoords="offset points",
                         fontsize=8, fontweight="bold" if highlight else "normal")
-    ax.set_xscale("log")
+    if soft_compress:
+        ax.set_xscale("symlog", linthresh=5 if x_key == "params_m" else 10,
+                      linscale=0.55, base=10)
+    else:
+        ax.set_xscale("log")
     if xlim is None:
         if x_key == "params_m":
-            xlim, ticks = (1.2, 50), (2, 5, 10, 20, 50)
+            xlim, ticks = ((0.8, 50), (1, 2, 5, 10, 20, 50)) if soft_compress else ((1.2, 50), (2, 5, 10, 20, 50))
         else:
-            xlim, ticks = (3, 250), (5, 10, 20, 50, 100, 200)
+            xlim, ticks = ((1.5, 250), (2, 5, 10, 20, 50, 100, 200)) if soft_compress else ((3, 250), (5, 10, 20, 50, 100, 200))
     ax.set_xlim(*xlim)
     ax.xaxis.set_major_locator(FixedLocator(ticks))
     ax.xaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:g}"))
@@ -96,9 +103,11 @@ def main() -> None:
     if not args.compress_gap:
         figure, axes = plt.subplots(1, 2, figsize=(10.5, 4.1), constrained_layout=True)
         draw_panel(axes[0], rows, "params_m", "Parameters (M)",
-                   "(a) Performance-Efficiency Trade-off (mAP vs Parameters)", args.no_text)
+                   "(a) Performance-Efficiency Trade-off (mAP vs Parameters)", args.no_text,
+                   soft_compress=args.soft_compress)
         draw_panel(axes[1], rows, "flops_g", "FLOPs (G)",
-                   "(b) Performance-Efficiency Trade-off (mAP vs FLOPs)", args.no_text)
+                   "(b) Performance-Efficiency Trade-off (mAP vs FLOPs)", args.no_text,
+                   soft_compress=args.soft_compress)
     else:
         figure = plt.figure(figsize=(10.5, 4.1), constrained_layout=True)
         grid = figure.add_gridspec(1, 5, width_ratios=(1.05, 1.3, 0.18, 1.05, 1.3))
