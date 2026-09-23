@@ -23,6 +23,20 @@ def load_rows(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
+LABEL_OFFSETS = {
+    "params_m": {
+        "YOLOv5n": (7, -10), "YOLOv8n": (8, 4), "YOLO11n": (8, -13),
+        "YOLO12n": (8, 6), "YOLO26n": (8, 7),
+        "Deformable-DETR": (-80, 5), "Faster-RCNN": (8, 8),
+    },
+    "flops_g": {
+        "YOLOv5n": (8, -11), "YOLOv8n": (8, 4), "YOLO11n": (8, -13),
+        "YOLO12n": (8, 6), "YOLO26n": (8, 7),
+        "Deformable-DETR": (8, 7), "Faster-RCNN": (8, 8),
+    },
+}
+
+
 def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: str) -> None:
     colors = plt.get_cmap("tab10").colors
     for index, row in enumerate(rows):
@@ -31,7 +45,8 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
         color = "#d62728" if highlight else colors[index % len(colors)]
         ax.scatter(x, y, s=115 if highlight else 90, c=[color], edgecolors="black",
                    linewidths=0.7, zorder=3)
-        ax.annotate(row["model"], (x, y), xytext=(5, 5), textcoords="offset points",
+        offset = LABEL_OFFSETS.get(x_key, {}).get(row["model"], (5, 5))
+        ax.annotate(row["model"], (x, y), xytext=offset, textcoords="offset points",
                     fontsize=8, fontweight="bold" if highlight else "normal")
     ax.set_xscale("log")
     ax.set_xlabel(x_label, fontweight="bold")
