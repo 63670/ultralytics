@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--device", default="0")
     parser.add_argument("--alpha", type=float, default=0.42)
+    parser.add_argument("--colormap", default="turbo", choices=("turbo", "jet"))
     parser.add_argument("--activation-threshold", type=float, default=None,
                         help="Suppress weak CAM regions in overlays; e.g. 0.35 keeps the original image there.")
     parser.add_argument("--low-alpha", type=float, default=None,
@@ -146,7 +147,7 @@ def main() -> None:
     if not images:
         raise FileNotFoundError(f"No images found in {args.source}")
     args.output.mkdir(parents=True, exist_ok=True)
-    color_map = colormaps["turbo"]
+    color_map = colormaps[args.colormap]
     names = yolo.names
     metadata: list[dict[str, object]] = []
 
