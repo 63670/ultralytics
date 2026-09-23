@@ -32,11 +32,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--device", default="0")
     parser.add_argument("--alpha", type=float, default=0.42)
-    parser.add_argument("--method", choices=("gradcam", "layercam"), default="layercam",
-                        help="CAM variant; LayerCAM is sharper for intermediate feature maps.")
+    parser.add_argument("--method", choices=("gradcam", "gradcampp", "layercam"), default="layercam",
+                        help="CAM variant; Grad-CAM++ is suited to a selected target detection.")
     parser.add_argument("--conf", type=float, default=0.25)
     parser.add_argument("--iou", type=float, default=0.6)
     parser.add_argument("--max-det", type=int, default=16)
+    parser.add_argument("--target-index", type=int, default=0,
+                        help="One-based rank in final NMS detections; 0 explains every retained detection.")
     parser.add_argument("--no-box", action="store_true", help="Do not draw retained detection boxes.")
     return parser.parse_args()
 
@@ -143,6 +145,10 @@ def main() -> None:
                 (int(candidate), int(detection[5]), float(detection[4]), detection[:4].cpu().numpy())
                 for detection, candidate in zip(nms_detections[0], kept_indices[0])
             ]
+            if args.target_index:
+                if not 1 <= args.target_index <= len(detections):
+                    raise ValueError(f"--target-index must be 1 to {len(detections)} for {path.name}")
+                detections = [detections[args.target_index - 1]]
             if args.layer == "detect":
                 features = captured["features"]
                 assert isinstance(features, list)
@@ -173,6 +179,14 @@ def main() -> None:
                 gradient = feature.grad
                 if args.method == "gradcam":
                     weights = gradient.mean(dim=(2, 3), keepdim=True)
+                    cam_tensor = torch.relu((weights * feature).sum(dim=1))
+                elif args.method == "gradcampp":
+                    gradient_2 = gradient.square()
+                    gradient_3 = gradient_2 * gradient
+                    denominator = 2 * gradient_2 + feature.sum(dim=(2, 3), keepdim=True) * gradient_3
+                    alpha = gradient_2 / (denominator + 1e-7)
+                    alpha = torch.where(torch.isfinite(alpha), alpha, torch.zeros_like(alpha))
+                    weights = (alpha * torch.relu(gradient)).sum(dim=(2, 3), keepdim=True)
                     cam_tensor = torch.relu((weights * feature).sum(dim=1))
                 else:
                     cam_tensor = torch.relu((torch.relu(gradient) * feature).sum(dim=1))
