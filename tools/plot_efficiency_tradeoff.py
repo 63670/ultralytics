@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -55,26 +56,30 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
             continue
         highlight = row["highlight"].lower() == "true"
         color = "#d62728" if highlight else colors[index % len(colors)]
-        ax.scatter(x, y, s=185 if highlight else 150, c=[color], edgecolors="black",
+        display_x = math.sqrt(math.log10(max(x, 1))) if soft_compress else x
+        ax.scatter(display_x, y, s=185 if highlight else 150, c=[color], edgecolors="black",
                    linewidths=0.8, alpha=0.72, zorder=3)
         if not no_text:
             offset = LABEL_OFFSETS.get(x_key, {}).get(row["model"], (5, 5))
-            ax.annotate(row["model"], (x, y), xytext=offset, textcoords="offset points",
+            ax.annotate(row["model"], (display_x, y), xytext=offset, textcoords="offset points",
                         fontsize=8, fontweight="bold" if highlight else "normal")
-    if soft_compress:
-        ax.set_xscale("symlog", linthresh=5 if x_key == "params_m" else 10,
-                      linscale=0.55, base=10)
-    else:
+    if not soft_compress:
         ax.set_xscale("log")
-    if xlim is None:
+    if soft_compress:
+        max_value = 50 if x_key == "params_m" else 250
+        ax.set_xlim(-0.12, math.sqrt(math.log10(max_value)) + 0.06)
+        ax.set_xticks((0, 0.4, 0.8, 1.2))
+        ax.tick_params(axis="x", bottom=False, labelbottom=False)
+    elif xlim is None:
         if x_key == "params_m":
-            xlim, ticks = ((0.8, 50), (1, 2, 5, 10, 20, 50)) if soft_compress else ((1.2, 50), (2, 5, 10, 20, 50))
+            xlim, ticks = (1.2, 50), (2, 5, 10, 20, 50)
         else:
-            xlim, ticks = ((1.5, 250), (2, 5, 10, 20, 50, 100, 200)) if soft_compress else ((3, 250), (5, 10, 20, 50, 100, 200))
-    ax.set_xlim(*xlim)
-    ax.xaxis.set_major_locator(FixedLocator(ticks))
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:g}"))
-    ax.xaxis.set_minor_locator(NullLocator())
+            xlim, ticks = (3, 250), (5, 10, 20, 50, 100, 200)
+    if not soft_compress:
+        ax.set_xlim(*xlim)
+        ax.xaxis.set_major_locator(FixedLocator(ticks))
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:g}"))
+        ax.xaxis.set_minor_locator(NullLocator())
     if not show_y:
         ax.tick_params(axis="y", left=False, labelleft=False)
         ax.spines["left"].set_visible(False)
