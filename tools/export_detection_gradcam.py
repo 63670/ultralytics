@@ -11,6 +11,7 @@ import argparse
 import csv
 from pathlib import Path
 
+import cv2
 import numpy as np
 import torch
 from matplotlib import colormaps
@@ -43,6 +44,8 @@ def parse_args() -> argparse.Namespace:
                         help="Exponent before color mapping; values above 1 shift weak responses toward blue.")
     parser.add_argument("--blue-threshold", type=float, default=None,
                         help="Values at or below this activation use a fixed transparent blue; higher values are remapped.")
+    parser.add_argument("--blur-sigma", type=float, default=0.0,
+                        help="Gaussian smoothing of normalized CAMs; useful for reducing isolated activation peaks.")
     parser.add_argument("--method", choices=("gradcam", "gradcampp", "layercam"), default="layercam",
                         help="CAM variant; Grad-CAM++ is suited to a selected target detection.")
     parser.add_argument("--conf", type=float, default=0.25)
@@ -231,7 +234,10 @@ def main() -> None:
                 cam = np.asarray(Image.fromarray(cam).resize((args.imgsz, args.imgsz), Image.Resampling.BILINEAR))
                 cam = cam[pad_y:pad_y + resized_h, pad_x:pad_x + resized_w]
                 cam = np.asarray(Image.fromarray(cam).resize(original.size, Image.Resampling.BILINEAR))
-                cams.append(normalize(cam))
+                normalized_cam = normalize(cam)
+                if args.blur_sigma > 0:
+                    normalized_cam = cv2.GaussianBlur(normalized_cam, (0, 0), args.blur_sigma)
+                cams.append(normalized_cam)
             combined_cam = np.maximum.reduce(cams) if cams else np.zeros((original.height, original.width), dtype=np.float32)
             if args.color_gamma <= 0:
                 raise ValueError("--color-gamma must be > 0.")
