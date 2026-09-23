@@ -18,8 +18,11 @@ def main() -> None:
     source = json.loads(args.annotations.read_text(encoding="utf-8"))
     wanted = {line.strip() for line in args.images_file.read_text(encoding="utf-8").splitlines()
               if line.strip() and not line.lstrip().startswith("#")}
-    images = [image for image in source["images"] if image["file_name"] in wanted]
-    found = {image["file_name"] for image in images}
+    # COCO often stores paths such as ``test2017/name.jpg`` while the
+    # comparison list intentionally stores portable bare filenames.
+    images = [image for image in source["images"]
+              if image["file_name"] in wanted or Path(image["file_name"]).name in wanted]
+    found = {Path(image["file_name"]).name for image in images}
     missing = wanted - found
     if missing:
         raise ValueError(f"Images absent from COCO annotations: {sorted(missing)}")
