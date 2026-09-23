@@ -15,9 +15,9 @@ All values are the latest retained single-run results on the held-out test set
 | YOLO12n | Ultralytics | 2.56M | 7.3 | 94.3 | 60.9 |
 | YOLO26n | Ultralytics | 2.38M | 5.3 | 96.5 | 61.4 |
 | RT-DETRv2-R18 | Native COCO | 20.09M | 60.72 | 95.2 | **67.7** |
-| DETR-R50 | Native COCO | 41.56M | 38.82 | 96.4 | 53.6 |
-| Deformable DETR-R50 | Native COCO | 40.10M | 79.64 | **96.8** | 64.3 |
-| Faster R-CNN-R50 | Native COCO | 41.36M | 90.91 | 96.1 | 64.7 |
+| DETR-R50 | Native COCO | 41.28M | 77.25 | 96.4 | 53.6 |
+| Deformable DETR-R50 | Native COCO | 39.82M | 158.66 | **96.8** | 64.3 |
+| Faster R-CNN-R50 | Native COCO | 41.13M | 181.45 | 96.1 | 64.7 |
 | **DACP-Net** | **Ultralytics** | **3.39M** | **8.9** | **96.9** | 66.3 |
 
 ## Ablation Experiments
