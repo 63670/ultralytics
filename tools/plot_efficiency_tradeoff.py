@@ -15,6 +15,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path,
                         default=Path("runs/figures/efficiency_tradeoff.pdf"))
     parser.add_argument("--dpi", type=int, default=600)
+    parser.add_argument("--no-text", action="store_true",
+                        help="Hide model annotations, titles, and axis titles for manual typesetting.")
     return parser.parse_args()
 
 
@@ -37,7 +39,8 @@ LABEL_OFFSETS = {
 }
 
 
-def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: str) -> None:
+def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: str,
+               no_text: bool) -> None:
     colors = plt.get_cmap("tab10").colors
     for index, row in enumerate(rows):
         x, y = float(row[x_key]), float(row["map50_95"])
@@ -45,13 +48,15 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
         color = "#d62728" if highlight else colors[index % len(colors)]
         ax.scatter(x, y, s=115 if highlight else 90, c=[color], edgecolors="black",
                    linewidths=0.7, zorder=3)
-        offset = LABEL_OFFSETS.get(x_key, {}).get(row["model"], (5, 5))
-        ax.annotate(row["model"], (x, y), xytext=offset, textcoords="offset points",
-                    fontsize=8, fontweight="bold" if highlight else "normal")
+        if not no_text:
+            offset = LABEL_OFFSETS.get(x_key, {}).get(row["model"], (5, 5))
+            ax.annotate(row["model"], (x, y), xytext=offset, textcoords="offset points",
+                        fontsize=8, fontweight="bold" if highlight else "normal")
     ax.set_xscale("log")
-    ax.set_xlabel(x_label, fontweight="bold")
-    ax.set_ylabel("mAP@0.5:0.95 (%)", fontweight="bold")
-    ax.set_title(panel, loc="left", fontsize=11, fontweight="bold")
+    if not no_text:
+        ax.set_xlabel(x_label, fontweight="bold")
+        ax.set_ylabel("mAP@0.5:0.95 (%)", fontweight="bold")
+        ax.set_title(panel, loc="left", fontsize=11, fontweight="bold")
     ax.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.45, zorder=0)
     ax.set_ylim(50, 70)
 
@@ -62,9 +67,9 @@ def main() -> None:
     plt.rcParams.update({"font.family": "DejaVu Serif", "font.size": 9})
     figure, axes = plt.subplots(1, 2, figsize=(10.5, 4.1), constrained_layout=True)
     draw_panel(axes[0], rows, "params_m", "Parameters (M)",
-               "(a) Performance-Efficiency Trade-off (mAP vs Parameters)")
+               "(a) Performance-Efficiency Trade-off (mAP vs Parameters)", args.no_text)
     draw_panel(axes[1], rows, "flops_g", "FLOPs (G)",
-               "(b) Performance-Efficiency Trade-off (mAP vs FLOPs)")
+               "(b) Performance-Efficiency Trade-off (mAP vs FLOPs)", args.no_text)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(args.output, dpi=args.dpi, bbox_inches="tight")
     figure.savefig(args.output.with_suffix(".png"), dpi=args.dpi, bbox_inches="tight")
