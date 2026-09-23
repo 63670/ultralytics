@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export detection-conditioned Grad-CAM maps for an Ultralytics detector.
+"""Export detection-conditioned Grad-CAM or LayerCAM maps for an Ultralytics detector.
 
 For every image, the script selects the model's highest-confidence raw
 detection candidate and backpropagates that candidate's class score to a
@@ -31,6 +31,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--device", default="0")
     parser.add_argument("--alpha", type=float, default=0.42)
+    parser.add_argument("--method", choices=("gradcam", "layercam"), default="layercam",
+                        help="CAM variant; LayerCAM is sharper for intermediate feature maps.")
     parser.add_argument("--no-box", action="store_true", help="Do not draw the target prediction box.")
     return parser.parse_args()
 
@@ -124,8 +126,14 @@ def main() -> None:
             score.backward()
             feature = captured["feature"]
             gradient = feature.grad
-            weights = gradient.mean(dim=(2, 3), keepdim=True)
-            cam = torch.relu((weights * feature).sum(dim=1))[0].detach().float().cpu().numpy()
+            if args.method == "gradcam":
+                weights = gradient.mean(dim=(2, 3), keepdim=True)
+                cam_tensor = torch.relu((weights * feature).sum(dim=1))
+            else:
+                # Preserve spatial gradients instead of averaging them. This is
+                # particularly useful for compact fabric defects at P3.
+                cam_tensor = torch.relu((torch.relu(gradient) * feature).sum(dim=1))
+            cam = cam_tensor[0].detach().float().cpu().numpy()
             cam = np.asarray(Image.fromarray(cam).resize((args.imgsz, args.imgsz), Image.Resampling.BILINEAR))
             pad_x, pad_y, resized_w, resized_h = pad
             cam = cam[pad_y:pad_y + resized_h, pad_x:pad_x + resized_w]
