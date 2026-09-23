@@ -7,6 +7,7 @@ import csv
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FixedLocator, FuncFormatter, NullLocator
 
 
 def parse_args() -> argparse.Namespace:
@@ -53,6 +54,15 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
             ax.annotate(row["model"], (x, y), xytext=offset, textcoords="offset points",
                         fontsize=8, fontweight="bold" if highlight else "normal")
     ax.set_xscale("log")
+    if x_key == "params_m":
+        ax.set_xlim(2, 50)
+        ticks = (2, 5, 10, 20, 50)
+    else:
+        ax.set_xlim(4, 250)
+        ticks = (5, 10, 20, 50, 100, 200)
+    ax.xaxis.set_major_locator(FixedLocator(ticks))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:g}"))
+    ax.xaxis.set_minor_locator(NullLocator())
     if not no_text:
         ax.set_xlabel(x_label, fontweight="bold")
         ax.set_ylabel("mAP@0.5:0.95 (%)", fontweight="bold")
