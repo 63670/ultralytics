@@ -14,7 +14,7 @@ All values are the latest retained single-run results on the held-out test set
 | YOLO11n | Ultralytics | 2.58M | 6.4 | 0.950 | 0.596 |
 | YOLO12n | Ultralytics | 2.56M | 7.3 | 0.943 | 0.609 |
 | YOLO26n | Ultralytics | 2.38M | 5.3 | 0.965 | 0.614 |
-| RT-DETRv2-R18 | Native COCO | — | — | 0.952 | **0.677** |
+| RT-DETRv2-R18 | Native COCO | 20.09M | 60.72 | 0.952 | **0.677** |
 | DETR-R50 | Native COCO | — | — | 0.964 | 0.536 |
 | Deformable DETR-R50 | Native COCO | — | — | **0.968** | 0.643 |
 | Faster R-CNN-R50 | Native COCO | — | — | 0.961 | 0.647 |
