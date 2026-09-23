@@ -31,7 +31,8 @@ def main() -> None:
     grouped: dict[int, list[str]] = {}
     for detection in json.loads(args.predictions.read_text(encoding="utf-8")):
         image = images.get(detection["image_id"])
-        if image is None or (allowed is not None and image["file_name"] not in allowed):
+        if image is None or (allowed is not None and image["file_name"] not in allowed
+                             and Path(image["file_name"]).name not in allowed):
             continue
         score = float(detection.get("score", 1.0))
         if score < args.score_threshold:
@@ -43,7 +44,7 @@ def main() -> None:
         grouped.setdefault(detection["image_id"], []).append(line)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     for image_id, image in images.items():
-        if allowed is not None and image["file_name"] not in allowed:
+        if allowed is not None and image["file_name"] not in allowed and Path(image["file_name"]).name not in allowed:
             continue
         (args.output_dir / f"{Path(image['file_name']).stem}.txt").write_text(
             "\n".join(grouped.get(image_id, [])) + ("\n" if grouped.get(image_id) else ""),
