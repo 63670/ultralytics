@@ -69,7 +69,7 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
             continue
         highlight = row["highlight"].lower() == "true"
         color = "#d62728" if highlight else colors[index % len(colors)]
-        display_x = math.log10(max(x, 1)) ** 0.25 if soft_compress else x
+        display_x = math.log10(max(x, 1)) ** 0.15 if soft_compress else x
         ax.scatter(display_x, y, s=185 if highlight else 150, c=[color], edgecolors="black",
                    linewidths=0.8, alpha=0.72, zorder=3)
         labels.append((row["model"], display_x, y, highlight))
@@ -78,7 +78,7 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
     if soft_compress:
         values = [float(row[x_key]) for row in rows]
         minimum, maximum = min(values), max(values)
-        compress = lambda value: math.log10(max(value, 1)) ** 0.25
+        compress = lambda value: math.log10(max(value, 1)) ** 0.15
         ax.set_xlim(compress(minimum) - 0.008, compress(maximum) + 0.10)
         candidate_ticks = ((5, 10, 20, 40) if x_key == "params_m"
                            else (10, 20, 50, 100, 200))
