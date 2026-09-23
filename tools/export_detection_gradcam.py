@@ -25,7 +25,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--source", type=Path, required=True)
-    parser.add_argument("--layer", required=True, help="Module path, e.g. model.4.direction")
+    parser.add_argument("--layer", default="detect",
+                        help="Module path, or 'detect' to automatically use the matched detection-head scale.")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--device", default="0")
@@ -120,8 +121,6 @@ def main() -> None:
     yolo = YOLO(str(args.model))
     model = yolo.model.eval()
     modules = dict(model.named_modules())
-    if args.layer not in modules:
-        raise ValueError(f"Unknown layer {args.layer!r}.")
     device_name = args.device if args.device == "cpu" or args.device.startswith("cuda:") else f"cuda:{args.device}"
     device = torch.device(device_name)
     model.to(device)
@@ -129,7 +128,7 @@ def main() -> None:
     # parameter gradients disabled. Grad-CAM needs a backward graph.
     for parameter in model.parameters():
         parameter.requires_grad_(True)
-    captured: dict[str, torch.Tensor] = {}
+    captured: dict[str, object] = {}
 
     def forward_hook(_, __, output):
         if isinstance(output, (tuple, list)):
@@ -139,7 +138,23 @@ def main() -> None:
         output.retain_grad()
         captured["feature"] = output
 
-    handle = modules[args.layer].register_forward_hook(forward_hook)
+    if args.layer == "detect":
+        detect_candidates = [(name, module) for name, module in modules.items()
+                             if module.__class__.__name__ == "Detect"]
+        if not detect_candidates:
+            raise ValueError("Could not find a Detect module in this model.")
+
+        def detect_pre_hook(_, inputs):
+            features = list(inputs[0])
+            for feature in features:
+                feature.retain_grad()
+            captured["features"] = features
+
+        handle = detect_candidates[-1][1].register_forward_pre_hook(detect_pre_hook)
+    else:
+        if args.layer not in modules:
+            raise ValueError(f"Unknown layer {args.layer!r}.")
+        handle = modules[args.layer].register_forward_hook(forward_hook)
     images = source_images(args.source)
     if not images:
         raise FileNotFoundError(f"No images found in {args.source}")
@@ -158,11 +173,30 @@ def main() -> None:
             model.zero_grad(set_to_none=True)
             prediction = model(tensor)[0]
             detections = select_detections(prediction[0].detach(), args.conf, args.iou, args.max_det)
-            feature = captured["feature"]
+            if args.layer == "detect":
+                features = captured["features"]
+                assert isinstance(features, list)
+                candidate_counts = [feature.shape[2] * feature.shape[3] for feature in features]
+
+                def feature_for(candidate_id: int) -> tuple[torch.Tensor, int]:
+                    offset = 0
+                    for level, (feature, count) in enumerate(zip(features, candidate_counts)):
+                        if candidate_id < offset + count:
+                            return feature, level
+                        offset += count
+                    raise IndexError(f"Candidate {candidate_id} is outside detection-head outputs")
+            else:
+                feature = captured["feature"]
+                assert isinstance(feature, torch.Tensor)
+
             pad_x, pad_y, resized_w, resized_h = pad
             cams: list[np.ndarray] = []
             for target_index, (candidate_id, class_id, _, _) in enumerate(detections):
                 model.zero_grad(set_to_none=True)
+                if args.layer == "detect":
+                    feature, feature_level = feature_for(candidate_id)
+                else:
+                    feature_level = -1
                 feature.grad = None
                 score = prediction[0, 4 + class_id, candidate_id]
                 score.backward(retain_graph=target_index + 1 < len(detections))
@@ -189,7 +223,8 @@ def main() -> None:
                 labels.append(f"{label} {confidence:.3f}")
                 if not args.no_box:
                     drawer.rectangle(box, outline="white", width=3)
-                metadata.append({"image": path.name, "class_id": class_id, "class_name": label,
+                level = feature_for(candidate_id)[1] if args.layer == "detect" else -1
+                metadata.append({"image": path.name, "feature_level": level, "class_id": class_id, "class_name": label,
                                  "confidence": f"{confidence:.6f}",
                                  "x1": f"{box[0]:.2f}", "y1": f"{box[1]:.2f}",
                                  "x2": f"{box[2]:.2f}", "y2": f"{box[3]:.2f}"})
@@ -199,7 +234,7 @@ def main() -> None:
         handle.remove()
 
     with (args.output / "targets.csv").open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=["image", "class_id", "class_name", "confidence", "x1", "y1", "x2", "y2"])
+        writer = csv.DictWriter(file, fieldnames=["image", "feature_level", "class_id", "class_name", "confidence", "x1", "y1", "x2", "y2"])
         writer.writeheader()
         writer.writerows(metadata)
 
