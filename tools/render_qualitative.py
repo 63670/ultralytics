@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 
 CLASS_NAMES = ("row", "col", "hole")
@@ -27,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--threshold", type=float, default=0.25)
     parser.add_argument("--tile", type=int, default=256)
+    parser.add_argument("--title-font-size", type=int, default=18)
     parser.add_argument("--show-score", action="store_true")
     return parser.parse_args()
 
@@ -85,13 +86,18 @@ def main() -> None:
     if not names:
         raise ValueError("No image names found in --images-file")
     columns = [("Labels", args.labels_dir), *models]
-    header_h, pad = 26, 3
+    footer_h, pad = args.title_font_size + 14, 3
+    try:
+        title_font = ImageFont.truetype("DejaVuSans.ttf", args.title_font_size)
+    except OSError:
+        title_font = ImageFont.load_default()
     grid = Image.new("RGB", (len(columns) * (args.tile + pad) + pad,
-                              len(names) * (args.tile + pad) + header_h + pad), "white")
+                              len(names) * (args.tile + pad) + footer_h + pad), "white")
     draw = ImageDraw.Draw(grid)
     for col, (title, _) in enumerate(columns):
         x = pad + col * (args.tile + pad)
-        draw.text((x + 3, 5), title, fill="black")
+        draw.text((x + args.tile / 2, len(names) * (args.tile + pad) + pad + 5),
+                  title, fill="black", font=title_font, anchor="mt")
     for row, image_name in enumerate(names):
         image_path = args.images_dir / image_name
         if not image_path.exists():
@@ -102,7 +108,7 @@ def main() -> None:
             tile = draw_tile(image_path, label_path, args.tile, args.threshold,
                              args.show_score)
             x = pad + col * (args.tile + pad)
-            y = header_h + pad + row * (args.tile + pad)
+            y = pad + row * (args.tile + pad)
             grid.paste(tile, (x, y))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     grid.save(args.output, dpi=(300, 300))
