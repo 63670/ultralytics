@@ -84,6 +84,10 @@ def main() -> None:
     device_name = args.device if args.device == "cpu" or args.device.startswith("cuda:") else f"cuda:{args.device}"
     device = torch.device(device_name)
     model.to(device)
+    # Ultralytics checkpoints are loaded for inference and may have all
+    # parameter gradients disabled. Grad-CAM needs a backward graph.
+    for parameter in model.parameters():
+        parameter.requires_grad_(True)
     captured: dict[str, torch.Tensor] = {}
 
     def forward_hook(_, __, output):
