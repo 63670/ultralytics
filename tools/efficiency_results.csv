@@ -1,0 +1,11 @@
+model,params_m,flops_g,map50_95,highlight
+YOLOv5n,2.50,7.10,58.4,false
+YOLOv8n,3.01,8.10,59.3,false
+YOLO11n,2.58,6.40,59.6,false
+YOLO12n,2.56,7.30,60.9,false
+YOLO26n,2.38,5.30,61.4,false
+RT-DETR-R18,20.09,60.72,67.7,false
+DETR-R50,41.28,77.25,53.6,false
+Deformable-DETR,39.82,158.66,64.3,false
+Faster-RCNN,41.13,181.45,64.7,false
+Ours,3.39,8.90,66.3,true
