@@ -31,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=Path("tools/efficiency_results.csv"))
     parser.add_argument("--output", type=Path,
-                        default=Path("runs/figures/efficiency_tradeoff.pdf"))
+                        default=Path("runs/figures/efficiency_tradeoff.svg"))
     parser.add_argument("--dpi", type=int, default=600)
     parser.add_argument("--no-text", action="store_true",
                         help="Hide model annotations, titles, and axis titles for manual typesetting.")
@@ -139,7 +139,7 @@ def main() -> None:
     if not args.compress_gap:
         figure, axes = plt.subplots(1, 2, figsize=(12.5, 4.8), constrained_layout=True)
         labels_left = draw_panel(axes[0], rows, "params_m", "Param.(M)",
-                   "(a) Performance-Efficiency Trade-off (mAP vs Parameters)", args.no_text,
+                   "(a) Performance-Efficiency Trade-off (mAP vs Param.(M))", args.no_text,
                    soft_compress=args.soft_compress, model_labels=args.model_labels)
         labels_right = draw_panel(axes[1], rows, "flops_g", "FLOPs (G)",
                    "(b) Performance-Efficiency Trade-off (mAP vs FLOPs)", args.no_text,
