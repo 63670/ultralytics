@@ -13,7 +13,7 @@ from PIL import Image, ImageDraw
 
 
 CLASS_NAMES = ("row", "col", "hole")
-COLORS = ((33, 150, 243), (0, 188, 212), (255, 152, 0))
+COLORS = ((33, 150, 243), (0, 188, 212), (255, 255, 255))
 
 
 def parse_args() -> argparse.Namespace:
