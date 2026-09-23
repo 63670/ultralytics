@@ -20,6 +20,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dpi", type=int, default=600)
     parser.add_argument("--no-text", action="store_true",
                         help="Hide model annotations, titles, and axis titles for manual typesetting.")
+    parser.add_argument("--model-labels", action="store_true",
+                        help="Add automatically placed model labels and arrows.")
     parser.add_argument("--compress-gap", action="store_true",
                         help="Use visibly broken x-axes to compress empty parameter/FLOPs ranges.")
     parser.add_argument("--soft-compress", action="store_true",
@@ -57,7 +59,8 @@ def place_labels(ax, labels: list[tuple[str, float, float, bool]], figure) -> No
 def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: str,
                no_text: bool, xlim: tuple[float, float] | None = None,
                ticks: tuple[float, ...] | None = None, show_y: bool = True,
-               soft_compress: bool = False) -> list[tuple[str, float, float, bool]]:
+               soft_compress: bool = False,
+               model_labels: bool = False) -> list[tuple[str, float, float, bool]]:
     colors = plt.get_cmap("tab10").colors
     labels = []
     for index, row in enumerate(rows):
@@ -66,7 +69,7 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
             continue
         highlight = row["highlight"].lower() == "true"
         color = "#d62728" if highlight else colors[index % len(colors)]
-        display_x = math.sqrt(math.log10(max(x, 1))) if soft_compress else x
+        display_x = math.log10(max(x, 1)) ** 0.25 if soft_compress else x
         ax.scatter(display_x, y, s=185 if highlight else 150, c=[color], edgecolors="black",
                    linewidths=0.8, alpha=0.72, zorder=3)
         labels.append((row["model"], display_x, y, highlight))
@@ -75,10 +78,10 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
     if soft_compress:
         values = [float(row[x_key]) for row in rows]
         minimum, maximum = min(values), max(values)
-        compress = lambda value: math.sqrt(math.log10(max(value, 1)))
-        ax.set_xlim(compress(minimum) - 0.03, compress(maximum) + 0.22)
-        candidate_ticks = ((2.5, 5, 10, 20, 40) if x_key == "params_m"
-                           else (5, 10, 20, 50, 100, 200))
+        compress = lambda value: math.log10(max(value, 1)) ** 0.25
+        ax.set_xlim(compress(minimum) - 0.008, compress(maximum) + 0.10)
+        candidate_ticks = ((5, 10, 20, 40) if x_key == "params_m"
+                           else (10, 20, 50, 100, 200))
         visible_ticks = [value for value in candidate_ticks
                          if minimum * 0.94 <= value <= maximum * 1.06]
         ax.set_xticks([compress(value) for value in visible_ticks])
@@ -102,7 +105,7 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
         ax.set_title(panel, loc="left", fontsize=11, fontweight="bold")
     ax.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.45, zorder=0)
     ax.set_ylim(50, 70)
-    return [] if no_text else labels
+    return labels if model_labels and not no_text else []
 
 
 def add_break_marks(left, right) -> None:
@@ -123,11 +126,11 @@ def main() -> None:
         figure, axes = plt.subplots(1, 2, figsize=(12.5, 4.8), constrained_layout=True)
         labels_left = draw_panel(axes[0], rows, "params_m", "Parameters (M)",
                    "(a) Performance-Efficiency Trade-off (mAP vs Parameters)", args.no_text,
-                   soft_compress=args.soft_compress)
+                   soft_compress=args.soft_compress, model_labels=args.model_labels)
         labels_right = draw_panel(axes[1], rows, "flops_g", "FLOPs (G)",
                    "(b) Performance-Efficiency Trade-off (mAP vs FLOPs)", args.no_text,
-                   soft_compress=args.soft_compress)
-        if not args.no_text:
+                   soft_compress=args.soft_compress, model_labels=args.model_labels)
+        if args.model_labels and not args.no_text:
             figure.canvas.draw()
             figure.set_layout_engine(None)
             place_labels(axes[0], labels_left, figure)
@@ -140,14 +143,14 @@ def main() -> None:
         flops_left = figure.add_subplot(grid[0, 3])
         flops_right = figure.add_subplot(grid[0, 4], sharey=flops_left)
         label_sets = [
-            (param_left, draw_panel(param_left, rows, "params_m", "", "", args.no_text, (1.2, 6), (2, 5))),
-            (param_right, draw_panel(param_right, rows, "params_m", "", "", args.no_text, (18, 50), (20, 50), False)),
-            (flops_left, draw_panel(flops_left, rows, "flops_g", "", "", args.no_text, (3, 12), (5, 10))),
-            (flops_right, draw_panel(flops_right, rows, "flops_g", "", "", args.no_text, (35, 230), (50, 100, 200), False)),
+            (param_left, draw_panel(param_left, rows, "params_m", "", "", args.no_text, (1.2, 6), (2, 5), model_labels=args.model_labels)),
+            (param_right, draw_panel(param_right, rows, "params_m", "", "", args.no_text, (18, 50), (20, 50), False, model_labels=args.model_labels)),
+            (flops_left, draw_panel(flops_left, rows, "flops_g", "", "", args.no_text, (3, 12), (5, 10), model_labels=args.model_labels)),
+            (flops_right, draw_panel(flops_right, rows, "flops_g", "", "", args.no_text, (35, 230), (50, 100, 200), False, model_labels=args.model_labels)),
         ]
         add_break_marks(param_left, param_right)
         add_break_marks(flops_left, flops_right)
-        if not args.no_text:
+        if args.model_labels and not args.no_text:
             for axis, panel_labels in label_sets:
                 place_labels(axis, panel_labels, figure)
     args.output.parent.mkdir(parents=True, exist_ok=True)
