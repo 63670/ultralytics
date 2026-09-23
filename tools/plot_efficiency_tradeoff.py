@@ -12,6 +12,21 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator, FuncFormatter, NullLocator
 
 
+# Tableau 10: a widely used, colorblind-friendly palette for technical figures.
+MODEL_COLORS = {
+    "YOLOv5n": "#4E79A7",
+    "YOLOv8n": "#F28E2B",
+    "YOLO11n": "#59A14F",
+    "YOLO12n": "#B07AA1",
+    "YOLO26n": "#76B7B2",
+    "RT-DETR-R18": "#9C755F",
+    "DETR-R50": "#EDC948",
+    "Deformable-DETR": "#BAB0AC",
+    "Faster-RCNN": "#FF9DA7",
+    "Ours": "#E15759",
+}
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=Path("tools/efficiency_results.csv"))
@@ -61,17 +76,16 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
                ticks: tuple[float, ...] | None = None, show_y: bool = True,
                soft_compress: bool = False,
                model_labels: bool = False) -> list[tuple[str, float, float, bool]]:
-    colors = plt.get_cmap("tab10").colors
     labels = []
     for index, row in enumerate(rows):
         x, y = float(row[x_key]), float(row["map50_95"])
         if xlim is not None and not xlim[0] <= x <= xlim[1]:
             continue
         highlight = row["highlight"].lower() == "true"
-        color = "#d62728" if highlight else colors[index % len(colors)]
+        color = MODEL_COLORS.get(row["model"], "#4E79A7")
         display_x = math.log10(max(x, 1)) ** 0.15 if soft_compress else x
-        ax.scatter(display_x, y, s=185 if highlight else 150, c=[color], edgecolors="black",
-                   linewidths=0.8, alpha=0.72, zorder=3)
+        ax.scatter(display_x, y, s=290 if highlight else 245, c=[color], edgecolors="#1F1F1F",
+                   linewidths=0.9, alpha=0.78, zorder=3)
         labels.append((row["model"], display_x, y, highlight))
     if not soft_compress:
         ax.set_xscale("log")
