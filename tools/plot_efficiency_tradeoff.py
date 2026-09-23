@@ -104,7 +104,7 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
         if x_key == "params_m":
             xlim, ticks = (1, 100), (1, 2, 5, 10, 20, 50, 100)
         else:
-            xlim, ticks = (4, 350), (5, 10, 20, 50, 100, 200, 300)
+            xlim, ticks = (2, 350), (2, 5, 10, 20, 50, 100, 200, 300)
     if not soft_compress:
         ax.set_xlim(*xlim)
         ax.xaxis.set_major_locator(FixedLocator(ticks))
