@@ -88,9 +88,9 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
         ax.set_xticklabels([f"{value:g}" for value in visible_ticks])
     elif xlim is None:
         if x_key == "params_m":
-            xlim, ticks = (1.2, 50), (2, 5, 10, 20, 50)
+            xlim, ticks = (1, 100), (1, 2, 5, 10, 20, 50, 100)
         else:
-            xlim, ticks = (3, 250), (5, 10, 20, 50, 100, 200)
+            xlim, ticks = (4, 350), (5, 10, 20, 50, 100, 200, 300)
     if not soft_compress:
         ax.set_xlim(*xlim)
         ax.xaxis.set_major_locator(FixedLocator(ticks))
