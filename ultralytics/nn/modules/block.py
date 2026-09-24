@@ -37,6 +37,7 @@ __all__ = (
     "C2fAttn",
     "C2fCIB",
     "C2fDirectional",
+    "C2fDirectionalPre",
     "ContentAwareUpsample",
     "C2fPSA",
     "C3Ghost",
@@ -388,6 +389,19 @@ class C2fDirectional(C2f):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply C2f feature extraction followed by directional fusion."""
         return self.direction(super().forward(x))
+
+
+class C2fDirectionalPre(C2f):
+    """Apply residual directional texture encoding before C2f feature reuse."""
+
+    def __init__(self, c1: int, c2: int, n: int = 1, shortcut: bool = False, g: int = 1, e: float = 0.5):
+        """Initialize input-direction encoding followed by the unchanged C2f topology."""
+        super().__init__(c1, c2, n, shortcut, g, e)
+        self.direction = DirectionalConv(c1, c1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Encode horizontal, vertical, and local texture before C2f fusion."""
+        return super().forward(self.direction(x))
 
 
 class ContentAwareUpsample(nn.Module):
