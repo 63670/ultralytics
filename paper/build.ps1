@@ -6,6 +6,14 @@ try {
     # A trailing separator preserves the TeX installation's default search path.
     $env:TEXINPUTS = ".;./templates//;" + $previousTexInputs
     New-Item -ItemType Directory -Force build | Out-Null
+    # A manual pdflatex run from paper/ leaves root-level auxiliary files.
+    # They can shadow build/manuscript.aux and make citations appear unresolved.
+    foreach ($extension in @("aux", "bbl", "blg", "log", "out", "fls", "fdb_latexmk", "synctex.gz")) {
+        $staleArtifact = Join-Path $PSScriptRoot "manuscript.$extension"
+        if (Test-Path -LiteralPath $staleArtifact) {
+            Remove-Item -LiteralPath $staleArtifact -Force
+        }
+    }
     & $Python make_figures.py
     if ($LASTEXITCODE -ne 0) { throw "Figure generation failed." }
     & pdflatex -interaction=nonstopmode -halt-on-error -output-directory=build manuscript.tex
