@@ -1,0 +1,15 @@
+work/
+build/
+rendered/
+build-output.txt
+figures/tradeoff.pdf
+figures/tradeoff.svg
+figures/tradeoff.png
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz

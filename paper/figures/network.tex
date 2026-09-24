@@ -1,0 +1,32 @@
+\begin{tikzpicture}[x=1cm,y=1cm,>=Stealth,
+ b/.style={draw=black!65,rounded corners=2pt,align=center,font=\small,minimum height=0.8cm,text width=2.25cm,fill=blue!5},
+ a/.style={->,thick}, l/.style={font=\scriptsize,fill=white,inner sep=1pt}]
+ \node[b] (input) at (0,3) {Input $640\!\times\!640$};
+ \node[b] (stem) at (0,1.6) {Conv stem +\ C2f--WWTE ($/4$)};
+ \node[b] (c3) at (0,0) {C2f--WWTE\ $C_3$: $80\!\times\!80$};
+ \node[b] (c4) at (0,-1.9) {C2f--WWTE\ $C_4$: $40\!\times\!40$};
+ \node[b] (c5) at (0,-3.8) {C2f--WWTE + SPPF\ $C_5$: $20\!\times\!20$};
+ \node[b,fill=orange!12] (u4) at (3.0,-3.8) {LTFR $\times2$};
+ \node[b] (t4) at (3.0,-1.9) {Concat + C2f\ $T_4$: $40\!\times\!40$};
+ \node[b,fill=orange!12] (u3) at (3.0,0) {LTFR $\times2$};
+ \node[b] (p3) at (6,0) {Concat + C2f\ $P_3$: $80\!\times\!80$};
+ \node[b] (p4) at (6,-1.9) {Concat + C2f\ $P_4$: $40\!\times\!40$};
+ \node[b] (p5) at (6,-3.8) {Concat + C2f\ $P_5$: $20\!\times\!20$};
+ \node[b,fill=teal!9,text width=2.0cm,minimum height=3cm] (head) at (9,-1.9) {Unchanged\ YOLOv8\ detection head\\ horizontal / vertical / hole};
+ \draw[a] (input)--(stem); \draw[a] (stem)--(c3);
+ \draw[a] (c3)--node[l,left] {Conv $s=2$}(c4);
+ \draw[a] (c4)--node[l,left] {Conv $s=2$}(c5);
+ \draw[a] (c5)--(u4); \draw[a] (u4)--(t4); \draw[a] (c4)--(t4);
+ \draw[a] (t4)--(u3); \draw[a] (u3)--(p3);
+ \draw[a] (c3.north) -- ++(0,0.6) -| (p3.north);
+ \draw[a] (p3)--node[l,right] {Conv $s=2$}(p4);
+ \draw[a] (t4)--(p4);
+ \draw[a] (p4)--node[l,right] {Conv $s=2$}(p5);
+ \draw[a] (c5.south) -- ++(0,-0.65) -| (p5.south);
+ \draw[a] (p3.east) -- ++(.35,0) |- ([yshift=10mm]head.west);
+ \draw[a] (p4.east)--(head.west);
+ \draw[a] (p5.east) -- ++(.35,0) |- ([yshift=-10mm]head.west);
+ \node[font=\small\bfseries] at (0,4) {Backbone};
+ \node[font=\small\bfseries] at (4.5,4) {Top-down / bottom-up pyramid};
+ \node[font=\small\bfseries] at (9,4) {Detection};
+\end{tikzpicture}
