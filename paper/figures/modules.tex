@@ -1,32 +1,48 @@
 \begin{tikzpicture}[x=1cm,y=1cm,>=Stealth,
- b/.style={draw=black!65,rounded corners=1pt,font=\small,align=center,minimum height=.8cm,text width=2.3cm,fill=blue!5},
- a/.style={->,thick},l/.style={font=\scriptsize,fill=white,inner sep=1pt}]
- \node[font=\bfseries] at (0,3.8) {(a) WWTE};
- \node[b] (x) at (0,2.7) {C2f output $X$};
- \node[b,text width=1.7cm] (h) at (-2.1,1.2) {DWConv $1\!\times\!7$};
- \node[b,text width=1.7cm] (v) at (0,1.2) {DWConv $7\!\times\!1$};
- \node[b,text width=1.7cm] (d) at (2.1,1.2) {DWConv $3\!\times\!3$};
- \node[b] (cat) at (0,-.3) {Concatenate\ $1\!\times\!1$ Conv};
- \node[b] (sum) at (0,-1.8) {Residual addition\ $Y=X+F(X)$};
- \draw[a] (x.south) -- ++(0,-.25) -| (h.north);
- \draw[a] (x)--(v);
- \draw[a] (x.south) -- ++(0,-.25) -| (d.north);
- \draw[a] (h.south) -- ++(0,-.25) -| (cat.north);
- \draw[a] (v)--(cat);
- \draw[a] (d.south) -- ++(0,-.25) -| (cat.north);
- \draw[a] (cat)--(sum);
- \draw[a] (x.west) -- (-3.25,2.7) |- (sum.west);
- \node[font=\bfseries] at (8,3.8) {(b) LTFR};
- \node[b] (lx) at (8,2.7) {Input $X$};
- \node[b] (compress) at (6.4,1.2) {$1\!\times\!1$ compression\ $C\to\max(C/4,16)$};
- \node[b] (kernel) at (6.4,-.3) {$3\!\times\!3$ encoder\ pixel shuffle $\times2$};
- \node[b] (sm) at (6.4,-1.8) {Softmax over\ 25 kernel weights};
- \node[b] (patch) at (9.6,1.2) {$5\!\times\!5$ unfold\ zero padding};
- \node[b] (repeat) at (9.6,-.3) {Repeat patches\ to $2H\!\times\!2W$};
- \node[b,fill=orange!12] (out) at (9.6,-1.8) {Weighted sum\ output $2H\!\times\!2W$};
- \draw[a] (lx.south) -- ++(0,-.25) -| (compress.north);
- \draw[a] (lx.south) -- ++(0,-.25) -| (patch.north);
- \draw[a] (compress)--(kernel); \draw[a] (kernel)--(sm);
- \draw[a] (patch)--(repeat); \draw[a] (repeat)--(out);
- \draw[a] (sm)--(out);
+  base/.style={draw=black!65,rounded corners=1.2pt,very thick,font=\scriptsize,align=center,
+    minimum height=.72cm,text width=2.15cm,fill=gray!6},
+  kernel/.style={base,fill=orange!16},
+  reassembly/.style={base,fill=cyan!12},
+  output/.style={base,fill=green!14},
+  flow/.style={->,thick,black!80},
+  note/.style={font=\scriptsize\bfseries,align=center}]
+
+% (a) WWTE
+\node[font=\bfseries] at (0,4.05) {(a) WWTE};
+\node[base] (wx) at (0,3.05) {C2f output $X$};
+\node[base,text width=1.55cm] (wh) at (-2.05,1.45) {DWConv\\$1\!\times\!7$};
+\node[base,text width=1.55cm] (wv) at (0,1.45) {DWConv\\$7\!\times\!1$};
+\node[base,text width=1.55cm] (wl) at (2.05,1.45) {DWConv\\$3\!\times\!3$};
+\node[base] (wf) at (0,-.05) {Concatenate and $1\!\times\!1$ fusion};
+\node[output] (wy) at (0,-1.55) {Residual output\\$Y=X+F(X)$};
+\draw[flow] (wx.south) -- ++(0,-.28) -| (wh.north);
+\draw[flow] (wx) -- (wv);
+\draw[flow] (wx.south) -- ++(0,-.28) -| (wl.north);
+\draw[flow] (wh.south) -- ++(0,-.22) -| (wf.north);
+\draw[flow] (wv) -- (wf);
+\draw[flow] (wl.south) -- ++(0,-.22) -| (wf.north);
+\draw[flow] (wf) -- (wy);
+\draw[flow] (wx.west) -- (-3.15,3.05) |- (wy.west);
+
+% (b) LTFR
+\node[font=\bfseries] at (9.3,4.05) {(b) LTFR ($s=2$, $k=5$)};
+\node[base] (lx) at (9.3,3.05) {Input feature\\$X\in\mathbb{R}^{C\times H\times W}$};
+
+\node[kernel] (lc) at (6.4,1.5) {$1\!\times\!1$ channel compressor\\$C\!\rightarrow\! C_r=\max(C/4,16)$};
+\node[kernel] (le) at (6.4,.05) {$3\!\times\!3$ kernel encoder\\$C_r\!\rightarrow\!s^2k^2$};
+\node[kernel] (lk) at (6.4,-1.4) {PixelShuffle $\times2$ and Softmax\\$K\in\mathbb{R}^{k^2\times2H\times2W}$};
+
+\node[reassembly] (lu) at (12.2,1.5) {$5\!\times\!5$ unfold with padding\\local patches $P$};
+\node[reassembly] (la) at (12.2,.05) {Spatial alignment $\times2$\\$\widetilde{P}\in\mathbb{R}^{C\times k^2\times2H\times2W}$};
+\node[output,text width=3.3cm] (ly) at (9.3,-2.65) {Location-specific weighted reassembly\\$Y_{c,i,j}=\sum_{u=1}^{k^2}K_{u,i,j}\widetilde{P}_{c,u,i,j}$\\Output $Y\in\mathbb{R}^{C\times2H\times2W}$};
+
+\draw[flow] (lx.south) -- ++(0,-.25) -| (lc.north);
+\draw[flow] (lx.south) -- ++(0,-.25) -| (lu.north);
+\draw[flow] (lc) -- (le);
+\draw[flow] (le) -- (lk);
+\draw[flow] (lu) -- (la);
+\draw[flow] (lk.south) -- ++(0,-.30) -| (ly.north west);
+\draw[flow] (la.south) -- ++(0,-.30) -| (ly.north east);
+\node[note,text=orange!70!black,fill=white,inner sep=1pt] at (6.4,2.47) {Dynamic-kernel\\generation};
+\node[note,text=cyan!55!black,fill=white,inner sep=1pt] at (12.2,2.47) {Local-feature\\reassembly};
 \end{tikzpicture}

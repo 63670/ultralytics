@@ -117,7 +117,7 @@ Thus, the reassembly weights adapt to local texture rather than being spatially 
 \begin{figure*}[!t]
 \centering
 \resizebox{0.88\textwidth}{!}{\input{figures/modules.tex}}
-\caption{Internal structures of (a) WWTE and (b) LTFR. WWTE uses three depthwise branches and residual fusion. LTFR generates location-specific $5\times5$ reassembly kernels at scale $2$.}
+\caption{Internal structures of (a) WWTE and (b) LTFR. WWTE uses three depthwise branches and residual fusion. LTFR is a compact CARAFE-style $2\times$ operator: it predicts location-specific $5\times5$ kernels and reassembles aligned local feature patches.}
 \label{fig:modules}
 \end{figure*}
 
