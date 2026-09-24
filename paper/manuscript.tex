@@ -56,11 +56,20 @@ Unlike a fully autonomous control claim, the proposed workflow deliberately reta
 \subsection{Production Workflow}
 Fig.~\ref{fig:system} illustrates the intended operating sequence. An operator starts the circular knitting machine. A proximity switch reports the machine rotation state to the edge side and enables image acquisition and inference. The edge unit analyzes captured fabric images locally. When its decision logic identifies a candidate defect, it sends a stop request through the machine-side control interface and records the associated image and prediction. The candidate is shown to the operator for secondary confirmation. After the operator handles the event and restarts the machine, the production cycle resumes. Detection records and confirmation outcomes are uploaded to the cloud, where they can be reviewed, curated, and used during a later controlled model-update process.
 
+Fig.~\ref{fig:site} provides the actual on-machine installation. The wide view shows the circular knitting machine on the production floor. The upper inset highlights the camera directed at the knitting region, and the lower inset shows the edge-side touch display during inspection. Together with the workflow in Fig.~\ref{fig:system}, this installation evidence distinguishes the work from an offline-only image experiment.
+
 \begin{figure*}[!t]
 \centering
 \resizebox{0.98\textwidth}{!}{\input{figures/system_overview.tex}}
 \caption{Closed-loop inspection workflow for the circular knitting machine. Solid arrows describe the implemented production sequence provided for this study. The dashed cloud-to-review arrow represents offline data curation and later model tuning; it is not an online automatic-update claim. Hardware-specific timing and interlock details are intentionally not inferred and should be added from site measurements before submission.}
 \label{fig:system}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{site_print.jpg}
+\caption{Actual production-line installation on the circular knitting machine. The upper inset highlights the camera location; the lower inset shows the edge-side touch display while inspection is active. Colored callouts and insets are retained from the installation record.}
+\label{fig:site}
 \end{figure*}
 
 The design follows the edge-intelligence principle that time-sensitive perception and action remain near the physical process, while selected evidence can be retained centrally. Related IoT work combines local detection with a cloud or digital representation for broader inspection data management \cite{saleh2025pothole}. Here, the control consequence is more direct: the event is escalated to a worker, not accepted as a final autonomous verdict. This provides a pragmatic route for handling rare defects and avoiding silent model drift.
@@ -170,7 +179,7 @@ Fig.~\ref{fig:tradeoff} visualizes the parameter- and operation-accuracy trade-o
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=.97\textwidth]{tradeoff.pdf}
+\includegraphics[width=.97\textwidth]{efficiency.png}
 \caption{Accuracy-efficiency trade-off of the retained test results. Both horizontal axes use a logarithmic scale. Marker coordinates are the exact values in Table~\ref{tab:comparison}; the plot does not contain manual coordinate compression.}
 \label{fig:tradeoff}
 \end{figure*}
