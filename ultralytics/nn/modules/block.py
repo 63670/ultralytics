@@ -38,6 +38,7 @@ __all__ = (
     "C2fCIB",
     "C2fDirectional",
     "C2fDirectionalPre",
+    "C2fWWTE",
     "ContentAwareUpsample",
     "C2fPSA",
     "C3Ghost",
@@ -594,6 +595,34 @@ class Bottleneck(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply bottleneck with optional shortcut connection."""
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+
+
+class DirectionalBottleneck(Bottleneck):
+    """Bottleneck with WWTE between its spatial convolution stages."""
+
+    def __init__(
+        self, c1: int, c2: int, shortcut: bool = True, g: int = 1, k: tuple[int, int] = (3, 3), e: float = 0.5
+    ):
+        """Initialize spatial convolution, directional texture encoding, and output convolution."""
+        super().__init__(c1, c2, shortcut, g, k, e)
+        hidden_channels = int(c2 * e)
+        self.wwte = DirectionalConv(hidden_channels, hidden_channels)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Transform features with directional texture encoding inside the residual bottleneck path."""
+        y = self.cv2(self.wwte(self.cv1(x)))
+        return x + y if self.add else y
+
+
+class C2fWWTE(C2f):
+    """C2f with WWTE embedded in each progressive bottleneck branch."""
+
+    def __init__(self, c1: int, c2: int, n: int = 1, shortcut: bool = False, g: int = 1, e: float = 0.5):
+        """Preserve C2f splitting and aggregation while replacing internal bottlenecks with WWTE variants."""
+        super().__init__(c1, c2, n, shortcut, g, e)
+        self.m = nn.ModuleList(
+            DirectionalBottleneck(self.c, self.c, shortcut, g, k=((3, 3), (3, 3)), e=1.0) for _ in range(n)
+        )
 
 
 class BottleneckCSP(nn.Module):
