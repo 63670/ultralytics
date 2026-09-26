@@ -39,6 +39,7 @@ __all__ = (
     "C2fDirectional",
     "C2fDirectionalPre",
     "C2fWWTE",
+    "C2fWWTEGated",
     "ContentAwareUpsample",
     "C2fPSA",
     "C3Ghost",
@@ -403,6 +404,26 @@ class C2fDirectionalPre(C2f):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Encode horizontal, vertical, and local texture before C2f fusion."""
         return super().forward(self.direction(x))
+
+
+class C2fWWTEGated(C2f):
+    """C2f with one zero-initialized WWTE gate over its aggregated branch features."""
+
+    def __init__(self, c1: int, c2: int, n: int = 1, shortcut: bool = False, g: int = 1, e: float = 0.5):
+        """Keep C2f intact and insert directional modulation before its final fusion convolution."""
+        super().__init__(c1, c2, n, shortcut, g, e)
+        merged_channels = (2 + n) * self.c
+        self.wwte = DirectionalConv(merged_channels, merged_channels)
+        # Exact C2f behavior at initialization; directional residuals are introduced only when learned.
+        self.gamma = nn.Parameter(torch.zeros(1, merged_channels, 1, 1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply gated directional modulation once after C2f feature aggregation."""
+        y = list(self.cv1(x).chunk(2, 1))
+        y.extend(m(y[-1]) for m in self.m)
+        aggregated = torch.cat(y, 1)
+        directional_residual = self.wwte(aggregated) - aggregated
+        return self.cv2(aggregated + self.gamma * directional_residual)
 
 
 class ContentAwareUpsample(nn.Module):
