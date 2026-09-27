@@ -14,13 +14,13 @@
 \usetikzlibrary{arrows.meta,positioning}
 \graphicspath{{figures/}}
 
-\newcommand{\model}{DACP-Net\xspace}
+\newcommand{\model}{TFRA-YOLO\xspace}
 \newcommand{\ap}{AP@[.50:.95]}
 \newcommand{\pending}[1]{\textcolor{red}{[TBD: #1]}}
 
 \begin{document}
 
-\title{DACP-Net: Directional-Aware Content-Adaptive Pyramid Network for Closed-Loop Fabric Defect Inspection on Circular Knitting Machines}
+\title{TFRA-YOLO: Textile Feature Refinement and Reassembly YOLO for Closed-Loop Fabric Defect Inspection on Circular Knitting Machines}
 
 \author{\pending{Author Name(s)}%
 \thanks{\pending{Affiliation, city, country, and corresponding author information.}}%
@@ -29,7 +29,7 @@
 \maketitle
 
 \begin{abstract}
-Continuous fabric inspection on circular knitting machines must recognize sparse, elongated defects under repetitive texture while responding quickly enough to support production intervention. This paper presents a closed-loop edge-cloud inspection workflow and DACP-Net, a lightweight detector tailored to this setting. In the workflow, a proximity-switch rotation signal enables inspection at the edge; the edge device acquires fabric images and issues a local stop command when a defect is detected. The candidate defect is then presented to an operator for confirmation, and both the detection and the confirmation are retained in the cloud for subsequent data curation and offline model improvement. DACP-Net starts from YOLOv8n and introduces a warp--weft texture encoding (WWTE) block that jointly models horizontal, vertical, and local texture responses, together with a local texture-guided feature reassembly (LTFR) block that replaces the two fixed top-down upsampling operations with content-adaptive reassembly. On a production-line dataset of 403 images covering horizontal defects, vertical defects, and holes, the retained test split contains 81 images and 91 instances. DACP-Net obtains 66.3\% AP and 96.9\% AP50, improving YOLOv8n by 7.0 and 2.8 percentage points, respectively, with 3.39 M parameters and 8.9 G FLOPs at $640\times640$ input. The result indicates that direction-sensitive representation and adaptive pyramid reconstruction are useful for lightweight knitted-fabric inspection. The manuscript also states the deployment measurements still required before a production-performance claim is made.
+Continuous fabric inspection on circular knitting machines must recognize sparse, elongated defects under repetitive texture while responding quickly enough to support production intervention. This paper presents a closed-loop edge-cloud inspection workflow and TFRA-YOLO, a lightweight detector tailored to this setting. In the workflow, a proximity-switch rotation signal enables inspection at the edge; the edge device acquires fabric images and issues a local stop command when a defect is detected. The candidate defect is then presented to an operator for confirmation, and both the detection and the confirmation are retained in the cloud for subsequent data curation and offline model improvement. TFRA-YOLO starts from YOLOv8n and introduces a warp--weft texture encoding (WWTE) block that jointly models horizontal, vertical, and local texture responses, together with a local texture-guided feature reassembly (LTFR) block that replaces the two fixed top-down upsampling operations with local feature reassembly. On a production-line dataset of 403 images covering horizontal defects, vertical defects, and holes, the retained test split contains 81 images and 91 instances. TFRA-YOLO obtains 66.3\% AP and 96.9\% AP50, improving YOLOv8n by 7.0 and 2.8 percentage points, respectively, with 3.39 M parameters and 8.9 G FLOPs at $640\times640$ input. The result indicates that orthogonal texture representation and local pyramid reconstruction are useful for lightweight knitted-fabric inspection. The manuscript also states the deployment measurements still required before a production-performance claim is made.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -77,14 +77,14 @@ The design follows the edge-intelligence principle that time-sensitive perceptio
 \subsection{Operational Boundaries}
 The workflow separates three decisions: (i) whether machine rotation enables inspection, (ii) whether the detector produces a candidate defect, and (iii) whether an operator confirms and disposes of the event. The reported recognition experiments validate only the second decision on a held-out image split. Actual acquisition-to-stop latency, machine stop distance, false-stop rate on defect-free fabric, availability of the control interface, and the operator-confirmation rate require site measurements and are therefore not fabricated in this draft. These measurements are specified in the accompanying material checklist.
 
-\section{DACP-Net}
+\section{TFRA-YOLO}
 \subsection{Overview}
 \model is built from the YOLOv8n detector \cite{ultralytics2023}. As shown in Fig.~\ref{fig:network}, the backbone retains the original resolution hierarchy, but replaces the C2f output refinement at four stages with C2f--WWTE. In the head, the two top-down nearest-neighbor upsampling operations are replaced with LTFR. The standard concatenation, C2f fusion, bottom-up path, and three-scale detection head are retained. The detection scales are $P_3$, $P_4$, and $P_5$, corresponding to $80\times80$, $40\times40$, and $20\times20$ feature maps for a $640\times640$ input.
 
 \begin{figure*}[!t]
 \centering
-\resizebox{0.94\textwidth}{!}{\input{figures/network.tex}}
-\caption{Architecture of \model. C2f--WWTE replaces the four C2f refinement outputs in the backbone. LTFR replaces only the two top-down upsampling operations; the bottom-up fusion and prediction head follow YOLOv8n.}
+\includegraphics[width=\textwidth]{model.png}
+\caption{Architecture of \model. The Knitted Texture Fusion Backbone uses C2f--WWTE blocks to encode horizontal, vertical, and local texture cues. The Local Texture Reassembly Pyramid replaces the two top-down fixed upsampling operations with LTFR, while the bottom-up path and three-scale detection head follow YOLOv8n.}
 \label{fig:network}
 \end{figure*}
 
@@ -142,7 +142,7 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 \end{table}
 
 \subsection{Training and Evaluation}
-All models use the available pretrained initialization and $640\times640$ input. For the Ultralytics experiments, the retained configuration uses 300 maximum epochs, patience 80, batch size 16, automatic optimizer selection, and the framework's standard geometric and photometric augmentations; the DACP-Net checkpoint is initialized from \texttt{yolov8n.pt}. Evaluation is conducted on the held-out test split with a maximum of 16 detections per image. We report COCO-style AP averaged over IoU thresholds 0.50:0.95 and AP50. AP values are written as percentages.
+All models use the available pretrained initialization and $640\times640$ input. For the Ultralytics experiments, the retained configuration uses 300 maximum epochs, patience 80, batch size 16, automatic optimizer selection, and the framework's standard geometric and photometric augmentations; the TFRA-YOLO checkpoint is initialized from \texttt{yolov8n.pt}. Evaluation is conducted on the held-out test split with a maximum of 16 detections per image. We report COCO-style AP averaged over IoU thresholds 0.50:0.95 and AP50. AP values are written as percentages.
 
 The comparison table contains the latest retained checkpoint output for each model, rather than a mean over matched random seeds. FLOPs and parameter counts are reported at $[1,3,640,640]$. The values are suitable for a coarse efficiency comparison, but cross-framework FLOP accounting can omit unsupported operators; no cross-framework latency claim is made. DETR, Deformable DETR, Faster R-CNN, and RT-DETRv2 follow their respective repositories and pretrained backbones \cite{carion2020detr,zhu2021deformable,ren2015faster,lv2024rtdetrv2}.
 
