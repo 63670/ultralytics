@@ -57,6 +57,31 @@ Unlike a fully autonomous control claim, the proposed workflow deliberately reta
 \subsection{Production Workflow}
 Fig.~\ref{fig:system} illustrates the intended operating sequence. An operator starts the circular knitting machine. A proximity switch reports the machine rotation state to the edge side and enables image acquisition and inference. The edge unit analyzes captured fabric images locally. When its decision logic identifies a candidate defect, it sends a stop request through the machine-side control interface and records the associated image and prediction. The candidate is shown locally to the operator for secondary confirmation. After the operator handles the event and restarts the machine, the production cycle resumes. Detection records and local confirmation outcomes are uploaded to the cloud, where they are aggregated for defect-category statistics and process-improvement analysis.
 
+\subsection{On-Machine Deployment Configuration}
+The deployed edge terminal uses a Rockchip RK3566 processor running Android~13. Images are acquired with a SmartSens 1.3-megapixel industrial high-definition global-shutter camera at $1280\times1024$ resolution and a nominal 30~frames/s. The camera is installed 10~cm from the fabric, providing an approximately $16\times14$~cm field of view. On the deployed terminal, the reported inference time is 45~ms per processed image (approximately 22.2 processed frames/s). This rate is sufficient for the maximum stated machine condition: a 38-inch circular knitting machine at 30~revolutions/min has a circumference of approximately 3.03~m and a fabric-surface speed of approximately 1.52~m/s. Consequently, the surface advances approximately 6.8~cm during one 45-ms inference interval, which remains below the 14-cm shorter side of the field of view and yields at least 7.2~cm nominal overlap between adjacent processed views. The edge terminal is connected to the circular knitting machine control system by a direct wired interface; the measured time from a defect decision to transmission of the stop-control signal is below 10~ms. This value characterizes the electrical control-command path, not the physical time required for the machine to come to a full stop. The system is designed to support continuous 24/7 inspection. Table~\ref{tab:deployment} summarizes the configuration.
+
+\begin{table}[!t]
+\caption{On-machine deployment configuration.}
+\label{tab:deployment}
+\centering
+\footnotesize
+\begin{tabular}{p{0.31\columnwidth}p{0.49\columnwidth}}
+\toprule
+Item & Configuration or measured value \\
+\midrule
+Edge terminal & Rockchip RK3566; Android 13 \\
+Camera & SmartSens 1.3-megapixel industrial HD global-shutter camera \\
+Acquisition & $1280\times1024$; nominal 30 frames/s \\
+Installation geometry & 10~cm camera-to-fabric distance; approximately $16\times14$~cm field of view \\
+Inference time & 45~ms per processed image (approximately 22.2 processed frames/s) \\
+Maximum-speed coverage & 38-inch diameter and 30~revolutions/min: 1.52~m/s surface speed; 6.8~cm advance per processed view \\
+Control interface & Direct wired connection to the circular knitting machine controller \\
+Decision-to-command latency & $<10$~ms from defect decision to stop-control signal transmission \\
+Operating mode & Designed for continuous 24/7 inspection \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 Fig.~\ref{fig:site} provides the actual on-machine installation. The wide view shows the circular knitting machine on the production floor. The upper inset highlights the camera directed at the knitting region, and the lower inset shows the edge-side touch display during inspection. Together with the workflow in Fig.~\ref{fig:system}, this installation evidence distinguishes the work from an offline-only image experiment.
 
 \begin{figure*}[!t]
@@ -76,7 +101,7 @@ Fig.~\ref{fig:site} provides the actual on-machine installation. The wide view s
 The design follows the edge-intelligence principle that time-sensitive perception and action remain near the physical process, while selected evidence can be retained centrally. Related IoT work combines local detection with a cloud or digital representation for broader inspection data management \cite{saleh2025pothole}. Here, the control consequence is more direct: the event is escalated to a worker, not accepted as a final autonomous verdict. This provides a pragmatic route for handling rare defects while retaining the records needed to identify recurring defect patterns and process anomalies.
 
 \subsection{Operational Boundaries}
-The workflow separates three decisions: (i) whether machine rotation enables inspection, (ii) whether the detector produces a candidate defect, and (iii) whether an operator confirms and disposes of the event. The reported recognition experiments validate only the second decision on a held-out image split. Actual acquisition-to-stop latency, machine stop distance, false-stop rate on defect-free fabric, availability of the control interface, and the operator-confirmation rate require site measurements and are therefore not fabricated in this draft. These measurements are specified in the accompanying material checklist.
+The workflow separates three decisions: (i) whether machine rotation enables inspection, (ii) whether the detector produces a candidate defect, and (iii) whether an operator confirms and disposes of the event. The reported recognition experiments validate only the second decision on a held-out image split. The deployed configuration establishes geometric image coverage at the stated maximum machine speed, the camera, edge terminal, wired control interface, and decision-to-command latency, but does not yet quantify physical machine-stop time, false-stop rate on defect-free fabric, frame-delivery or drop statistics during continuous operation, or operator-confirmation rate. These measurements should be reported from a controlled site trial before submission.
 
 \section{TFRA-YOLO}
 \subsection{Overview}
