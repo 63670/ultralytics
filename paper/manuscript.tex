@@ -156,8 +156,9 @@ WWTE and LTFR have complementary roles. WWTE first creates direction-sensitive c
 
 \begin{figure*}[!t]
 \centering
-\resizebox{0.88\textwidth}{!}{\input{figures/modules.tex}}
-\caption{Internal structures of (a) WWTE and (b) LTFR. WWTE uses three depthwise branches and residual fusion. LTFR is a compact CARAFE-style $2\times$ operator: it predicts location-specific $5\times5$ kernels and reassembles aligned local feature patches.}
+\includegraphics[width=0.45\textwidth]{figures/wwte.png}\\[-0.5ex]
+\includegraphics[width=0.95\textwidth]{figures/ltfr.png}
+\caption{Internal structures of WWTE and LTFR. WWTE applies horizontal, vertical, and local depthwise branches followed by $1\times1$ fusion and residual addition. LTFR predicts location-specific $5\times5$ kernels and uses them to reassemble unfolded local feature patches during $2\times$ upsampling.}
 \label{fig:modules}
 \end{figure*}
 
