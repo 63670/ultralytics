@@ -4,15 +4,15 @@
  \node[box] (machine) at (0,0) {Circular knitting\ machine};
  \node[box] (edge) at (4.4,0) {Edge inspection\ and defect decision};
  \node[box] (worker) at (8.8,0) {Operator display\ and confirmation};
- \node[box,fill=teal!7] (cloud) at (13.2,0) {Cloud defect and\ confirmation records};
+ \node[box,fill=teal!7] (cloud) at (13.2,0) {Cloud defect records\ and statistics};
  \node[box] (switch) at (0,2.0) {Proximity switch\ rotation signal};
  \node[box] (camera) at (4.4,2.0) {Image acquisition\ of moving fabric};
- \node[box,fill=orange!8] (review) at (13.2,-2.1) {Future offline review\ and model tuning};
+ \node[box,fill=orange!8] (review) at (13.2,-2.1) {Defect statistics and\ process improvement};
  \draw[link] (machine) -- (switch);
  \draw[link] (switch) -- node[ann,above] {enable inspection} (camera);
  \draw[link] (camera) -- node[ann,right] {images} (edge);
  \draw[link] (edge) -- node[ann,above] {display defect} (worker);
- \draw[link] (worker) -- node[ann,above] {confirmation} (cloud);
+ \draw[link] (worker) -- node[ann,above] {local confirmation} (cloud);
  \draw[link] (edge.south) -- ++(0,-1.0) -| node[ann,pos=0.25,below] {local stop signal} (machine.south);
  \draw[link] (worker.south) -- ++(0,-2.0) -| node[ann,pos=0.3,below] {resolve defect; manual restart} ([xshift=-5mm]machine.south);
  \draw[link] (edge.north east) -- ++(0.35,0.55) -- node[ann,above] {defect upload} (13.2,0.95) -- (cloud.north);
