@@ -7,6 +7,7 @@
 \usepackage{cite}
 \usepackage{graphicx}
 \usepackage{multirow}
+\usepackage{placeins}
 \usepackage{tikz}
 \usepackage{xcolor}
 \usepackage{xspace}
@@ -220,6 +221,9 @@ The present evidence supports a promising lightweight detector on a real product
 \section{Conclusion}
 This work presents a closed-loop framework for defect inspection on a circular knitting machine and \model, a compact direction- and content-adaptive detector. The workflow couples rotation-aware edge inspection, local stop signaling, human confirmation, and cloud-side record retention. The detector combines WWTE for horizontal, vertical, and local knitted-texture encoding with LTFR for adaptive feature-pyramid reconstruction. On the retained test split, \model improves YOLOv8n from 59.3\% to 66.3\% AP at 3.39 M parameters and 8.9 G FLOPs. The next step is not merely more offline accuracy: it is a disciplined site evaluation of sensing-to-stop latency, false-stop behavior, confirmation outcomes, and grouped generalization across production conditions.
 
+% Place all preceding figures before the reference list without forcing a
+% single-column page break in the two-column bibliography.
+\FloatBarrier
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
