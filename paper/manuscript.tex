@@ -92,8 +92,8 @@ Fig.~\ref{fig:site} provides the actual on-machine installation. The wide view s
 
 \begin{figure*}[!t]
 \centering
-\resizebox{0.98\textwidth}{!}{\input{figures/system_overview.tex}}
-\caption{Closed-loop inspection workflow for the circular knitting machine. Solid arrows describe the latency-critical local production sequence. Dashed arrows describe cloud digital-twin synchronization, defect statistics, process improvement, and authorized remote supervisory control. The wired local defect-to-stop path does not depend on cloud connectivity. Hardware-specific timing and interlock details are intentionally not inferred and should be added from site measurements before submission.}
+\includegraphics[width=0.86\textwidth]{figures/overview.png}
+\caption{System overview of the deployed circular-knitting inspection setup. A Hall sensor reports the machine rotation state to the edge terminal; the industrial camera sends images through a SerDes link; the edge terminal issues the wired electrical stop-control signal to the machine; and the cloud platform exchanges status and inspection records through MQTT.}
 \label{fig:system}
 \end{figure*}
 
