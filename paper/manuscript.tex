@@ -296,6 +296,15 @@ The \model checkpoint obtains 61.7\%, 73.8\%, and 63.4\% AP for horizontal defec
 \label{fig:qualitative}
 \end{figure*}
 
+Fig.~\ref{fig:heatmaps} further compares the activation visualizations produced by the official Ultralytics visualization routine for the YOLOv8n baseline and \model. Each row corresponds to the same test image, with the original image, baseline visualization, and TFRA-YOLO visualization arranged from left to right. These maps are used only as qualitative evidence of where the detectors respond; the AP results in Tables~\ref{tab:comparison} and~\ref{tab:ablation} remain the basis for the quantitative comparison.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/heatmap_comparison.png}
+\caption{Qualitative activation visualization on three selected test images. The left, middle, and right columns show the original images, YOLOv8n visualizations, and TFRA-YOLO visualizations, respectively. Each visualization is generated with the same official Ultralytics routine.}
+\label{fig:heatmaps}
+\end{figure*}
+
 \subsection{Limitations and Submission-Ready Validation}
 The present evidence supports a promising lightweight detector on a real production-line image set, but it does not yet establish production reliability. First, the test split is small and category-imbalanced. Second, FLOPs are not a substitute for end-to-end edge latency, especially when image capture, preprocessing, postprocessing, control communication, and physical stopping are part of the operational loop. Finally, the operator's confirmation records are intended to improve defect statistics and process analysis; their actual acceptance rate and operational value have not yet been measured. These points define a concrete validation plan, rather than weaknesses that should be concealed.
 
