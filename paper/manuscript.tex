@@ -92,6 +92,8 @@ The training and deployment models use different representations. Training produ
 
 Fig.~\ref{fig:site} provides the actual on-machine installation. The wide view shows the circular knitting machine on the production floor. The upper inset highlights the camera directed at the knitting region, and the lower inset shows the edge-side touch display during inspection. Together with the workflow in Fig.~\ref{fig:system}, this installation evidence distinguishes the work from an offline-only image experiment.
 
+Fig.~\ref{fig:cloud} shows the corresponding cloud IoT platform. The platform provides a portal view, defect-count trend statistics, device status and remote configuration, and a review page for uploaded defect records. These cloud functions support supervisory operation and process analysis; they are separated from the latency-critical local wired stop path.
+
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.86\textwidth]{figures/overview.png}
@@ -104,6 +106,13 @@ Fig.~\ref{fig:site} provides the actual on-machine installation. The wide view s
 \includegraphics[width=\textwidth]{site_print.jpg}
 \caption{Actual production-line installation on the circular knitting machine. The upper inset highlights the camera location; the lower inset shows the edge-side touch display while inspection is active. Colored callouts and insets are retained from the installation record.}
 \label{fig:site}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/cloud.png}
+\caption{Cloud IoT platform for the deployed inspection system. The four panels show the platform portal, defect-count trend dashboard, device-state and remote-configuration interface, and uploaded defect-record review interface, respectively. Cloud communication supports status visualization, statistics, and authorized supervision, whereas the defect-to-stop control path remains local and wired.}
+\label{fig:cloud}
 \end{figure*}
 
 The design follows the edge-intelligence principle that time-sensitive perception and action remain near the physical process, while selected evidence can be retained centrally. Here, the control consequence is more direct: the event is escalated to a worker, not accepted as a final autonomous verdict. This provides a pragmatic route for handling rare defects while retaining the records needed to identify recurring defect patterns and process anomalies.
