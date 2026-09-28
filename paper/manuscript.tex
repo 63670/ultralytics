@@ -50,8 +50,8 @@ Beyond detector design, practical deployment requires inference to be synchroniz
 
 The main contributions of our work are as follows.
 \begin{itemize}
-  \item We propose the warp--weft texture encoding (WWTE) module and integrate it after selected C2f stages of YOLOv8n. Its horizontal, vertical, and local depthwise branches explicitly encode the three characteristic forms of knitted-texture interruption while residual fusion preserves the original C2f representation.
-  \item We design the local texture-guided feature reassembly (LTFR) pyramid for \model. LTFR replaces the two fixed nearest-neighbor top-down upsampling operations with location-specific reassembly, allowing coarse semantic features to be reconstructed according to local knitted texture before multi-scale detection.
+  \item We introduce a warp--weft texture encoding (WWTE) module that explicitly decomposes horizontal, vertical, and compact local texture cues and fuses them with the baseline C2f representation, providing a lightweight texture-specific inductive bias for circular-knitted defect detection.
+  \item We develop a local texture-guided feature reassembly (LTFR) pyramid that replaces fixed nearest-neighbor upsampling with location-adaptive reconstruction, improving the preservation of weak defect structures during top-down multi-scale fusion.
   \item We implement a cloud-edge inspection prototype for circular knitting machines that integrates rotation-synchronized sensing, RK3566 edge inference, local wired stop control, and cloud-based digital-twin monitoring. The design keeps the latency-critical intervention loop local while supporting centralized defect statistics and device supervision.
 \end{itemize}
 
