@@ -136,6 +136,13 @@ Y=X+F(X).
 
 Equation~\eqref{eq:wwte-residual} is important for an edge-deployed adaptation: the C2f feature $X$ remains directly available if a directional response is unhelpful, while $F(X)$ adds only the learned, task-specific texture cue. The design is related to, but not equivalent to, asymmetric convolution blocks \cite{ding2019acnet}: it uses depthwise directional paths, three-way concatenation, and a learned pointwise fusion within the existing C2f structure. Its intended effect is therefore selective sensitivity to elongated horizontal and vertical discontinuities without sacrificing the compact context used for holes.
 
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/wwte.png}
+\caption{WWTE structure. A C2f feature is processed by horizontal, vertical, and local depthwise branches, followed by channel concatenation, $1\times1$ fusion, and residual addition.}
+\label{fig:wwte}
+\end{figure}
+
 \subsection{Local Texture-Guided Feature Reassembly}
 The features enriched by WWTE must next be passed from a coarse semantic level to a finer detection level. Fixed nearest-neighbor upsampling simply copies a source value to a $2\times2$ region; it has no mechanism to decide whether the copied response corresponds to regular fabric texture, a thin directional break, or a defect boundary. This limitation is most consequential in the two top-down transitions, where coarse semantic features must be aligned with the high-resolution texture evidence used by the $P_4$ and $P_3$ detectors. LTFR therefore replaces only these two fixed upsampling operations; the original concatenation, C2f fusion, bottom-up path, and detection head remain unchanged.
 
@@ -152,14 +159,13 @@ Y_{i,j}=\sum_{u=1}^{25}K_{i,j,u}\mathcal{N}_{i,j,u}(X).
 
 Unlike a spatially shared interpolation kernel, Eq.~\eqref{eq:ltfr-reassembly} allows a location near a thin defect or a texture boundary to select a different local mixture from a location within regular fabric. The channel-compression stage bounds the overhead of predicting these kernels, while the $5\times5$ neighborhood provides more local support than a copied source pixel. LTFR is not claimed as a new generic reassembly primitive; its contribution here is the lightweight placement of input-dependent reassembly at the two texture-critical top-down transitions of YOLOv8n.
 
-WWTE and LTFR have complementary roles. WWTE first creates direction-sensitive cues in the backbone; LTFR then propagates and aligns those cues during top-down reconstruction instead of indiscriminately replicating them. The component ablation in Table~\ref{tab:ablation} tests this design: WWTE produces the larger isolated gain, LTFR still improves the baseline on its own, and their combination yields the best result. Fig.~\ref{fig:modules} details both modules.
+WWTE and LTFR have complementary roles. WWTE first creates direction-sensitive cues in the backbone; LTFR then propagates and aligns those cues during top-down reconstruction instead of indiscriminately replicating them. The component ablation in Table~\ref{tab:ablation} tests this design: WWTE produces the larger isolated gain, LTFR still improves the baseline on its own, and their combination yields the best result. Figs.~\ref{fig:wwte} and~\ref{fig:ltfr} detail the two modules.
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.45\textwidth]{figures/wwte.png}\\[-0.5ex]
-\includegraphics[width=0.95\textwidth]{figures/ltfr.png}
-\caption{Internal structures of WWTE and LTFR. WWTE applies horizontal, vertical, and local depthwise branches followed by $1\times1$ fusion and residual addition. LTFR predicts location-specific $5\times5$ kernels and uses them to reassemble unfolded local feature patches during $2\times$ upsampling.}
-\label{fig:modules}
+\includegraphics[width=0.92\textwidth]{figures/ltfr.png}
+\caption{LTFR structure. The upper path predicts location-specific $5\times5$ reassembly kernels, and the lower path unfolds and aligns local feature patches. Their element-wise product is summed along the kernel dimension to produce a $2\times$ upsampled feature.}
+\label{fig:ltfr}
 \end{figure*}
 
 \section{Experimental Protocol}
@@ -183,7 +189,32 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 \end{table}
 
 \subsection{Training and Evaluation}
-All models use the available pretrained initialization and $640\times640$ input. For the Ultralytics experiments, the retained configuration uses 300 maximum epochs, patience 80, batch size 16, automatic optimizer selection, and the framework's standard geometric and photometric augmentations; the TFRA-YOLO checkpoint is initialized from \texttt{yolov8n.pt}. Evaluation is conducted on the held-out test split with a maximum of 16 detections per image.
+Table~\ref{tab:implementation} summarizes the implementation protocol used for the Ultralytics experiments. TFRA-YOLO and its direct YOLOv8n baseline are initialized from \texttt{yolov8n.pt}; the remaining comparison models use the available official pretrained initialization in their respective repositories. Evaluation is conducted on the held-out test split with a maximum of 16 detections per image.
+
+\begin{table*}[!t]
+\caption{Implementation protocol and training hyperparameters.}
+\label{tab:implementation}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{p{0.22\textwidth}p{0.70\textwidth}}
+\toprule
+Item & Specification \\
+\midrule
+Training hardware & NVIDIA GeForce RTX 3090 GPU (24 GB) \\
+Software & Ubuntu 24.04, Python 3.10.20, PyTorch 2.4.1+cu124, and Ultralytics 8.4.140 \\
+Model initialization & TFRA-YOLO and YOLOv8n: \texttt{yolov8n.pt}; other baselines: the available official pretrained checkpoint in the corresponding repository \\
+Input resolution & $640\times640$ \\
+Batch size / data workers & 16 / 8 \\
+Maximum epochs / early stopping patience & 300 / 80 epochs \\
+Optimizer & Ultralytics automatic optimizer selection \\
+Data augmentation & Standard Ultralytics geometric and photometric augmentations; no augmentation hyperparameter was manually overridden \\
+Checkpoint retained for testing & Framework-selected best validation checkpoint \\
+Test protocol & Held-out test split, maximum 16 detections per image \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1.0}
+\end{table*}
 
 \subsection{Evaluation Metrics}
 We use the COCO detection protocol. For a predicted box $B_p$ and a ground-truth box $B_g$, intersection over union (IoU) is defined as $\operatorname{IoU}(B_p,B_g)=|B_p\cap B_g|/|B_p\cup B_g|$. At an IoU threshold $t$, a prediction is counted as a true positive only when it has the correct class and is matched one-to-one to an as-yet unmatched ground-truth instance; all remaining predictions are false positives and unmatched ground-truth instances are false negatives. For each class $c$, $\operatorname{AP}_c(t)$ is the area under its interpolated precision--recall curve. With $C=3$ classes, the reported AP and AP50 are
