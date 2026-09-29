@@ -68,7 +68,7 @@ The two proposed components target different stages of feature processing. DTE f
 \end{figure*}
 
 \subsection{Directional Texture Encoding}
-The visual cue of a defect in circular-knitted fabric is often a local disruption of repetitive texture rather than an isolated object boundary. Such disruptions commonly appear in horizontally elongated, vertically elongated, or compact local forms. A standard C2f block can learn these patterns implicitly through local feature aggregation, but it does not explicitly separate directional and compact texture responses. DTE is therefore introduced to encode these complementary structures with horizontal, vertical, and local branches. 
+The visual cue of a defect in circular-knitted fabric is often a local disruption of repetitive texture rather than an isolated object boundary. Such disruptions commonly appear in horizontally elongated, vertically elongated, or compact local forms. A standard C2f block can learn these patterns implicitly through local feature aggregation, but it does not explicitly separate directional and compact texture responses. DTE is therefore introduced to encode these complementary structures with horizontal, vertical, and local branches.
 For a C2f output $X\in\mathbb{R}^{C\times H\times W}$, DTE first forms three depthwise branch responses:
 \begin{align}
 F_h &= \operatorname{DW}_{1\times7}(X), \label{eq:dte-horizontal}\\
