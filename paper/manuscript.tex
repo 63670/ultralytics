@@ -236,7 +236,8 @@ Table~\ref{tab:comparison} compares \model with the retained baselines. \model a
 \label{tab:comparison}
 \centering
 \small
-\begin{tabular}{lrrrr}
+\renewcommand{\arraystretch}{1.06}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrr}
 \toprule
 Model & Params (M) & FLOPs (G) & AP50 (\%) & AP (\%) \\
 \midrule
@@ -260,7 +261,8 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 \multicolumn{5}{l}{\textit{Ours}} \\
 \model & 3.39 & 8.90 & \textbf{96.9} & \underline{66.3} \\
 \bottomrule
-\end{tabular}
+\end{tabular*}
+\renewcommand{\arraystretch}{1.0}
 \end{table*}
 
 Fig.~\ref{fig:tradeoff} visualizes the parameter- and operation-accuracy trade-off without shifting any data coordinates. The position of \model in the low-parameter region is consistent with the tabulated result. Because the horizontal axes are logarithmic, the visual is intended to show scale rather than imply a linear performance-efficiency relationship.
