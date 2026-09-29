@@ -46,18 +46,19 @@ For circular-knitted fabric inspection, two texture-specific limitations remain 
 
 Based on this motivation, we develop \model to introduce texture-specific inductive biases at both feature encoding and feature reconstruction stages. To address the first limitation, we introduce a directional texture encoding (DTE) module after selected backbone stages. DTE separately models horizontal, vertical, and compact local texture evidence, while residual fusion retains the baseline representation and augments it with directional texture cues. To address the second limitation, we introduce a local texture-guided feature reassembly (LTFR) pyramid that replaces fixed nearest-neighbor top-down upsampling with location-specific feature reassembly. \model preserves the lightweight single-stage YOLO detection paradigm while introducing directional texture encoding in the backbone and content-adaptive reconstruction in the top-down feature pyramid.
 
-Beyond detector design, practical deployment requires inference to be synchronized with the circular knitting machine and to support low-latency local intervention. We therefore integrate \model into a cloud-edge inspection system comprising rotation-synchronized image acquisition, RK3566-based edge inference, local wired stop control, and a cloud digital-twin platform. The Hall sensor provides machine-rotation information used to synchronize the inspection cycle. Once a defect is detected, the edge terminal immediately triggers the local wired stop-control path, after which the detection result is displayed for on-site operator inspection and troubleshooting. Defect records and device states are synchronized to the cloud platform for status visualization, defect statistics, and production-quality analysis, while the latency-critical stop-control loop remains entirely local and does not depend on cloud communication.
+Beyond detector design, practical deployment on circular knitting machines requires inspection to be synchronized with machine rotation and to support low-latency local intervention. We therefore integrate TFRA-YOLO into a cloud-edge inspection system that combines image acquisition synchronized with machine rotation, RK3566-based edge inference, and cloud-based IoT monitoring. The latency-critical intervention loop remains entirely local, while defect records and device states are synchronized with the cloud IoT platform for status visualization and production-quality analysis.
 
 The main contributions of our work are as follows.
 \begin{itemize}
   \item We introduce a directional texture encoding (DTE) module that explicitly models horizontal, vertical, and compact local texture cues and fuses them with the baseline backbone representation, providing a lightweight texture-specific inductive bias for circular-knitted defect detection.
   \item We develop a local texture-guided feature reassembly (LTFR) pyramid that replaces fixed nearest-neighbor upsampling with location-adaptive reconstruction, enabling content-adaptive reconstruction of local defect structures during top-down multi-scale fusion.
-  \item We implement a cloud-edge inspection prototype for circular knitting machines that integrates rotation-synchronized sensing, RK3566 edge inference, local wired stop control, and cloud-based digital-twin monitoring. The design keeps the latency-critical intervention loop local while supporting centralized defect statistics and device supervision.
+  \item We implement a cloud-edge inspection prototype that keeps the latency-critical intervention loop local while supporting centralized defect statistics and device supervision.
 \end{itemize}
 
-\section{Proposed Method}
+\section{Method}
 \subsection{TFRA-YOLO Architecture}
-\model is instantiated on the YOLOv8n detector \cite{ultralytics2023}, which is selected as the baseline considering its deployment performance on the target RK3566 platform and its architectural extensibility \cite{rockchipmodelzoo}. As shown in Fig.~\ref{fig:network}, the backbone retains the original resolution hierarchy, but replaces the C2f output refinement at four stages with C2f--DTE. In the head, the two top-down nearest-neighbor upsampling operations are replaced with LTFR. The standard concatenation, C2f fusion, bottom-up path, and three-scale detection head are retained. The detection scales are $P_3$, $P_4$, and $P_5$, corresponding to $80\times80$, $40\times40$, and $20\times20$ feature maps for a $640\times640$ input.
+\model is built on YOLOv8n\cite{ultralytics2023} and consists of three main components: a directional texture encoding backbone, a local texture-guided reassembly pyramid, and a multi-scale detection head. YOLOv8n is selected as the baseline because it provides favorable inference efficiency on the target RK3566 platform while retaining sufficient architectural flexibility for texture-specific modification.\cite{rockchipmodelzoo} As shown in Fig. 1, the directional texture encoding backbone introduces DTE after selected C2f stages to strengthen the representation of horizontally extended, vertically extended, and compact local texture disruptions. The local texture-guided reassembly pyramid replaces the fixed nearest-neighbor upsampling operations with LTFR, allowing higher-resolution features to be reconstructed according to local content before multi-scale fusion. The fused pyramid features are then forwarded to the detection head for defect classification and localization.
+The two proposed components target different stages of feature processing. DTE focuses on extracting direction-sensitive texture cues from the repetitive knitted background, whereas LTFR focuses on reconstructing and propagating these cues across feature scales.
 
 \begin{figure*}[!t]
 \centering
@@ -67,26 +68,26 @@ The main contributions of our work are as follows.
 \end{figure*}
 
 \subsection{Directional Texture Encoding}
-The visual cue of a defect in knitted fabric is usually not an isolated object boundary. Instead, it is a local violation of the repetitive loop texture: a \emph{row} defect typically interrupts continuity across the width direction, a \emph{col} defect typically interrupts continuity along the height direction, and a \emph{hole} produces a compact local discontinuity. A standard C2f output preserves multi-path features and can learn such local patterns, but it does not explicitly introduce a directional decomposition for these three forms of texture interruption. DTE therefore uses horizontal, vertical, and local texture branches to encode the corresponding image-space structures.
-
-DTE is inserted \emph{after} the selected C2f outputs rather than replacing the C2f gradient-flow structure. Thus, the original C2f features remain available through the residual pathway, while DTE learns a residual texture correction at multiple backbone depths. For a C2f output $X\in\mathbb{R}^{C\times H\times W}$, DTE first forms three depthwise branch responses:
+The visual cue of a defect in circular-knitted fabric is often a local disruption of repetitive texture rather than an isolated object boundary. Such disruptions commonly appear in horizontally elongated, vertically elongated, or compact local forms. A standard C2f block can learn these patterns implicitly through local feature aggregation, but it does not explicitly separate directional and compact texture responses. DTE is therefore introduced to encode these complementary structures with horizontal, vertical, and local branches. 
+For a C2f output $X\in\mathbb{R}^{C\times H\times W}$, DTE first forms three depthwise branch responses:
 \begin{align}
 F_h &= \operatorname{DW}_{1\times7}(X), \label{eq:dte-horizontal}\\
 F_v &= \operatorname{DW}_{7\times1}(X), \label{eq:dte-vertical}\\
 F_l &= \operatorname{DW}_{3\times3}(X). \label{eq:dte-local}
 \end{align}
-The $1\times7$ branch aggregates evidence along a horizontal trace without first mixing channels, whereas the $7\times1$ branch performs the analogous vertical aggregation. The $3\times3$ branch retains compact local evidence required for holes and short texture breaks. The three responses are concatenated and fused by a $1\times1$ convolution with normalization and activation:
+The \(1\times7\) and \(7\times1\) branches enlarge the receptive field along the horizontal and vertical directions, respectively, while the \(3\times3\) branch preserves compact local texture information. The three responses are concatenated and fused by a \(1\times1\) convolution:
 \begin{equation}
 F_d=\phi\left([F_h,F_v,F_l]\right),
 \label{eq:dte-fusion}
 \end{equation}
-where $[\cdot]$ denotes channel concatenation. Depthwise filtering keeps the long directional receptive fields inexpensive, while the pointwise fusion learns how much horizontal, vertical, and local evidence should be retained at each feature channel. Because input and output channels match in the present implementation, the directional response is added residually to the original C2f feature:
+where \([\cdot]\) denotes channel concatenation and \(\phi\) denotes pointwise convolution followed by normalization and activation. Depthwise filtering keeps the directional branches lightweight, while the pointwise operation mixes the branch responses across channels.
+The fused response is added to the original C2f feature through a residual connection:
 \begin{equation}
 Y=X+F_d.
 \label{eq:dte-residual}
 \end{equation}
 
-The residual fusion in Eq.~\eqref{eq:dte-residual} is important for an edge-deployed adaptation: the C2f feature $X$ remains directly available if a directional response is unhelpful, while $F_d$ adds only the learned, task-specific texture cue. The design is related to, but not equivalent to, asymmetric convolution blocks \cite{ding2019acnet}: it uses depthwise directional paths, three-way concatenation, and a learned pointwise fusion within the existing C2f structure. Its intended effect is therefore selective sensitivity to elongated horizontal and vertical discontinuities without sacrificing the compact context used for holes.
+This preserves the baseline representation while introducing additional direction-sensitive texture cues with limited computational overhead. Although DTE is related to asymmetric convolution [19], it differs in using depthwise horizontal, vertical, and local branches together with three-way fusion and residual integration within the C2f backbone.
 
 \begin{figure}[!t]
 \centering
@@ -96,9 +97,9 @@ The residual fusion in Eq.~\eqref{eq:dte-residual} is important for an edge-depl
 \end{figure}
 
 \subsection{Local Texture-Guided Feature Reassembly}
-The features enriched by DTE must next be passed from a coarse semantic level to a finer detection level. Fixed nearest-neighbor upsampling copies a source value to a $2\times2$ region according to a content-independent rule; its reconstruction weights do not adapt to local texture structure. This can be suboptimal in the top-down feature-pyramid transitions \cite{lin2017fpn}, where coarse semantic features must be aligned with high-resolution texture evidence and narrow defect boundaries may occupy only a small fraction of the local region. LTFR therefore replaces only these two fixed upsampling operations; the original concatenation, C2f fusion, bottom-up path, and detection head remain unchanged.
+In the feature pyramid, fixed nearest-neighbor upsampling reconstructs higher-resolution features using a content-independent copying rule, without adapting to local texture structure. This can be suboptimal for multi-scale fusion in repetitive knitted textures, where narrow defect boundaries may occupy only a small portion of the local region. LTFR therefore replaces the two fixed upsampling operations with content-adaptive feature reassembly.
 
-LTFR instantiates the content-aware reassembly principle of CARAFE \cite{wang2019carafe} in this restricted pyramid role. Given $X\in\mathbb{R}^{C\times H\times W}$, a $1\times1$ compressor first reduces the kernel-prediction feature to $C_r=\max(C/4,16)$ channels:
+LTFR adopts content-aware feature reassembly to reconstruct each output location from a locally predicted neighborhood. This formulation follows the content-aware reassembly principle introduced in CARAFE \cite{wang2019carafe}. Given $X\in\mathbb{R}^{C\times H\times W}$, a $1\times1$ compressor first reduces the kernel-prediction feature to $C_r=\max(C/4,16)$ channels:
 \begin{equation}
 X_c=E_{1\times1}(X).
 \label{eq:ltfr-compression}
@@ -118,20 +119,25 @@ and a softmax across the $k^2$ kernel positions produces a distinct normalized r
 K_{i,j}=\operatorname{softmax}(\widehat{K}_{i,j}).
 \label{eq:ltfr-kernel}
 \end{equation}
-Here, $E_{1\times1}$ and $E_{3\times3}$ denote the compression and kernel-encoding layers, respectively, and $\operatorname{PS}$ denotes pixel shuffle. The $25$ weights of each $K_{i,j}$ sum to one. In parallel, a local $k\times k$ feature patch is extracted from $X$ and aligned with the enlarged grid:
+The normalization constraint is
+\begin{equation}
+\sum_{u=1}^{k^2}K_{i,j,u}=1.
+\label{eq:ltfr-normalization}
+\end{equation}
+Here, $E_{1\times1}$ and $E_{3\times3}$ denote the compression and kernel-encoding layers, respectively, and $\operatorname{PS}$ denotes pixel shuffle. In parallel, a local $k\times k$ feature patch is extracted from $X$ and aligned with the enlarged grid:
 \begin{equation}
 P_{i,j}=\operatorname{Unfold}_{k\times k}(X)_{i,j}.
 \label{eq:ltfr-patch}
 \end{equation}
-The reassembled feature is then obtained by the location-specific weighted sum
+where $P_{i,j}\in\mathbb{R}^{C\times k^2}$ denotes the local feature neighborhood associated with output location $(i,j)$. The reassembled feature is then obtained by the location-specific weighted sum
 \begin{equation}
 Y_{i,j}=\sum_{u=1}^{k^2}K_{i,j,u}P_{i,j,u}.
 \label{eq:ltfr-reassembly}
 \end{equation}
 
-Unlike a spatially shared interpolation kernel, Eq.~\eqref{eq:ltfr-reassembly} allows a location near a thin defect or a texture boundary to select a different local mixture from a location within regular fabric. The channel-compression stage bounds the overhead of predicting these kernels, while the $5\times5$ neighborhood provides more local support than a copied source pixel. LTFR is not claimed as a new generic reassembly primitive; its contribution here is the lightweight placement of input-dependent reassembly at the two texture-critical top-down transitions of YOLOv8n.
+Unlike a spatially shared interpolation kernel, Eq.~\eqref{eq:ltfr-reassembly} allows the reconstruction weights to vary with local texture content, so defect boundaries and regular knitted regions can be aggregated differently. The channel-compression stage bounds the overhead of predicting these kernels, while the $5\times5$ neighborhood provides more local support than a copied source pixel. In \model, this reassembly mechanism is applied specifically to the two feature-pyramid upsampling stages to preserve local defect structure during multi-scale fusion.
 
-DTE and LTFR have complementary roles. DTE first creates direction-sensitive cues in the backbone; LTFR then propagates and aligns those cues during top-down reconstruction instead of indiscriminately replicating them. The component ablation in Table~\ref{tab:ablation} tests this design: DTE produces the larger isolated gain, LTFR still improves the baseline on its own, and their combination yields the best result. Figs.~\ref{fig:dte} and~\ref{fig:ltfr} detail the two modules.
+DTE and LTFR play complementary roles: DTE enhances direction-sensitive texture representation in the backbone, while LTFR performs content-adaptive reconstruction of these features across pyramid scales.
 
 \begin{figure*}[!t]
 \centering
