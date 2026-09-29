@@ -148,43 +148,14 @@ DTE and LTFR play complementary roles: DTE enhances direction-sensitive texture 
 
 \subsection{Closed-Loop Inspection System}
 \label{sec:deployment}
-\paragraph{Production workflow.}
-Fig.~\ref{fig:system} shows the inspection system installed on a circular knitting machine, which comprises a Hall sensor, an industrial camera, and an RK3566 edge device. The workflow begins when the operator presses the machine's native start button, initiating rotation. The Hall sensor detects the rotation and signals the RK3566, which activates LED illumination, acquires video frames from the camera, and begins real-time defect inspection. Once a defect is detected, the RK3566 issues a stop command via a wired connection to the machine controller, halting production before the defect propagates further. The corresponding defect frame is displayed locally for on-site operator inspection and troubleshooting and uploaded to the cloud platform for defect statistics and production-quality analysis. After the operator resolves the issue and restarts the machine, the production cycle resumes. All defect-to-stop decisions are made locally, without relying on cloud communication.
+Fig.~\ref{fig:system} shows the inspection system installed on a circular knitting machine, comprising a Hall sensor, an industrial camera, and an RK3566 edge device. The workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and signals the RK3566, which activates the supplementary illumination, acquires camera frames, and performs real-time defect inspection. Once a defect is detected, the RK3566 immediately issues a stop command through the wired connection to the machine controller. The corresponding defect frame is then displayed locally for operator inspection and troubleshooting. After the problem is resolved and the machine is restarted, the inspection cycle resumes. The complete defect-to-stop loop is executed locally and does not depend on cloud communication.
 
-\paragraph{On-machine deployment.}
-The deployed edge terminal uses a Rockchip RK3566 processor running Android~13. Images are acquired with a SmartSens 1.3-megapixel industrial high-definition global-shutter camera at $1280\times1024$ resolution and a nominal 30~frames/s. Adjustable supplementary lighting is used to stabilize the local imaging condition. The camera is installed 10~cm from the fabric, providing an approximately $16\times14$~cm field of view. On the deployed terminal, the reported inference time is 45~ms per processed image (approximately 22.2 processed frames/s). This rate is sufficient for the maximum stated machine condition: a 38-inch circular knitting machine at 30~revolutions/min has a circumference of approximately 3.03~m and a fabric-surface speed of approximately 1.52~m/s. Consequently, the surface advances approximately 6.8~cm during one 45-ms inference interval, which remains below the 14-cm shorter side of the field of view and yields at least 7.2~cm nominal overlap between adjacent processed views. The edge terminal is connected to the circular knitting machine control system by a direct wired interface; the measured time from a defect decision to transmission of the stop-control signal is below 10~ms. The edge terminal synchronizes non-latency-critical status and defect records with the cloud IoT platform through MQTT. The system is designed to support continuous 24/7 inspection. Table~\ref{tab:deployment} summarizes the configuration.
+To support real-time inference on the RK3566 NPU, the trained detector is converted from the training framework to an edge-executable representation. The PyTorch model is first exported to ONNX at an input resolution of \(640\times640\), and then converted to RKNN using the official RKNN-Toolkit2 [20]. Post-training INT8 quantization is applied during conversion, with representative training images used for calibration [21]. The resulting RKNN model is loaded by the Android edge application and executed on the RK3566 NPU. The deployment pipeline is therefore
+\[
+\text{PyTorch} \rightarrow \text{ONNX} \rightarrow \text{INT8 RKNN} \rightarrow \text{RK3566 NPU}.
+\]
 
-\begin{table}[!t]
-\caption{On-machine deployment configuration.}
-\label{tab:deployment}
-\centering
-\footnotesize
-\begin{tabular}{p{0.31\columnwidth}p{0.49\columnwidth}}
-\toprule
-Item & Configuration or measured value \\
-\midrule
-Edge terminal & Rockchip RK3566; Android 13 \\
-Camera & SmartSens 1.3-megapixel industrial HD global-shutter camera \\
-Supplementary light & Adjustable illumination \\
-Acquisition & $1280\times1024$; nominal 30 frames/s \\
-Installation geometry & 10~cm camera-to-fabric distance; approximately $16\times14$~cm field of view \\
-Inference time & 45~ms per processed image (approximately 22.2 processed frames/s) \\
-Maximum-speed coverage & 38-inch diameter and 30~revolutions/min: 1.52~m/s surface speed; 6.8~cm advance per processed view \\
-Control interface & Direct wired connection to the circular knitting machine controller \\
-Decision-to-command latency & $<10$~ms from defect decision to stop-control signal transmission \\
-Cloud communication & MQTT-based synchronization \\
-Cloud platform & Digital twin: live state, defect analytics, and authorized remote control \\
-Operating mode & Designed for continuous 24/7 inspection \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\paragraph{Platform-aware deployment.}
-The choice of YOLOv8n as the baseline is driven by deployment compatibility rather than by version chronology alone. The RKNN Model Zoo provides tested RK3566 NPU examples and single-core INT8 throughput figures for several YOLO families at $640\times640$ input \cite{rockchipmodelzoo}. In the current official benchmark, YOLOv8n reaches 34.0~frames/s, exceeding the listed newer YOLOv10n (20.7~frames/s) and YOLO11n (20.6~frames/s). The legacy YOLOv5n and YOLOv6n entries are faster (39.7 and 48.8~frames/s, respectively), which directly demonstrates that a newer YOLO version is not automatically a better NPU choice. We therefore select YOLOv8n as a high-throughput baseline with tested RK3566 NPU examples in the official Model Zoo and an extensible structure for textile-specific modification, rather than claiming that it is the absolute fastest model in the official benchmark. The benchmark values are used only for platform-aware model selection: they do not substitute for measuring the final customized detector on the deployed application.
-
-Training produces a PyTorch checkpoint, which is exported at $640\times640$ through ONNX and then converted to an RKNN model for the RK3566 NPU. We use the official RKNN-Toolkit2 conversion workflow, which targets Rockchip NPUs and supports model conversion, quantization, inference, and performance evaluation \cite{rockchiptoolkit2}. Integer-only quantization is a well-established route to reduce inference cost on constrained hardware \cite{jacob2018quantization}. In the deployment path, post-training INT8 quantization is applied during ONNX-to-RKNN conversion with representative training images used for calibration; the resulting RKNN artifact is loaded by the Android edge application for NPU execution. This workflow is summarized as \emph{PyTorch checkpoint} $\rightarrow$ \emph{ONNX} $\rightarrow$ \emph{INT8 RKNN} $\rightarrow$ \emph{RK3566 NPU}. The reported 45-ms edge inference time in Table~\ref{tab:deployment} corresponds to the deployed application, not PyTorch inference on the training workstation.
-
-Fig.~\ref{fig:cloud} shows the corresponding cloud IoT platform. The platform provides a portal view, defect-count trend statistics, device status and remote configuration, and a review page for uploaded defect records. These cloud functions support supervisory operation and production-quality analysis; they are separated from the latency-critical local wired stop path.
+While defect detection and stop control are handled locally, non-latency-critical information is synchronized to the cloud platform. As shown in Fig. 5, the cloud IoT platform receives defect records and device states from the edge terminal for centralized visualization, defect statistics, and production-quality analysis.
 
 \begin{figure*}[!t]
 \centering
@@ -200,15 +171,9 @@ Fig.~\ref{fig:cloud} shows the corresponding cloud IoT platform. The platform pr
 \label{fig:cloud}
 \end{figure*}
 
-The design follows the edge-intelligence principle that time-sensitive perception and action remain near the physical process, while selected evidence can be retained centrally \cite{shi2016edge}. The cloud side is organized as a manufacturing digital-twin service for live state visualization, statistics, and authorized supervision \cite{tao2019digitaltwin,kritzinger2018digitaltwin}. Here, the control consequence is more direct: the event is escalated to a worker, not accepted as a final autonomous verdict. This provides a pragmatic route for handling rare defects while retaining the records needed to identify recurring defect patterns and production-quality issues.
-
-\paragraph{Operational boundaries.}
-The workflow separates three stages: (i) whether machine rotation enables inspection, (ii) whether the detector produces a defect decision and initiates the local stop path, and (iii) how an operator inspects and troubleshoots the stopped-machine event. The reported recognition experiments validate only the second stage on a held-out image split. The deployed configuration establishes geometric image coverage at the stated maximum machine speed, the camera, edge terminal, wired control interface, and decision-to-command latency, but does not yet quantify physical machine-stop time, false-stop rate on defect-free fabric, frame-delivery or drop statistics during continuous operation, or operator-troubleshooting completion rate. These measurements should be reported from a controlled site trial before submission.
-
 \section{Experimental Setup}
 \subsection{Dataset}
-The dataset was acquired on a real circular-knitting production line using the deployed camera arrangement described in Section~\ref{sec:deployment}. Frames containing visible defects were retained and annotated with bounding boxes by the project team. The three engineering labels are \emph{row}, \emph{col}, and \emph{hole}; \emph{row} and \emph{col} typically manifest as horizontal and vertical texture disruptions, respectively. The supplied annotations define an image-level train/validation/test split of 282/40/81 images, as summarized in Table~\ref{tab:data}. The held-out test set contains 91 labeled defects. Production-roll, material-batch, and temporal identifiers were not retained with the released annotation package; therefore, the present evaluation is reported as an image-level split and does not claim explicit isolation of adjacent video frames. This limitation is considered when interpreting the results and motivates a future production-period evaluation with grouped splits.
-
+The dataset was collected from a real circular-knitting production line using the deployed image-acquisition system described in Section II-D. Images were captured during machine operation and manually annotated with axis-aligned bounding boxes by the project team. The dataset contains three engineering defect categories: row, col, and hole, which generally appear as horizontal disruptions, vertical disruptions, and compact local damage, respectively. A total of 403 images containing 468 defect instances were divided into training, validation, and test sets with 282, 40, and 81 images, respectively. The corresponding instance statistics are listed in Table I. The validation set was used for checkpoint selection, whereas all quantitative results in this paper were obtained on the held-out test set containing 81 images and 91 instances. The implementation protocol and training hyperparameters are summarized in Table II.
 \begin{table}[!t]
 \caption{Image-level split and defect-instance counts in the real production-line dataset.}
 \label{tab:data}
@@ -224,9 +189,6 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-\subsection{Training and Evaluation}
-Table~\ref{tab:implementation} summarizes the implementation protocol used for the Ultralytics experiments. TFRA-YOLO and its direct YOLOv8n baseline are initialized from \texttt{yolov8n.pt}; the remaining comparison models use the available official pretrained initialization in their respective repositories. Evaluation is conducted on the held-out test split with a maximum of 16 detections per image.
 
 \begin{table*}[!t]
 \caption{Implementation protocol and training hyperparameters.}
@@ -270,7 +232,7 @@ For each model, the retained best-validation checkpoint is evaluated once on the
 Table~\ref{tab:comparison} compares \model with the retained baselines. \model achieves 66.3\% AP and 96.9\% AP50. Relative to its direct YOLOv8n baseline, AP improves by 7.0 points and AP50 by 2.8 points for 0.38 M additional parameters and 0.8 G additional FLOPs. Among the compact YOLO variants evaluated here, \model has the highest AP. RT-DETR-R18 obtains 67.7\% AP, 1.4 points higher than \model, but requires 20.09 M parameters and 60.72 G FLOPs. This is a useful trade-off rather than a claim that \model dominates every detector.
 
 \begin{table*}[!t]
-\caption{Test-set comparison on 81 images and 91 instances. AP is COCO AP@[.50:.95]. All values are percentages except parameters and FLOPs.}
+\caption{Test-set comparison on 81 images and 91 instances. AP is COCO AP@[.50:.95]. All values are percentages except parameters and FLOPs. Bold and underlined values denote the best and second-best AP/AP50 results, respectively.}
 \label{tab:comparison}
 \centering
 \small
@@ -278,17 +240,25 @@ Table~\ref{tab:comparison} compares \model with the retained baselines. \model a
 \toprule
 Model & Params (M) & FLOPs (G) & AP50 (\%) & AP (\%) \\
 \midrule
+\multicolumn{5}{l}{\textit{Lightweight Real-Time Detectors}} \\
 YOLOv5n & 2.50 & 7.10 & 93.1 & 58.4 \\
-YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 YOLO11n & 2.58 & 6.40 & 95.0 & 59.6 \\
 YOLO12n & 2.56 & 7.30 & 94.3 & 60.9 \\
 YOLO26n & 2.38 & 5.30 & 96.5 & 61.4 \\
+\midrule
+\multicolumn{5}{l}{\textit{End-to-End Detectors}} \\
 RT-DETR-R18 & 20.09 & 60.72 & 95.2 & \textbf{67.7} \\
 DETR-R50 & 41.28 & 77.25 & 96.4 & 53.6 \\
-Deformable DETR-R50 & 39.82 & 158.66 & 96.8 & 64.3 \\
+Deformable DETR-R50 & 39.82 & 158.66 & \underline{96.8} & 64.3 \\
+\midrule
+\multicolumn{5}{l}{\textit{Two-Stage Detector}} \\
 Faster R-CNN-R50 & 41.13 & 181.45 & 96.1 & 64.7 \\
 \midrule
-\model & 3.39 & 8.90 & \textbf{96.9} & 66.3 \\
+\multicolumn{5}{l}{\textit{Baseline}} \\
+YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
+\midrule
+\multicolumn{5}{l}{\textit{Ours}} \\
+\model & 3.39 & 8.90 & \textbf{96.9} & \underline{66.3} \\
 \bottomrule
 \end{tabular}
 \end{table*}
