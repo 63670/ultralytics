@@ -69,22 +69,28 @@ The main contributions of our work are as follows.
 \subsection{Directional Texture Encoding}
 The visual cue of a defect in knitted fabric is usually not an isolated object boundary. Instead, it is a local violation of the repetitive loop texture: a \emph{row} defect typically interrupts continuity across the width direction, a \emph{col} defect typically interrupts continuity along the height direction, and a \emph{hole} produces a compact local discontinuity. A standard C2f output preserves multi-path features and can learn such local patterns, but it does not explicitly introduce a directional decomposition for these three forms of texture interruption. DTE therefore uses horizontal, vertical, and local texture branches to encode the corresponding image-space structures.
 
-DTE is inserted \emph{after} the selected C2f outputs rather than replacing the C2f gradient-flow structure. Thus, the original C2f features remain available through the residual pathway, while DTE learns a residual texture correction at multiple backbone depths. For a C2f output $X\in\mathbb{R}^{C\times H\times W}$, the module applies depthwise horizontal, vertical, and local branches and then fuses them:
+DTE is inserted \emph{after} the selected C2f outputs rather than replacing the C2f gradient-flow structure. Thus, the original C2f features remain available through the residual pathway, while DTE learns a residual texture correction at multiple backbone depths. For a C2f output $X\in\mathbb{R}^{C\times H\times W}$, DTE first forms three depthwise branch responses:
+\begin{align}
+F_h &= \operatorname{DW}_{1\times7}(X), \label{eq:dte-horizontal}\\
+F_v &= \operatorname{DW}_{7\times1}(X), \label{eq:dte-vertical}\\
+F_l &= \operatorname{DW}_{3\times3}(X). \label{eq:dte-local}
+\end{align}
+The $1\times7$ branch aggregates evidence along a horizontal trace without first mixing channels, whereas the $7\times1$ branch performs the analogous vertical aggregation. The $3\times3$ branch retains compact local evidence required for holes and short texture breaks. The three responses are concatenated and fused by a $1\times1$ convolution with normalization and activation:
 \begin{equation}
-F(X)=\phi\left([\operatorname{DW}_{1\times7}(X),\operatorname{DW}_{7\times1}(X),\operatorname{DW}_{3\times3}(X)]\right),
-\label{eq:dte}
+F_d=\phi\left([F_h,F_v,F_l]\right),
+\label{eq:dte-fusion}
 \end{equation}
-where $[\cdot]$ denotes channel concatenation and $\phi$ is a $1\times1$ convolution with normalization and activation. The $1\times7$ branch aggregates evidence along a horizontal trace without first mixing channels, whereas the $7\times1$ branch performs the analogous vertical aggregation. The $3\times3$ branch retains compact local evidence required for holes and short texture breaks. Depthwise filtering keeps the long directional receptive fields inexpensive; the following pointwise fusion learns how much horizontal, vertical, and local evidence should be retained at each feature channel. Because input and output channels match in the present implementation, the module uses residual fusion:
+where $[\cdot]$ denotes channel concatenation. Depthwise filtering keeps the long directional receptive fields inexpensive, while the pointwise fusion learns how much horizontal, vertical, and local evidence should be retained at each feature channel. Because input and output channels match in the present implementation, the directional response is added residually to the original C2f feature:
 \begin{equation}
-Y=X+F(X).
+Y=X+F_d.
 \label{eq:dte-residual}
 \end{equation}
 
-Equation~\eqref{eq:dte-residual} is important for an edge-deployed adaptation: the C2f feature $X$ remains directly available if a directional response is unhelpful, while $F(X)$ adds only the learned, task-specific texture cue. The design is related to, but not equivalent to, asymmetric convolution blocks \cite{ding2019acnet}: it uses depthwise directional paths, three-way concatenation, and a learned pointwise fusion within the existing C2f structure. Its intended effect is therefore selective sensitivity to elongated horizontal and vertical discontinuities without sacrificing the compact context used for holes.
+The residual fusion in Eq.~\eqref{eq:dte-residual} is important for an edge-deployed adaptation: the C2f feature $X$ remains directly available if a directional response is unhelpful, while $F_d$ adds only the learned, task-specific texture cue. The design is related to, but not equivalent to, asymmetric convolution blocks \cite{ding2019acnet}: it uses depthwise directional paths, three-way concatenation, and a learned pointwise fusion within the existing C2f structure. Its intended effect is therefore selective sensitivity to elongated horizontal and vertical discontinuities without sacrificing the compact context used for holes.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{figures/wwte.png}
+\includegraphics[width=\columnwidth]{figures/dte.png}
 \caption{DTE structure. A C2f feature is processed by horizontal, vertical, and local depthwise branches, followed by channel concatenation, $1\times1$ fusion, and residual addition.}
 \label{fig:dte}
 \end{figure}
@@ -92,14 +98,34 @@ Equation~\eqref{eq:dte-residual} is important for an edge-deployed adaptation: t
 \subsection{Local Texture-Guided Feature Reassembly}
 The features enriched by DTE must next be passed from a coarse semantic level to a finer detection level. Fixed nearest-neighbor upsampling copies a source value to a $2\times2$ region according to a content-independent rule; its reconstruction weights do not adapt to local texture structure. This can be suboptimal in the top-down feature-pyramid transitions \cite{lin2017fpn}, where coarse semantic features must be aligned with high-resolution texture evidence and narrow defect boundaries may occupy only a small fraction of the local region. LTFR therefore replaces only these two fixed upsampling operations; the original concatenation, C2f fusion, bottom-up path, and detection head remain unchanged.
 
-LTFR instantiates the content-aware reassembly principle of CARAFE \cite{wang2019carafe} in this restricted pyramid role. Given $X\in\mathbb{R}^{C\times H\times W}$, a $1\times1$ compressor first reduces the kernel-prediction feature to $C_r=\max(C/4,16)$ channels. A $3\times3$ encoder then produces $s^2k^2$ kernel logits, where the scale factor is $s=2$ and the reassembly kernel size is $k=5$. Pixel shuffle expands these logits onto the upsampled grid, and softmax yields a distinct normalized $5\times5$ kernel $K_{i,j}$ at each output location:
+LTFR instantiates the content-aware reassembly principle of CARAFE \cite{wang2019carafe} in this restricted pyramid role. Given $X\in\mathbb{R}^{C\times H\times W}$, a $1\times1$ compressor first reduces the kernel-prediction feature to $C_r=\max(C/4,16)$ channels:
 \begin{equation}
-K_{i,j}=\operatorname{softmax}\left(\operatorname{PS}\left(E_{3\times3}(E_{1\times1}(X))\right)_{i,j}\right).
+X_c=E_{1\times1}(X).
+\label{eq:ltfr-compression}
+\end{equation}
+A $3\times3$ encoder then predicts $s^2k^2$ kernel logits, where the scale factor is $s=2$ and the reassembly kernel size is $k=5$:
+\begin{equation}
+K'=E_{3\times3}(X_c).
+\label{eq:ltfr-logits}
+\end{equation}
+Pixel shuffle expands the logits to the upsampled grid,
+\begin{equation}
+\widehat{K}=\operatorname{PS}(K'),
+\label{eq:ltfr-pixelshuffle}
+\end{equation}
+and a softmax across the $k^2$ kernel positions produces a distinct normalized reassembly kernel at each output location:
+\begin{equation}
+K_{i,j}=\operatorname{softmax}(\widehat{K}_{i,j}).
 \label{eq:ltfr-kernel}
 \end{equation}
-Here, $E_{1\times1}$ and $E_{3\times3}$ denote the compression and kernel-encoding layers, respectively, and $\operatorname{PS}$ denotes pixel shuffle. The $25$ weights of each $K_{i,j}$ sum to one. For each output position, a $5\times5$ neighborhood $\mathcal{N}_{i,j}(X)$ is unfolded from $X$, spatially aligned with the enlarged grid, and reassembled as
+Here, $E_{1\times1}$ and $E_{3\times3}$ denote the compression and kernel-encoding layers, respectively, and $\operatorname{PS}$ denotes pixel shuffle. The $25$ weights of each $K_{i,j}$ sum to one. In parallel, a local $k\times k$ feature patch is extracted from $X$ and aligned with the enlarged grid:
 \begin{equation}
-Y_{i,j}=\sum_{u=1}^{25}K_{i,j,u}\mathcal{N}_{i,j,u}(X).
+P_{i,j}=\operatorname{Unfold}_{k\times k}(X)_{i,j}.
+\label{eq:ltfr-patch}
+\end{equation}
+The reassembled feature is then obtained by the location-specific weighted sum
+\begin{equation}
+Y_{i,j}=\sum_{u=1}^{k^2}K_{i,j,u}P_{i,j,u}.
 \label{eq:ltfr-reassembly}
 \end{equation}
 
@@ -187,7 +213,7 @@ Table~\ref{tab:comparison} compares \model with the retained baselines. \model a
 \toprule
 Model & Params (M) & FLOPs (G) & AP50 (\%) & AP (\%) \\
 \midrule
-YOLOv5n$^\dagger$ & 2.50 & 7.10 & 93.1 & 58.4 \\
+YOLOv5n & 2.50 & 7.10 & 93.1 & 58.4 \\
 YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 YOLO11n & 2.58 & 6.40 & 95.0 & 59.6 \\
 YOLO12n & 2.56 & 7.30 & 94.3 & 60.9 \\
@@ -199,7 +225,6 @@ Faster R-CNN-R50 & 41.13 & 181.45 & 96.1 & 64.7 \\
 \midrule
 \model & 3.39 & 8.90 & \textbf{96.9} & 66.3 \\
 \bottomrule
-\multicolumn{5}{l}{\footnotesize $^\dagger$The retained YOLOv5n checkpoint is the legacy YOLOv5n architecture, not the Ultralytics YOLOv5u variant.}
 \end{tabular}
 \end{table*}
 
