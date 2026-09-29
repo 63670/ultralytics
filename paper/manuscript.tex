@@ -55,8 +55,8 @@ The main contributions of our work are as follows.
   \item We implement a cloud-edge inspection prototype for circular knitting machines that integrates rotation-synchronized sensing, RK3566 edge inference, local wired stop control, and cloud-based digital-twin monitoring. The design keeps the latency-critical intervention loop local while supporting centralized defect statistics and device supervision.
 \end{itemize}
 
-\section{TFRA-YOLO}
-\subsection{Overview}
+\section{Proposed Method}
+\subsection{TFRA-YOLO Architecture}
 \model is instantiated on the YOLOv8n detector \cite{ultralytics2023}, which is selected as the baseline considering its deployment performance on the target RK3566 platform and its architectural extensibility \cite{rockchipmodelzoo}. As shown in Fig.~\ref{fig:network}, the backbone retains the original resolution hierarchy, but replaces the C2f output refinement at four stages with C2f--DTE. In the head, the two top-down nearest-neighbor upsampling operations are replaced with LTFR. The standard concatenation, C2f fusion, bottom-up path, and three-scale detection head are retained. The detection scales are $P_3$, $P_4$, and $P_5$, corresponding to $80\times80$, $40\times40$, and $20\times20$ feature maps for a $640\times640$ input.
 
 \begin{figure*}[!t]
@@ -139,6 +139,65 @@ DTE and LTFR have complementary roles. DTE first creates direction-sensitive cue
 \caption{LTFR structure. The upper path predicts location-specific $5\times5$ reassembly kernels, and the lower path unfolds and aligns local feature patches. Their element-wise product is summed along the kernel dimension to produce a $2\times$ upsampled feature.}
 \label{fig:ltfr}
 \end{figure*}
+
+\subsection{Closed-Loop Inspection System}
+\label{sec:deployment}
+\paragraph{Production workflow.}
+Fig.~\ref{fig:system} shows the inspection system installed on a circular knitting machine, which comprises a Hall sensor, an industrial camera, and an RK3566 edge device. The workflow begins when the operator presses the machine's native start button, initiating rotation. The Hall sensor detects the rotation and signals the RK3566, which activates LED illumination, acquires video frames from the camera, and begins real-time defect inspection. Once a defect is detected, the RK3566 issues a stop command via a wired connection to the machine controller, halting production before the defect propagates further. The corresponding defect frame is displayed locally for on-site operator inspection and troubleshooting and uploaded to the cloud platform for defect statistics and production-quality analysis. After the operator resolves the issue and restarts the machine, the production cycle resumes. All defect-to-stop decisions are made locally, without relying on cloud communication.
+
+\paragraph{On-machine deployment.}
+The deployed edge terminal uses a Rockchip RK3566 processor running Android~13. Images are acquired with a SmartSens 1.3-megapixel industrial high-definition global-shutter camera at $1280\times1024$ resolution and a nominal 30~frames/s. Adjustable supplementary lighting is used to stabilize the local imaging condition. The camera is installed 10~cm from the fabric, providing an approximately $16\times14$~cm field of view. On the deployed terminal, the reported inference time is 45~ms per processed image (approximately 22.2 processed frames/s). This rate is sufficient for the maximum stated machine condition: a 38-inch circular knitting machine at 30~revolutions/min has a circumference of approximately 3.03~m and a fabric-surface speed of approximately 1.52~m/s. Consequently, the surface advances approximately 6.8~cm during one 45-ms inference interval, which remains below the 14-cm shorter side of the field of view and yields at least 7.2~cm nominal overlap between adjacent processed views. The edge terminal is connected to the circular knitting machine control system by a direct wired interface; the measured time from a defect decision to transmission of the stop-control signal is below 10~ms. The edge terminal synchronizes non-latency-critical status and defect records with the cloud IoT platform through MQTT. The system is designed to support continuous 24/7 inspection. Table~\ref{tab:deployment} summarizes the configuration.
+
+\begin{table}[!t]
+\caption{On-machine deployment configuration.}
+\label{tab:deployment}
+\centering
+\footnotesize
+\begin{tabular}{p{0.31\columnwidth}p{0.49\columnwidth}}
+\toprule
+Item & Configuration or measured value \\
+\midrule
+Edge terminal & Rockchip RK3566; Android 13 \\
+Camera & SmartSens 1.3-megapixel industrial HD global-shutter camera \\
+Supplementary light & Adjustable illumination \\
+Acquisition & $1280\times1024$; nominal 30 frames/s \\
+Installation geometry & 10~cm camera-to-fabric distance; approximately $16\times14$~cm field of view \\
+Inference time & 45~ms per processed image (approximately 22.2 processed frames/s) \\
+Maximum-speed coverage & 38-inch diameter and 30~revolutions/min: 1.52~m/s surface speed; 6.8~cm advance per processed view \\
+Control interface & Direct wired connection to the circular knitting machine controller \\
+Decision-to-command latency & $<10$~ms from defect decision to stop-control signal transmission \\
+Cloud communication & MQTT-based synchronization \\
+Cloud platform & Digital twin: live state, defect analytics, and authorized remote control \\
+Operating mode & Designed for continuous 24/7 inspection \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Platform-aware deployment.}
+The choice of YOLOv8n as the baseline is driven by deployment compatibility rather than by version chronology alone. The RKNN Model Zoo provides tested RK3566 NPU examples and single-core INT8 throughput figures for several YOLO families at $640\times640$ input \cite{rockchipmodelzoo}. In the current official benchmark, YOLOv8n reaches 34.0~frames/s, exceeding the listed newer YOLOv10n (20.7~frames/s) and YOLO11n (20.6~frames/s). The legacy YOLOv5n and YOLOv6n entries are faster (39.7 and 48.8~frames/s, respectively), which directly demonstrates that a newer YOLO version is not automatically a better NPU choice. We therefore select YOLOv8n as a high-throughput baseline with tested RK3566 NPU examples in the official Model Zoo and an extensible structure for textile-specific modification, rather than claiming that it is the absolute fastest model in the official benchmark. The benchmark values are used only for platform-aware model selection: they do not substitute for measuring the final customized detector on the deployed application.
+
+Training produces a PyTorch checkpoint, which is exported at $640\times640$ through ONNX and then converted to an RKNN model for the RK3566 NPU. We use the official RKNN-Toolkit2 conversion workflow, which targets Rockchip NPUs and supports model conversion, quantization, inference, and performance evaluation \cite{rockchiptoolkit2}. Integer-only quantization is a well-established route to reduce inference cost on constrained hardware \cite{jacob2018quantization}. In the deployment path, post-training INT8 quantization is applied during ONNX-to-RKNN conversion with representative training images used for calibration; the resulting RKNN artifact is loaded by the Android edge application for NPU execution. This workflow is summarized as \emph{PyTorch checkpoint} $\rightarrow$ \emph{ONNX} $\rightarrow$ \emph{INT8 RKNN} $\rightarrow$ \emph{RK3566 NPU}. The reported 45-ms edge inference time in Table~\ref{tab:deployment} corresponds to the deployed application, not PyTorch inference on the training workstation.
+
+Fig.~\ref{fig:cloud} shows the corresponding cloud IoT platform. The platform provides a portal view, defect-count trend statistics, device status and remote configuration, and a review page for uploaded defect records. These cloud functions support supervisory operation and production-quality analysis; they are separated from the latency-critical local wired stop path.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{figures/overview.png}
+\caption{Actual deployment on the circular knitting machine. The insets highlight the start button, Hall sensor, industrial camera, and RK3566 edge device, respectively.}
+\label{fig:system}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/cloud.png}
+\caption{Cloud IoT platform for the deployed inspection system. The four panels show the platform portal, defect-count trend dashboard, device-state and remote-configuration interface, and uploaded defect-record review interface, respectively. Cloud communication supports status visualization, statistics, and authorized supervision, whereas the defect-to-stop control path remains local and wired.}
+\label{fig:cloud}
+\end{figure*}
+
+The design follows the edge-intelligence principle that time-sensitive perception and action remain near the physical process, while selected evidence can be retained centrally \cite{shi2016edge}. The cloud side is organized as a manufacturing digital-twin service for live state visualization, statistics, and authorized supervision \cite{tao2019digitaltwin,kritzinger2018digitaltwin}. Here, the control consequence is more direct: the event is escalated to a worker, not accepted as a final autonomous verdict. This provides a pragmatic route for handling rare defects while retaining the records needed to identify recurring defect patterns and production-quality issues.
+
+\paragraph{Operational boundaries.}
+The workflow separates three stages: (i) whether machine rotation enables inspection, (ii) whether the detector produces a defect decision and initiates the local stop path, and (iii) how an operator inspects and troubleshoots the stopped-machine event. The reported recognition experiments validate only the second stage on a held-out image split. The deployed configuration establishes geometric image coverage at the stated maximum machine speed, the camera, edge terminal, wired control interface, and decision-to-command latency, but does not yet quantify physical machine-stop time, false-stop rate on defect-free fabric, frame-delivery or drop statistics during continuous operation, or operator-troubleshooting completion rate. These measurements should be reported from a controlled site trial before submission.
 
 \section{Experimental Setup}
 \subsection{Dataset}
@@ -275,65 +334,6 @@ Fig.~\ref{fig:heatmaps} further compares the activation visualizations produced 
 \caption{Qualitative activation visualization on three selected test images. The left, middle, and right columns show the original images, YOLOv8n visualizations, and TFRA-YOLO visualizations, respectively. Each visualization is generated with the same official Ultralytics routine.}
 \label{fig:heatmaps}
 \end{figure*}
-
-\subsection{Closed-Loop Inspection System}
-\label{sec:deployment}
-\subsubsection{Production Workflow}
-Fig.~\ref{fig:system} shows the inspection system installed on a circular knitting machine, which comprises a Hall sensor, an industrial camera, and an RK3566 edge device. The workflow begins when the operator presses the machine's native start button, initiating rotation. The Hall sensor detects the rotation and signals the RK3566, which activates LED illumination, acquires video frames from the camera, and begins real-time defect inspection. Once a defect is detected, the RK3566 issues a stop command via a wired connection to the machine controller, halting production before the defect propagates further. The corresponding defect frame is displayed locally for on-site operator inspection and troubleshooting and uploaded to the cloud platform for defect statistics and production-quality analysis. After the operator resolves the issue and restarts the machine, the production cycle resumes. All defect-to-stop decisions are made locally, without relying on cloud communication.
-
-\subsubsection{On-Machine Deployment Configuration}
-The deployed edge terminal uses a Rockchip RK3566 processor running Android~13. Images are acquired with a SmartSens 1.3-megapixel industrial high-definition global-shutter camera at $1280\times1024$ resolution and a nominal 30~frames/s. Adjustable supplementary lighting is used to stabilize the local imaging condition. The camera is installed 10~cm from the fabric, providing an approximately $16\times14$~cm field of view. On the deployed terminal, the reported inference time is 45~ms per processed image (approximately 22.2 processed frames/s). This rate is sufficient for the maximum stated machine condition: a 38-inch circular knitting machine at 30~revolutions/min has a circumference of approximately 3.03~m and a fabric-surface speed of approximately 1.52~m/s. Consequently, the surface advances approximately 6.8~cm during one 45-ms inference interval, which remains below the 14-cm shorter side of the field of view and yields at least 7.2~cm nominal overlap between adjacent processed views. The edge terminal is connected to the circular knitting machine control system by a direct wired interface; the measured time from a defect decision to transmission of the stop-control signal is below 10~ms. The edge terminal synchronizes non-latency-critical status and defect records with the cloud IoT platform through MQTT. The system is designed to support continuous 24/7 inspection. Table~\ref{tab:deployment} summarizes the configuration.
-
-\begin{table}[!t]
-\caption{On-machine deployment configuration.}
-\label{tab:deployment}
-\centering
-\footnotesize
-\begin{tabular}{p{0.31\columnwidth}p{0.49\columnwidth}}
-\toprule
-Item & Configuration or measured value \\
-\midrule
-Edge terminal & Rockchip RK3566; Android 13 \\
-Camera & SmartSens 1.3-megapixel industrial HD global-shutter camera \\
-Supplementary light & Adjustable illumination \\
-Acquisition & $1280\times1024$; nominal 30 frames/s \\
-Installation geometry & 10~cm camera-to-fabric distance; approximately $16\times14$~cm field of view \\
-Inference time & 45~ms per processed image (approximately 22.2 processed frames/s) \\
-Maximum-speed coverage & 38-inch diameter and 30~revolutions/min: 1.52~m/s surface speed; 6.8~cm advance per processed view \\
-Control interface & Direct wired connection to the circular knitting machine controller \\
-Decision-to-command latency & $<10$~ms from defect decision to stop-control signal transmission \\
-Cloud communication & MQTT-based synchronization \\
-Cloud platform & Digital twin: live state, defect analytics, and authorized remote control \\
-Operating mode & Designed for continuous 24/7 inspection \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsubsection{Platform-Aware Baseline Selection and NPU Deployment}
-The choice of YOLOv8n as the baseline is driven by deployment compatibility rather than by version chronology alone. The RKNN Model Zoo provides tested RK3566 NPU examples and single-core INT8 throughput figures for several YOLO families at $640\times640$ input \cite{rockchipmodelzoo}. In the current official benchmark, YOLOv8n reaches 34.0~frames/s, exceeding the listed newer YOLOv10n (20.7~frames/s) and YOLO11n (20.6~frames/s). The legacy YOLOv5n and YOLOv6n entries are faster (39.7 and 48.8~frames/s, respectively), which directly demonstrates that a newer YOLO version is not automatically a better NPU choice. We therefore select YOLOv8n as a high-throughput baseline with tested RK3566 NPU examples in the official Model Zoo and an extensible structure for textile-specific modification, rather than claiming that it is the absolute fastest model in the official benchmark. The benchmark values are used only for platform-aware model selection: they do not substitute for measuring the final customized detector on the deployed application.
-
-The training and deployment models use different representations. Training produces a PyTorch checkpoint, which is exported at $640\times640$ through ONNX and then converted to an RKNN model for the RK3566 NPU. We use the official RKNN-Toolkit2 conversion workflow, which targets Rockchip NPUs and supports model conversion, quantization, inference, and performance evaluation \cite{rockchiptoolkit2}. Integer-only quantization is a well-established route to reduce inference cost on constrained hardware \cite{jacob2018quantization}. In the deployment path, post-training INT8 quantization is applied during ONNX-to-RKNN conversion with representative training images used for calibration; the resulting RKNN artifact is loaded by the Android edge application for NPU execution. This workflow is summarized as \emph{PyTorch checkpoint} $\rightarrow$ \emph{ONNX} $\rightarrow$ \emph{INT8 RKNN} $\rightarrow$ \emph{RK3566 NPU}. The reported 45-ms edge inference time in Table~\ref{tab:deployment} corresponds to the deployed application, not PyTorch inference on the training workstation.
-
-Fig.~\ref{fig:cloud} shows the corresponding cloud IoT platform. The platform provides a portal view, defect-count trend statistics, device status and remote configuration, and a review page for uploaded defect records. These cloud functions support supervisory operation and production-quality analysis; they are separated from the latency-critical local wired stop path.
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=\textwidth]{figures/overview.png}
-\caption{Actual deployment on the circular knitting machine. The insets highlight the start button, Hall sensor, industrial camera, and RK3566 edge device, respectively.}
-\label{fig:system}
-\end{figure*}
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.98\textwidth]{figures/cloud.png}
-\caption{Cloud IoT platform for the deployed inspection system. The four panels show the platform portal, defect-count trend dashboard, device-state and remote-configuration interface, and uploaded defect-record review interface, respectively. Cloud communication supports status visualization, statistics, and authorized supervision, whereas the defect-to-stop control path remains local and wired.}
-\label{fig:cloud}
-\end{figure*}
-
-The design follows the edge-intelligence principle that time-sensitive perception and action remain near the physical process, while selected evidence can be retained centrally \cite{shi2016edge}. The cloud side is organized as a manufacturing digital-twin service for live state visualization, statistics, and authorized supervision \cite{tao2019digitaltwin,kritzinger2018digitaltwin}. Here, the control consequence is more direct: the event is escalated to a worker, not accepted as a final autonomous verdict. This provides a pragmatic route for handling rare defects while retaining the records needed to identify recurring defect patterns and production-quality issues.
-
-\subsubsection{Operational Boundaries}
-The workflow separates three stages: (i) whether machine rotation enables inspection, (ii) whether the detector produces a defect decision and initiates the local stop path, and (iii) how an operator inspects and troubleshoots the stopped-machine event. The reported recognition experiments validate only the second stage on a held-out image split. The deployed configuration establishes geometric image coverage at the stated maximum machine speed, the camera, edge terminal, wired control interface, and decision-to-command latency, but does not yet quantify physical machine-stop time, false-stop rate on defect-free fabric, frame-delivery or drop statistics during continuous operation, or operator-troubleshooting completion rate. These measurements should be reported from a controlled site trial before submission.
 
 \subsection{Limitations and Submission-Ready Validation}
 The present evidence supports a promising lightweight detector on a real production-line image set, but it does not yet establish production reliability. First, the test split is small and category-imbalanced, and its image-level partition does not establish isolation of adjacent video frames. Second, FLOPs are not a substitute for end-to-end edge latency, especially when image capture, preprocessing, postprocessing, control communication, and physical stopping are part of the operational loop. Third, the current ablation isolates the two modules but does not yet separately quantify each DTE branch or compare LTFR with alternative interpolation and reassembly operators. Finally, operator troubleshooting records can support defect statistics and production-quality analysis, but their completeness and operational value have not yet been measured. These points define a concrete validation plan, rather than weaknesses that should be concealed.
