@@ -190,30 +190,41 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 \end{tabular}
 \end{table}
 
-\begin{table*}[!t]
-\caption{Implementation protocol and training hyperparameters.}
+\begin{table}[!t]
+\caption{Comprehensive implementation protocol and hyperparameters.}
 \label{tab:implementation}
 \centering
-\footnotesize
-\renewcommand{\arraystretch}{1.08}
-\begin{tabular}{p{0.22\textwidth}p{0.70\textwidth}}
+\scriptsize
+\renewcommand{\arraystretch}{1.04}
+\begin{tabular}{@{}p{0.22\columnwidth}p{0.24\columnwidth}p{0.44\columnwidth}@{}}
 \toprule
-Item & Specification \\
+Category & Parameter & Specification \\
 \midrule
-Training hardware & NVIDIA GeForce RTX 3090 GPU (24 GB) \\
-Software & Ubuntu 24.04, Python 3.10.20, PyTorch 2.4.1+cu124, and Ultralytics 8.4.140 \\
-Model initialization & TFRA-YOLO and YOLOv8n: \texttt{yolov8n.pt}; other baselines: the available official pretrained checkpoint in the corresponding repository \\
-Input resolution & $640\times640$ \\
-Batch size / data workers & 16 / 8 \\
-Maximum epochs / early stopping patience & 300 / 80 epochs \\
-Optimizer & Ultralytics automatic optimizer selection \\
-Data augmentation & Standard Ultralytics geometric and photometric augmentations; no augmentation hyperparameter was manually overridden \\
-Checkpoint retained for testing & Framework-selected best validation checkpoint \\
-Test protocol & Held-out test split, maximum 16 detections per image \\
+\multirow{3}{*}{\shortstack[l]{1. Training\\setup}}
+& Hardware & NVIDIA GeForce RTX 3090 GPU (24 GB) \\
+& Software & Ubuntu 24.04, Python 3.10.20, PyTorch 2.4.1+cu124, and Ultralytics 8.4.140 \\
+& Initialization & TFRA-YOLO and YOLOv8n: \texttt{yolov8n.pt}; other baselines: official pretrained checkpoints in their respective repositories \\
+\midrule
+\multirow{3}{*}{\shortstack[l]{2. Deployment\\setup}}
+& Edge hardware & Rockchip RK3566 NPU edge terminal \\
+& Edge system & Android 13 \\
+& Conversion and quantization & PyTorch $\rightarrow$ ONNX $\rightarrow$ INT8 RKNN with RKNN-Toolkit2 \\
+\midrule
+\multirow{2}{*}{\shortstack[l]{3. Data\\protocol}}
+& Input resolution & Fixed at $640\times640$ \\
+& Augmentation & Standard Ultralytics geometric and photometric augmentation; no augmentation hyperparameter was manually overridden \\
+\midrule
+\multirow{4}{*}{\shortstack[l]{4. Training\\dynamics}}
+& Batch size / workers & 16 / 8 \\
+& Maximum epochs / patience & 300 / 80 \\
+& Optimizer & Ultralytics automatic optimizer selection \\
+& Checkpoint for testing & Framework-selected best validation checkpoint \\
+\midrule
+5. Test protocol & Evaluation & Held-out test split; maximum 16 detections per image \\
 \bottomrule
 \end{tabular}
 \renewcommand{\arraystretch}{1.0}
-\end{table*}
+\end{table}
 
 \subsection{Evaluation Metrics}
 We use the COCO detection protocol \cite{lin2014coco}. For a predicted box $B_p$ and a ground-truth box $B_g$, intersection over union (IoU) is defined as $\operatorname{IoU}(B_p,B_g)=|B_p\cap B_g|/|B_p\cup B_g|$. At an IoU threshold $t$, a prediction is counted as a true positive only when it has the correct class and is matched one-to-one to an as-yet unmatched ground-truth instance; all remaining predictions are false positives and unmatched ground-truth instances are false negatives. For each class $c$, $\operatorname{AP}_c(t)$ is the area under its interpolated precision--recall curve. With $C=3$ classes, the reported AP and AP50 are
