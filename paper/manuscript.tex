@@ -168,10 +168,10 @@ The cloud platform receives defect records and device states for centralized mon
 \end{figure*}
 
 \section{Experimental Setup}
-\subsection{Dataset and Implementation}
+\subsection{Dataset}
 Images were collected during operation of a real circular-knitting production line using the arrangement in Section~\ref{sec:deployment}. A global-shutter industrial camera captures $1280\times1024$ frames at 30 FPS, approximately 10 cm from the fabric, with a field of view of approximately $16\times14$ cm. The project team retained defect-containing images and manually annotated axis-aligned bounding boxes. The engineering labels \emph{row}, \emph{col}, and \emph{hole} denote predominantly horizontal disruptions, vertical disruptions, and holes, respectively. These short labels are retained in detection displays, while their visual meanings are used in the analysis.
 
-The dataset contains 403 images and 468 annotated instances. Its nonoverlapping training, validation, and test subsets contain 282, 40, and 81 images, respectively (Table~\ref{tab:data}). Validation data are used for checkpoint selection, and detection accuracy is reported on the held-out test set of 81 images and 91 instances. Table~\ref{tab:implementation} summarizes the implementation settings. \model and its direct YOLOv8n baseline load compatible weights from \texttt{yolov8n.pt}; newly introduced layers use framework initialization. Other models use the available official pretrained initialization in their respective repositories. Training recipes are not assumed to be identical across repositories.
+The dataset contains 403 images and 468 annotated instances. Its nonoverlapping training, validation, and test subsets contain 282, 40, and 81 images, respectively (Table~\ref{tab:data}). Validation data are used for checkpoint selection, and detection accuracy is reported on the held-out test set of 81 images and 91 instances.
 \begin{table}[!h]
 \caption{Image-level split and defect-instance counts in the real production-line dataset.}
 \label{tab:data}
@@ -188,41 +188,40 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 \end{tabular}
 \end{table}
 
+\subsection{Implementation Details}
+\label{sec:implementation}
+Table~\ref{tab:implementation} summarizes the training and deployment settings. \model and its direct YOLOv8n baseline load compatible weights from \texttt{yolov8n.pt}; newly introduced layers use framework initialization. Other comparison models use the available pretrained checkpoints in their respective implementations. Remaining Ultralytics settings follow framework defaults, including data augmentation and optimizer selection.
+
+The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yolov12}, DETR \cite{carion2020detr}, Deformable DETR \cite{zhu2021deformable}, Faster R-CNN \cite{ren2015faster}, and an R18 model from the RT-DETRv2 implementation \cite{lv2024rtdetrv2}, denoted RT-DETR-R18.
+
+For baseline selection, Rockchip's official INT8 benchmark reports 39.7, 34.0, and 20.6 FPS for YOLOv5n, YOLOv8n, and YOLO11n, respectively, on RK3566/RK3568 at $640\times640$ input \cite{rockchipmodelzoo}. These reference-model inference measurements are distinct from the deployed \model throughput reported in Section~\ref{sec:edge-evaluation}.
+
 \begin{table}[!tbp]
-\caption{Implementation protocol. Training settings describe the Ultralytics experiments; deployment settings describe the installed edge device.}
+\caption{Training and edge-deployment settings. Training settings apply to the Ultralytics experiments.}
 \label{tab:implementation}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabular}{@{}L{0.21\columnwidth}L{0.23\columnwidth}L{\dimexpr0.56\columnwidth-12pt\relax}@{}}
+\begin{tabular}{@{}L{0.32\columnwidth}L{\dimexpr0.68\columnwidth-6pt\relax}@{}}
 \toprule
-Category & Parameter & Specification \\
+Item & Specification \\
 \midrule
-\shortstack[l]{1. Training\\setup}
-& Hardware & Intel i7-13700KF; NVIDIA RTX 3090 (24 GB) \\
-& Software & Ubuntu 24.04, Python 3.10.20, PyTorch 2.4.1+cu124, and Ultralytics 8.4.140 \\
-\midrule
-\shortstack[l]{2. Deployment\\setup}
-& Hardware & Rockchip RK3566 \\
-& System & Android 13 \\
-& Quantization & INT8 \\
-\midrule
-\shortstack[l]{3. Data\\protocol}
-& Input resolution & Fixed at $640\times640$ \\
-& Augmentation & Standard Ultralytics geometric and photometric augmentation; no augmentation hyperparameter was manually overridden \\
-\midrule
-\shortstack[l]{4. Training\\dynamics}
-& Batch & 16  \\
-& Maximum epochs & 300 \\
-& Early-stopping patience & 80 epochs \\
-& Optimizer & Ultralytics automatic optimizer selection \\
+Training hardware & Intel i7-13700KF; NVIDIA RTX 3090 (24 GB) \\
+Software & Ubuntu 24.04, Python 3.10.20, PyTorch 2.4.1+cu124, and Ultralytics 8.4.140 \\
+Deployment hardware & Rockchip RK3566 \\
+System / quantization & Android 13 / INT8 \\
+Input resolution & $640\times640$ \\
+Batch size & 16 \\
+Maximum epochs & 300 \\
+Early-stopping patience & 80 epochs \\
 \bottomrule
 \end{tabular}
 \renewcommand{\arraystretch}{1.0}
 \end{table}
 
 \subsection{Evaluation Metrics}
+\label{sec:evaluation}
 We report average precision across the ten IoU thresholds used in COCO evaluation \cite{lin2014coco}, together with AP at IoU $0.50$. For a predicted box $B_p$ and a ground-truth box $B_g$, intersection over union is $\operatorname{IoU}(B_p,B_g)=|B_p\cap B_g|/|B_p\cup B_g|$. At threshold $t$, a correct detection must have the correct class and match an otherwise unmatched ground-truth instance. Let $\operatorname{AP}_c(t)$ denote the area under the interpolated precision--recall curve for class $c$, expressed on $[0,1]$. For $N_c=3$ classes, the percentage-valued metrics are
 \begin{align}
 \operatorname{AP} &= \frac{100}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in\mathcal{T}}\operatorname{AP}_c(t), \notag\\
@@ -232,21 +231,19 @@ We report average precision across the ten IoU thresholds used in COCO evaluatio
 where $\mathcal{T}=\{0.50,0.55,\ldots,0.95\}$. 
 AP therefore evaluates localization over increasingly strict overlap requirements, whereas AP50 uses a single, less restrictive threshold. Differences between percentage-valued AP scores are reported in percentage points.
 
-The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yolov12}, DETR \cite{carion2020detr}, Deformable DETR \cite{zhu2021deformable}, Faster R-CNN \cite{ren2015faster}, and an R18 model from the RT-DETRv2 implementation \cite{lv2024rtdetrv2}, denoted RT-DETR-R18.
+All models are evaluated on the same held-out test images using their respective implementations and native evaluation and post-processing settings. Because evaluator details differ across frameworks, the direct YOLOv8n comparison and module ablations serve as the primary controlled comparisons, while cross-framework results provide broader references.
 
-All models are tested on the same held-out images using their native evaluators. Ultralytics runs retain at most 16 detections per image; RT-DETR uses a COCO maximum of 100. The retained MMDetection reports use maxima of 100 for AP and 1000 for AP50. Native interpolation and postprocessing also differ. Consequently, cross-framework results provide contextual comparisons rather than a fully harmonized benchmark; the direct YOLOv8n comparison and module ablations share the same evaluation implementation.
-
-Parameter counts and approximate FLOPs at input shape $[1,3,640,640]$ characterize model scale. YOLO counts come from fused model summaries, whereas the other counts follow their profiling reports. FLOPs use framework-native estimates, with approximately two operations per multiply--accumulate; unsupported operators may be omitted. These figures do not establish a cross-framework latency ranking. On-device throughput is measured separately for the deployed \model.
+Model scale is reported as parameter counts and approximate FLOPs at input shape $[1,3,640,640]$. Counts follow framework-native profiling (fused summaries for YOLO), with approximately two operations per multiply--accumulate; unsupported operators may be omitted. On-device throughput is evaluated separately on RK3566.
 
 \section{Results and Discussion}
 \label{sec:results}
 \subsection{Comparison With Other Detectors}
 Table~\ref{tab:comparison} presents the test results. \model achieves 66.3\% AP and 96.9\% AP50, compared with 59.3\% and 94.1\% for YOLOv8n. The improvements of 7.0 and 2.8 percentage points require 0.38 M additional parameters and approximately 0.8 G additional FLOPs. The larger gain under the stricter AP metric suggests that the modification improves localization quality beyond increasing the number of detections accepted at IoU $0.50$.
 
-Among the evaluated compact YOLO variants, \model has the highest reported AP. RT-DETR-R18 attains a higher AP of 67.7\%, with 20.09 M parameters and 60.72 G estimated FLOPs, compared with 3.39 M and 8.90 G for \model. Thus, the proposed design occupies a lower-complexity operating point rather than providing the highest accuracy among all architectures. Cross-framework score differences should be read together with the evaluator qualifications in Section~III-B.
+Among the evaluated compact YOLO variants, \model has the highest reported AP. RT-DETR-R18 attains a higher AP of 67.7\%, with 20.09 M parameters and 60.72 G estimated FLOPs, compared with 3.39 M and 8.90 G for \model. Thus, the proposed design occupies a lower-complexity operating point rather than providing the highest accuracy among all architectures. Cross-framework comparisons follow the evaluation protocol in Section~\ref{sec:evaluation}.
 
 \begin{table*}[!tbp]
-\caption{Detection results on the common test set. Bold and underlined values indicate the highest and second-highest reported scores, respectively. Cross-framework evaluators differ as described in Section~III-B.}
+\caption{Detection results on the common test set. Bold and underlined values indicate the highest and second-highest reported scores, respectively. The evaluation protocol is described in Section~\ref{sec:evaluation}.}
 \label{tab:comparison}
 \centering
 \small
@@ -277,7 +274,7 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 \bottomrule
 \end{tabular*}
 \par\smallskip
-\parbox{\textwidth}{\footnotesize RT-DETR-R18 uses the RT-DETRv2 codebase. Parameter counts and FLOPs follow the profiling conventions stated in Section~III-B.}
+\parbox{\textwidth}{\footnotesize RT-DETR-R18 uses the RT-DETRv2 codebase. Parameter counts and FLOPs follow the profiling conventions stated in Section~\ref{sec:evaluation}.}
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
 
@@ -285,15 +282,31 @@ Fig.~\ref{fig:tradeoff} visualizes the relationship between accuracy and model c
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=.97\textwidth]{efficiency.png}
+\includegraphics[width=0.87\textwidth]{efficiency.png}
 \caption{Accuracy versus parameter count (left) and approximate FLOPs (right). Both horizontal axes are logarithmic. AP corresponds to the mAP@0.5:0.95 notation in the plot; Ours denotes \model.}
 \label{fig:tradeoff}
+\end{figure*}
+
+% Queue the qualitative figures before the remaining result text so they can
+% share pages with their discussion rather than trail the conclusion.
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.84\textwidth]{qualitative_existing.png}
+\caption{Selected test predictions with a common rendering style and a confidence threshold of 0.25. Columns show ground-truth labels, YOLOv8n, YOLO11n, YOLO26n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours). The threshold is for display and does not define AP evaluation.}
+\label{fig:qualitative}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.76\textwidth]{heatmap_comparison.png}
+\caption{Illustrative LayerCAM-based overlays. Columns: original image, YOLOv8n, and \model (Ours). Rows, from top to bottom, are selected validation, training, and test examples. Both models use the same visualization procedure; these selected maps are not a quantitative test-set comparison.}
+\label{fig:heatmaps}
 \end{figure*}
 
 \subsection{Component Ablation}
 Table~\ref{tab:ablation} separates the effects of texture encoding and feature reassembly under the common YOLOv8n recipe. DTE raises AP from 59.3\% to 64.1\%, an increase of 4.8 percentage points, with approximately 0.27 M additional parameters. Its AP50 is close to that of the baseline, suggesting that its principal benefit in this experiment concerns stricter localization. LTFR alone achieves 60.7\% AP and 94.9\% AP50, improving the baseline by 1.4 and 0.8 percentage points, respectively, with approximately 0.10 M additional parameters.
 
-The complete model reaches 66.3\% AP, exceeding DTE alone by 2.2 points and LTFR alone by 5.6 points. This pattern is consistent with complementary roles for backbone encoding and pyramid reconstruction. These comparisons evaluate the complete modules at the chosen kernel configuration. DTE branch and kernel-size ablations, together with matched comparisons against nearest-neighbor, bilinear, and alternative CARAFE-based upsampling configurations, remain necessary to assess the individual design choices.
+The complete model reaches 66.3\% AP, exceeding DTE alone by 2.2 points and LTFR alone by 5.6 points. These results support the complementary contributions of DTE and LTFR at the module level: directional texture encoding strengthens the backbone representation, while adaptive reassembly improves its reconstruction across pyramid scales.
 
 \begin{table}[!tbp]
 \caption{Component ablation. Parameters are in millions, FLOPs in billions, and AP50/AP in percent.}
@@ -313,33 +326,18 @@ YOLOv8n & -- & -- & 3.01 & 8.1 & 94.1 & 59.3 \\
 \end{tabular*}
 \end{table}
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.84\textwidth]{qualitative_existing.png}
-\caption{Selected test predictions with a common rendering style and a confidence threshold of 0.25. Columns show ground-truth labels, YOLOv8n, YOLO11n, YOLO26n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours). The threshold is for display and does not define AP evaluation.}
-\label{fig:qualitative}
-\end{figure*}
-
 \subsection{Per-Class and Qualitative Results}
 The class-wise AP values of \model are 61.7\%, 73.8\%, and 63.4\% for \emph{row}, \emph{col}, and \emph{hole}, respectively. The corresponding YOLOv8n values are 62.2\%, 59.6\%, and 56.2\%. The aggregate improvement therefore comes primarily from vertical defects (+14.2 points) and holes (+7.2 points), while horizontal-defect AP decreases slightly by 0.5 points. This result supports a more specific interpretation than uniform improvement across all morphologies. The vertical category contains only 12 test instances, so the magnitude of its gain should not be generalized beyond the evaluated sample without further data.
 
 Fig.~\ref{fig:qualitative} compares seven selected test images using common colors, line widths, and a display confidence threshold of 0.25. These examples allow visual comparison of missed detections, extra predictions, and box alignment against repetitive texture. They illustrate individual predictions rather than establish a population-level ranking; the quantitative comparison uses the full test set.
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.76\textwidth]{heatmap_comparison.png}
-\caption{Illustrative LayerCAM-based overlays. Columns: original image, YOLOv8n, and \model (Ours). Rows, from top to bottom, are selected validation, training, and test examples. Both models use the same visualization procedure; these selected maps are not a quantitative test-set comparison.}
-\label{fig:heatmaps}
-\end{figure*}
-
 Fig.~\ref{fig:heatmaps} provides complementary, illustrative activation maps generated by the local LayerCAM-based implementation \cite{jiang2021layercam}. Positive class-score gradients weight the feature maps entering the three detection scales. Maps are spatially normalized for each candidate and scale, combined by a pixelwise maximum, and overlaid on the original image. The same procedure is used for both models, considering up to 16 highest-scoring candidates above 0.25, with a highest-score fallback if none exceed the threshold. The selected rows originate from the validation, training, and test subsets, respectively, and are not treated as additional held-out evidence. Per-map normalization and candidate selection also mean that heat intensity is not directly comparable as an absolute measure of model quality.
 
-\subsection{Deployment and Scope of the Evidence}
-Rockchip's official INT8 benchmark reports 39.7, 34.0, and 20.6 FPS for YOLOv5n, YOLOv8n, and YOLO11n, respectively, on RK3566/RK3568 at $640\times640$ input \cite{rockchipmodelzoo}. These reference-model inference measurements provide hardware context for baseline selection and are distinct from the deployed \model measurement below.
+\subsection{Edge Deployment Evaluation}
+\label{sec:edge-evaluation}
+The INT8 \model deployed on the RK3566 edge device achieves 28 FPS. Together with Hall-triggered acquisition and wired machine-stop control, this deployment supports local defect detection and intervention without a cloud round trip. Defect images are displayed for on-site operator review and troubleshooting, while defect records and device states are uploaded to the cloud for equipment monitoring and production-quality analysis.
 
-The deployed \model achieves 28 FPS on the RK3566 edge device, demonstrating that the modified detector can operate on the target embedded platform. This measurement complements the parameter and operation counts, because NPU execution also depends on operator support, data movement, and runtime scheduling. The system connects local predictions to wired machine control and preserves defect images for operator review and cloud analysis. The reported throughput is not a measurement of mechanical stopping time or a guarantee of complete detection coverage under every machine speed and camera arrangement.
-
-The evaluation is bounded by the available production-line dataset. Its small, imbalanced test set limits conclusions about rare defect variations and transfer to other materials or acquisition conditions. Because the retained images contain visible defects, image-level AP does not quantify false-stop frequency during long defect-free production intervals. Likewise, the floating-point detection results do not constitute a paired assessment of quantization-induced accuracy changes. Larger independent production samples, quantized-model accuracy evaluation, and finer-grained module ablations would extend the evidence beyond the present detector comparison and deployment demonstration.
+The current evaluation uses a small, imbalanced set of defect-containing images. Broader production trials are needed to assess transfer across materials and operating conditions, false stops during defect-free operation, and detection accuracy after INT8 conversion.
 
 \section{Conclusion}
 We have presented \model and a production-line defect detection system for circular knitting machines. \model couples directional texture encoding with content-adaptive feature reconstruction for knitted-fabric defect detection. DTE models horizontal, vertical, and compact local texture disruptions in the backbone, while LTFR replaces fixed upsampling with CARAFE-based local reassembly in the top-down feature pyramid. On the production-line test set, \model improves the YOLOv8n baseline from 59.3\% to 66.3\% AP and from 94.1\% to 96.9\% AP50, with 3.39 M parameters and approximately 8.9 G FLOPs. These results, together with the component ablation, support the complementary roles of texture encoding and feature reassembly in improving overall localization performance while retaining a compact model scale.
@@ -349,7 +347,7 @@ The detector is deployed on an RK3566 edge device and reaches 28 FPS. Combined w
 % Place all preceding figures before the reference list without forcing a
 % single-column page break in the two-column bibliography.
 \FloatBarrier
-\IEEEtriggeratref{21}
+\IEEEtriggeratref{38}
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
