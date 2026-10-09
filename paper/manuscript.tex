@@ -28,7 +28,7 @@
 \maketitle
 
 \begin{abstract}
-Circular knitting machines operate continuously, so defects caused by needle or yarn abnormalities may propagate over substantial fabric lengths before being discovered. To enable in-process defect detection and intervention, we develop a closed-loop defect detection system with edge inference and wired machine-stop control, and propose a lightweight detector termed \model. \model introduces directional texture encoding (DTE) to explicitly model horizontal, vertical, and compact local disruptions of repetitive knitted texture, and local texture-guided feature reassembly (LTFR) to replace fixed feature-pyramid upsampling with content-adaptive reconstruction. On a production-line fabric-defect dataset, \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively, with only 3.39 M parameters. After INT8 deployment, the detector runs at 28 FPS on the RK3566 edge device. The resulting system couples real-time defect localization, automatic local stop control, operator review, and cloud-based quality analysis, providing a practical solution for reducing defect propagation during circular-knitting production.
+Circular knitting machines operate continuously, so defects caused by needle or yarn abnormalities may propagate over substantial fabric lengths before being discovered. To enable in-process defect detection and intervention, we develop a closed-loop defect detection system with edge inference and wired machine-stop control, and propose a lightweight detector termed \model. \model introduces directional texture encoding (DTE) to explicitly model horizontal, vertical, and compact local disruptions of repetitive knitted texture, and local texture-guided feature reassembly (LTFR) to replace fixed feature-pyramid upsampling with content-adaptive reconstruction. On a production-line fabric-defect dataset, \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively, with only 3.39 M parameters. The detector is deployed as an INT8 RKNN model on an RK3566 edge device. The resulting system couples real-time defect localization, automatic local stop control, operator review, and cloud-based quality analysis, providing a practical solution for reducing defect propagation during circular-knitting production.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -50,7 +50,7 @@ The main contributions of our work are as follows.
 \begin{itemize}
   \item We introduce DTE to encode the characteristic morphologies of horizontal defects, vertical defects, and holes through horizontal, vertical, and local texture branches, providing a lightweight texture-specific representation for circular-knitted defect detection.
   \item We develop an LTFR pyramid that replaces fixed upsampling with local texture-conditioned reassembly, enabling adaptive feature reconstruction during multi-scale fusion.
-  \item We implement a closed-loop production-line defect detection system integrating RK3566 edge inference, wired machine-stop control, operator review, and cloud-based monitoring, and validate its deployment with production-line data and on-device measurements.
+  \item We implement a closed-loop production-line defect detection system integrating RK3566 edge inference, wired machine-stop control, operator review, and cloud-based monitoring, and demonstrate its deployment on a real circular-knitting production line.
 \end{itemize}
 
 \section{Proposed Method}
@@ -169,7 +169,7 @@ The cloud platform receives defect records and device states for centralized mon
 
 \section{Experimental Setup}
 \subsection{Dataset}
-Images were collected during operation of a real circular-knitting production line using the arrangement in Section~\ref{sec:deployment}. A global-shutter industrial camera captures $1280\times1024$ frames at 30 FPS, approximately 10 cm from the fabric, with a field of view of approximately $16\times14$ cm. The project team retained defect-containing images and manually annotated axis-aligned bounding boxes. The engineering labels \emph{row}, \emph{col}, and \emph{hole} denote predominantly horizontal disruptions, vertical disruptions, and holes, respectively. These short labels are retained in detection displays, while their visual meanings are used in the analysis.
+Images were collected during operation of a real circular-knitting production line using the arrangement in Section~\ref{sec:deployment}. A global-shutter industrial camera captures $1280\times1024$ frames approximately 10 cm from the fabric, with a field of view of approximately $16\times14$ cm. The project team retained defect-containing images and manually annotated axis-aligned bounding boxes. The engineering labels \emph{row}, \emph{col}, and \emph{hole} denote predominantly horizontal disruptions, vertical disruptions, and holes, respectively. These short labels are retained in detection displays, while their visual meanings are used in the analysis.
 
 The dataset contains 403 images and 468 annotated instances. Its nonoverlapping training, validation, and test subsets contain 282, 40, and 81 images, respectively (Table~\ref{tab:data}). Validation data are used for checkpoint selection, and detection accuracy is reported on the held-out test set of 81 images and 91 instances.
 \begin{table}[!h]
@@ -193,8 +193,6 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 Table~\ref{tab:implementation} summarizes the training and deployment settings. \model and its direct YOLOv8n baseline load compatible weights from \texttt{yolov8n.pt}; newly introduced layers use framework initialization. Other comparison models use the available pretrained checkpoints in their respective implementations. Remaining Ultralytics settings follow framework defaults, including data augmentation and optimizer selection.
 
 The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yolov12}, DETR \cite{carion2020detr}, Deformable DETR \cite{zhu2021deformable}, Faster R-CNN \cite{ren2015faster}, and an R18 model from the RT-DETRv2 implementation \cite{lv2024rtdetrv2}, denoted RT-DETR-R18.
-
-For baseline selection, Rockchip's official INT8 benchmark reports 39.7, 34.0, and 20.6 FPS for YOLOv5n, YOLOv8n, and YOLO11n, respectively, on RK3566/RK3568 at $640\times640$ input \cite{rockchipmodelzoo}. These reference-model inference measurements are distinct from the deployed \model throughput reported in Section~\ref{sec:edge-evaluation}.
 
 \begin{table}[!tbp]
 \caption{Implementation protocol. Training settings describe the Ultralytics experiments; deployment settings describe the installed edge device.}
@@ -243,7 +241,7 @@ AP therefore evaluates localization over increasingly strict overlap requirement
 
 All models are evaluated on the same held-out test images using their respective implementations and native evaluation and post-processing settings. Because evaluator details differ across frameworks, the direct YOLOv8n comparison and module ablations serve as the primary controlled comparisons, while cross-framework results provide broader references.
 
-Model scale is reported as parameter counts and approximate FLOPs at input shape $[1,3,640,640]$. Counts follow framework-native profiling (fused summaries for YOLO), with approximately two operations per multiply--accumulate; unsupported operators may be omitted. On-device throughput is evaluated separately on RK3566.
+Model scale is reported as parameter counts and approximate FLOPs at input shape $[1,3,640,640]$. Counts follow framework-native profiling (fused summaries for YOLO), with approximately two operations per multiply--accumulate; unsupported operators may be omitted.
 
 \section{Results and Discussion}
 \label{sec:results}
@@ -343,16 +341,16 @@ Fig.~\ref{fig:qualitative} compares seven selected test images using common colo
 
 Fig.~\ref{fig:heatmaps} provides complementary, illustrative activation maps generated by the local LayerCAM-based implementation \cite{jiang2021layercam}. Positive class-score gradients weight the feature maps entering the three detection scales. Maps are spatially normalized for each candidate and scale, combined by a pixelwise maximum, and overlaid on the original image. The same procedure is used for both models, considering up to 16 highest-scoring candidates above 0.25, with a highest-score fallback if none exceed the threshold. The selected rows originate from the validation, training, and test subsets, respectively, and are not treated as additional held-out evidence. Per-map normalization and candidate selection also mean that heat intensity is not directly comparable as an absolute measure of model quality.
 
-\subsection{Edge Deployment Evaluation}
+\subsection{Edge Deployment}
 \label{sec:edge-evaluation}
-The INT8 \model deployed on the RK3566 edge device achieves 28 FPS. Together with Hall-triggered acquisition and wired machine-stop control, this deployment supports local defect detection and intervention without a cloud round trip. Defect images are displayed for on-site operator review and troubleshooting, while defect records and device states are uploaded to the cloud for equipment monitoring and production-quality analysis.
+The INT8 \model is deployed on the RK3566 edge device. Together with Hall-triggered acquisition and wired machine-stop control, this deployment supports local defect detection and intervention without a cloud round trip. Defect images are displayed for on-site operator review and troubleshooting, while defect records and device states are uploaded to the cloud for equipment monitoring and production-quality analysis.
 
 The current evaluation uses a small, imbalanced set of defect-containing images. Broader production trials are needed to assess transfer across materials and operating conditions, false stops during defect-free operation, and detection accuracy after INT8 conversion.
 
 \section{Conclusion}
 We have presented \model and a production-line defect detection system for circular knitting machines. \model couples directional texture encoding with content-adaptive feature reconstruction for knitted-fabric defect detection. DTE models horizontal, vertical, and compact local texture disruptions in the backbone, while LTFR replaces fixed upsampling with CARAFE-based local reassembly in the top-down feature pyramid. On the production-line test set, \model improves the YOLOv8n baseline from 59.3\% to 66.3\% AP and from 94.1\% to 96.9\% AP50, with 3.39 M parameters and approximately 8.9 G FLOPs. These results, together with the component ablation, support the complementary roles of texture encoding and feature reassembly in improving overall localization performance while retaining a compact model scale.
 
-The detector is deployed on an RK3566 edge device and reaches 28 FPS. Combined with Hall-sensor-based machine-state detection and wired stop control, the system performs local defect detection and intervention without depending on cloud communication. Detection results are displayed for on-site operator review and troubleshooting, while defect records and device states are uploaded to the cloud for equipment monitoring and production-quality analysis. This deployment connects the detector to local machine control, supporting not only offline defect detection but also in-process defect containment during circular-knitting production. Future work will focus on broader production conditions, long-term false-stop and missed-detection behavior, quantized-model accuracy, and finer-grained analysis of the proposed modules.
+The detector is deployed on an RK3566 edge device. Combined with Hall-sensor-based machine-state detection and wired stop control, the system performs local defect detection and intervention without depending on cloud communication. Detection results are displayed for on-site operator review and troubleshooting, while defect records and device states are uploaded to the cloud for equipment monitoring and production-quality analysis. This deployment connects the detector to local machine control, supporting not only offline defect detection but also in-process defect containment during circular-knitting production. Future work will focus on broader production conditions, long-term false-stop and missed-detection behavior, quantized-model accuracy, and finer-grained analysis of the proposed modules.
 
 % Place all preceding figures before the reference list without forcing a
 % single-column page break in the two-column bibliography.
