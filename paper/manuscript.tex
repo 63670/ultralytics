@@ -197,24 +197,34 @@ The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yo
 For baseline selection, Rockchip's official INT8 benchmark reports 39.7, 34.0, and 20.6 FPS for YOLOv5n, YOLOv8n, and YOLO11n, respectively, on RK3566/RK3568 at $640\times640$ input \cite{rockchipmodelzoo}. These reference-model inference measurements are distinct from the deployed \model throughput reported in Section~\ref{sec:edge-evaluation}.
 
 \begin{table}[!tbp]
-\caption{Training and edge-deployment settings. Training settings apply to the Ultralytics experiments.}
+\caption{Implementation protocol. Training settings describe the Ultralytics experiments; deployment settings describe the installed edge device.}
 \label{tab:implementation}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabular}{@{}L{0.32\columnwidth}L{\dimexpr0.68\columnwidth-6pt\relax}@{}}
+\begin{tabular}{@{}L{0.21\columnwidth}L{0.23\columnwidth}L{\dimexpr0.56\columnwidth-12pt\relax}@{}}
 \toprule
-Item & Specification \\
+Category & Parameter & Specification \\
 \midrule
-Training hardware & Intel i7-13700KF; NVIDIA RTX 3090 (24 GB) \\
-Software & Ubuntu 24.04, Python 3.10.20, PyTorch 2.4.1+cu124, and Ultralytics 8.4.140 \\
-Deployment hardware & Rockchip RK3566 \\
-System / quantization & Android 13 / INT8 \\
-Input resolution & $640\times640$ \\
-Batch size & 16 \\
-Maximum epochs & 300 \\
-Early-stopping patience & 80 epochs \\
+\shortstack[l]{1. Training\\setup}
+& Hardware & Intel i7-13700KF; NVIDIA RTX 3090 (24 GB) \\
+& Software & Ubuntu 24.04, Python 3.10.20, PyTorch 2.4.1+cu124, and Ultralytics 8.4.140 \\
+\midrule
+\shortstack[l]{2. Deployment\\setup}
+& Hardware & Rockchip RK3566 \\
+& System & Android 13 \\
+& Quantization & INT8 \\
+\midrule
+\shortstack[l]{3. Data\\protocol}
+& Input resolution & Fixed at $640\times640$ \\
+& Augmentation & Standard Ultralytics geometric and photometric augmentation; no augmentation hyperparameter was manually overridden \\
+\midrule
+\shortstack[l]{4. Training\\dynamics}
+& Batch & 16  \\
+& Maximum epochs & 300 \\
+& Early-stopping patience & 80 epochs \\
+& Optimizer & Ultralytics automatic optimizer selection \\
 \bottomrule
 \end{tabular}
 \renewcommand{\arraystretch}{1.0}
