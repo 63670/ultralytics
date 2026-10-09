@@ -55,9 +55,9 @@ The main contributions of our work are as follows.
 
 \section{Proposed Method}
 \subsection{DMFR-YOLO Architecture}
-\model is developed based on YOLOv8n, which is selected for its compatibility with RK3566 deployment, compact model size, and modular architecture \cite{ultralytics2023,rockchipmodelzoo}. The proposed modifications target defect morphology encoding in the backbone and feature reconstruction in the feature pyramid.
+\model is developed based on YOLOv8n, which is selected for its compatibility with RK3566 deployment, compact model size, and modular architecture \cite{ultralytics2023,rockchipmodelzoo}. The proposed modifications focus on defect morphology encoding in the backbone and feature reconstruction in the feature pyramid.
 
-Fig.~\ref{fig:network} shows the overall architecture. DME is introduced after the main backbone stages to enhance the representation of horizontally elongated, vertically elongated, and localized hole-like defects. The extracted multi-scale features are then passed to the neck for feature fusion \cite{lin2017fpn,liu2018panet}. During this process, CAFR replaces the two nearest-neighbor upsampling operations with content-adaptive feature reassembly, allowing the reconstructed features to better preserve defect boundaries and weak responses. The fused features are finally fed into the original multi-scale detection head for prediction.
+Fig.~\ref{fig:network} shows the overall architecture. DME is introduced after the main backbone stages to enhance the representation of different defect morphologies. The extracted multi-scale features are then passed to the neck for feature fusion \cite{lin2017fpn,liu2018panet}. Within the feature pyramid, CAFR replaces two nearest-neighbor upsampling operations with content-adaptive feature reassembly to better preserve defect boundaries and weak responses. The fused features are subsequently used by the multi-scale detection head to predict defect locations and categories.
 
 \begin{figure*}[!t]
 \centering
@@ -75,7 +75,7 @@ F_h &= \operatorname{DW}_{1\times7}(X), \label{eq:dme-horizontal}\\
 F_v &= \operatorname{DW}_{7\times1}(X), \label{eq:dme-vertical}\\
 F_l &= \operatorname{DW}_{3\times3}(X). \label{eq:dme-local}
 \end{align}
-Here, $\operatorname{DW}$ denotes depthwise convolution followed by batch normalization and SiLU activation. Unit stride and symmetric padding preserve the spatial dimensions. The $1\times7$ and $7\times1$ kernels extend support along the horizontal and vertical image axes, respectively, while the $3\times3$ branch encodes compact neighborhoods. These directions describe image orientations rather than yarn systems. All branches produce $C$ channels. Their concatenation is fused as
+Here, $\operatorname{DW}$ denotes depthwise convolution followed by batch normalization and SiLU activation. All branches preserve the spatial dimensions and produce $C$ output channels. Their concatenation is fused as
 \begin{equation}
 F_d=\phi\left([F_h,F_v,F_l]\right),
 \label{eq:dme-fusion}
@@ -86,7 +86,7 @@ Y=X+F_d.
 \label{eq:dme-residual}
 \end{equation}
 
-The identity path preserves the incoming C2f representation, while the residual branch augments it with morphology-aware features. DME draws on asymmetric spatial filtering \cite{ding2019acnet}, combining orthogonal depthwise branches with compact local filtering and residual fusion after each selected backbone stage. This arrangement adds explicit defect morphology encoding to the aggregated backbone features rather than repeating these spatial filters within individual bottlenecks.
+The residual connection combines the morphology-aware features with the incoming C2f output, allowing DME to enhance the backbone representation without discarding the features learned by the preceding layers. Its directional filtering is informed by asymmetric convolution designs \cite{ding2019acnet}.
 
 \begin{figure}[!t]
 \centering
@@ -96,9 +96,9 @@ The identity path preserves the incoming C2f representation, while the residual 
 \end{figure}
 
 \subsection{Content-Adaptive Feature Reassembly}
-Top-down fusion transfers semantic information from coarse maps to finer maps containing more spatial detail. With nearest-neighbor upsampling, this transfer repeats source features using fixed assignments, irrespective of local feature content. CAFR instead predicts a normalized local reconstruction kernel from the input features for each output location, as shown in Fig.~\ref{fig:cafr}.
+In the feature pyramid, nearest-neighbor upsampling enlarges feature maps by directly replicating feature values. This fixed operation does not adapt to the spatial structure of defects. To address this limitation, we introduce content-adaptive feature reassembly (CAFR), following the reassembly mechanism of CARAFE \cite{wang2019carafe}. CAFR predicts spatially varying kernels from the input features and uses them to aggregate local neighborhoods (Fig.~\ref{fig:cafr}), aiming to better preserve defect boundaries and weak responses during multi-scale fusion.
 
-The reassembly formulation follows CARAFE \cite{wang2019carafe}. We use this mechanism at both top-down fusion stages with a compression ratio of four, scale factor $s=2$, and reassembly size $k=5$. Given $X\in\mathbb{R}^{C\times H\times W}$, the kernel-prediction branch first compresses the channels to $C_r=\max(\lfloor C/4\rfloor,16)$:
+In \model, CAFR is used at both top-down fusion stages with a compression ratio of four, scale factor $s=2$, and reassembly size $k=5$. Given $X\in\mathbb{R}^{C\times H\times W}$, the kernel-prediction branch first compresses the channels to $C_r=\max(\lfloor C/4\rfloor,16)$:
 \begin{equation}
 X_c=E_{1\times1}(X).
 \label{eq:cafr-compression}
@@ -128,26 +128,26 @@ In parallel, $\operatorname{Unfold}_{k\times k}$ extracts source neighborhoods w
 P_{i,j}=\operatorname{Unfold}_{k\times k}(X)_{\lfloor i/s\rfloor,\lfloor j/s\rfloor},
 \label{eq:cafr-patch}
 \end{equation}
-where $P_{i,j}\in\mathbb{R}^{C\times k^2}$. This alignment replicates source neighborhoods onto the enlarged grid without replacing the learned output-specific weights. The same spatial weights are applied to every feature channel:
+where $P_{i,j}\in\mathbb{R}^{C\times k^2}$. The neighborhood index $u$ enumerates the $k\times k$ offsets in row-major order, consistently for the predicted weights and the unfolded patches. Nearest-neighbor replication aligns these source neighborhoods with output locations; the output features are then reconstructed through weighted aggregation rather than direct feature replication. The same spatial weights are applied to every feature channel:
 \begin{equation}
 Y_{c,i,j}=\sum_{u=1}^{k^2}K_{i,j,u}P_{c,i,j,u}.
 \label{eq:cafr-reassembly}
 \end{equation}
 
-The output has shape $C\times sH\times sW$. Equation~\eqref{eq:cafr-reassembly} allows reconstruction weights to vary with local feature content, so defect boundaries and regular knitted regions can be aggregated differently. Channel compression limits kernel-prediction overhead. In \model, this CARAFE-based mechanism reconstructs the morphology-enriched features at the two top-down pyramid stages before lateral fusion, adapting their spatial aggregation as information passes from stride 32 to stride 16 and then to stride 8.
+The output has shape $C\times sH\times sW$. Equation~\eqref{eq:cafr-reassembly} allows reconstruction weights to vary with local feature content, so defect boundaries and regular knitted regions can be aggregated differently. Channel compression limits kernel-prediction overhead. In \model, CAFR reconstructs the morphology-enriched features at the two top-down pyramid stages before lateral fusion.
 
-DME and CAFR play complementary roles: DME encodes horizontally elongated, vertically elongated, and localized hole-like patterns in the backbone, while CAFR performs content-adaptive reconstruction of these features across pyramid scales.
+Together, DME and CAFR enhance defect morphology representation and its subsequent reconstruction across feature pyramid scales.
 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.92\textwidth]{ltfr.png}
-\caption{CAFR structure. The upper path predicts location-specific $5\times5$ reassembly kernels, and the lower path unfolds and aligns local feature patches. Their element-wise product is summed along the kernel dimension to produce a $2\times$ upsampled feature.}
+\caption{CAFR structure. The upper path predicts location-specific $5\times5$ reassembly kernels, and the lower path unfolds local feature patches and replicates them to align with output locations. Weighted aggregation, rather than this alignment operation, produces the final $2\times$ upsampled feature.}
 \label{fig:cafr}
 \end{figure*}
 
 \subsection{Closed-Loop Detection System}
 \label{sec:deployment}
-Fig.~\ref{fig:system} shows the installed system. After the operator starts the circular knitting machine, the Hall sensor detects rotation and signals the RK3566 edge device to switch on the LED light and begin detection from the camera video stream. When a defect is detected, the device sends a stop signal to the machine controller through a wired connection to interrupt further defect propagation. It then displays the defect image and detection result for on-site operator review and troubleshooting. The operator resolves the problem and restarts the machine, completing the operational cycle.
+Fig.~\ref{fig:system} shows the installed system. After the operator starts the circular knitting machine, the Hall sensor detects rotation and signals the RK3566 edge device to switch on the LED light and begin detection from the camera video stream. When a defect is detected, the device sends a stop signal to the machine controller through a wired connection to interrupt further defect propagation. The defect image and detection result are displayed locally for operator review and troubleshooting. The operator resolves the problem and restarts the machine, completing the operational cycle.
 
 The deployment path is PyTorch $\rightarrow$ ONNX $\rightarrow$ INT8 RKNN. The trained model is exported with a fixed $640\times640$ input and converted using RKNN-Toolkit2 \cite{rockchiptoolkit2}, with post-training INT8 quantization for efficient NPU execution \cite{jacob2018quantization}. An Android application executes the RKNN model on the RK3566 edge device.
 
