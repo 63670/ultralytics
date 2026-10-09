@@ -248,6 +248,8 @@ Table~\ref{tab:comparison} presents the detection results on the test set. \mode
 
 Among the evaluated lightweight YOLO detectors, \model achieves the highest AP. Although RT-DETR-R18 attains a slightly higher AP of 67.7\%, it requires 20.09 M parameters and 60.72 G FLOPs, compared with 3.39 M parameters and 8.90 G FLOPs for \model. Fig.~\ref{fig:tradeoff} further illustrates the favorable balance between detection accuracy and model complexity achieved by \model.
 
+Fig.~\ref{fig:qualitative} shows predictions on seven selected test images, allowing qualitative comparison of missed defects, extra detections, and bounding-box alignment against repetitive fabric backgrounds.
+
 \begin{table*}[!tbp]
 \caption{Detection results on the common test set. Bold and underlined values indicate the highest and second-highest reported scores, respectively. The evaluation protocol is described in Section~\ref{sec:evaluation}.}
 \label{tab:comparison}
@@ -311,6 +313,7 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 \subsection{Component Ablation}
 Table~\ref{tab:ablation} presents the ablation results for DME and CAFR under the common YOLOv8n training and evaluation settings. Introducing DME improves AP from 59.3\% to 64.1\%, while AP50 remains nearly unchanged, indicating improved localization performance under stricter IoU thresholds. CAFR alone increases AP to 60.7\% and AP50 to 94.9\%. When both modules are incorporated, \model achieves 66.3\% AP and 96.9\% AP50. These results support complementary contributions from DME and CAFR to detection performance.
 
+Fig.~\ref{fig:heatmaps} presents LayerCAM-based visualizations of YOLOv8n and \model generated using the same procedure \cite{jiang2021layercam}. The examples illustrate differences in feature responses around defect regions, providing a qualitative comparison of the two models. Heat intensity is normalized per map and is not an absolute measure of detection accuracy.
 
 \begin{table}[!tbp]
 \caption{Component ablation. Parameters are in millions, FLOPs in billions, and AP50/AP in percent.}
@@ -329,13 +332,6 @@ YOLOv8n & -- & -- & 3.01 & 8.1 & 94.1 & 59.3 \\
 \bottomrule
 \end{tabular*}
 \end{table}
-
-\subsection{Per-Class and Qualitative Results}
-The class-wise AP values of \model are 61.7\%, 73.8\%, and 63.4\% for horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}), respectively, compared with 62.2\%, 59.6\%, and 56.2\% for YOLOv8n. The improvement is most pronounced for vertical defects and holes, with AP gains of 14.2 and 7.2 percentage points, respectively. Horizontal-defect AP remains comparable to the baseline, decreasing slightly by 0.5 points. These results show that the performance gains differ across defect categories. The vertical category contains 12 test instances, so its gain is interpreted within this test set.
-
-Fig.~\ref{fig:qualitative} shows predictions on seven selected test images, allowing qualitative comparison of missed defects, extra detections, and bounding-box alignment against repetitive fabric backgrounds.
-
-Fig.~\ref{fig:heatmaps} presents LayerCAM-based visualizations of YOLOv8n and \model generated using the same procedure \cite{jiang2021layercam}. The examples illustrate differences in feature responses around defect regions, providing a qualitative comparison of the two models. Heat intensity is normalized per map and is not an absolute measure of detection accuracy.
 
 \subsection{Edge Deployment}
 \label{sec:edge-evaluation}
