@@ -1,5 +1,12 @@
 \documentclass[journal]{IEEEtran}
 
+% Match the supplied JIOT template even when an editor loads system IEEEtran.
+\makeatletter
+\renewcommand{\LARGE}{\@setfontsize{\LARGE}{18}{20pt}}
+\renewcommand{\huge}{\@setfontsize{\huge}{18}{24pt}}
+\renewcommand{\Huge}{\@setfontsize{\Huge}{18}{28pt}}
+\makeatother
+
 \usepackage{amsmath,amsfonts}
 \usepackage{array}
 \usepackage{booktabs}
@@ -8,6 +15,7 @@
 \usepackage{microtype}
 \usepackage{multirow}
 \usepackage{placeins}
+\usepackage{stfloats}
 \usepackage[nospread]{flushend}
 \usepackage{xspace}
 \usepackage{xurl}
@@ -181,7 +189,7 @@ The cloud platform receives defect records and device states for centralized mon
 Images were collected during operation of a real circular-knitting production line using the arrangement in Section~\ref{sec:deployment}. A global-shutter industrial camera captures $1280\times1024$ frames approximately 10 cm from the fabric, with a field of view of approximately $16\times14$ cm. The project team retained defect-containing images and manually annotated axis-aligned bounding boxes. The dataset includes three defect categories: horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}).
 
 The dataset contains 403 images with 468 annotated defect instances, divided into training, validation, and test sets of 282, 40, and 81 images, respectively, as summarized in Table~\ref{tab:data}. The validation set is used for checkpoint selection, while performance is reported on the held-out test set containing 91 labeled defects.
-\begin{table}[!h]
+\begin{table}[!htbp]
 \caption{Image-level split and defect-instance counts in the real production-line dataset.}
 \label{tab:data}
 \centering
@@ -296,28 +304,28 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 \end{table*}
 
 
-\begin{figure*}[!t]
+\begin{figure*}[!tb]
 \centering
 \includegraphics[width=0.87\textwidth]{efficiency.png}
 \caption{Accuracy versus parameter count (left) and approximate FLOPs (right). Both horizontal axes are logarithmic. AP corresponds to the mAP@0.5:0.95 notation in the plot; Ours denotes \model.}
 \label{fig:tradeoff}
 \end{figure*}
 
-% Queue the qualitative figures before the remaining result text so they can
-% share pages with their discussion rather than trail the conclusion.
-\begin{figure*}[!t]
+% Use a wide detector comparison and a compact single-column activation map
+% so result figures can share pages with the corresponding discussion.
+\begin{figure*}[!tb]
 \centering
-\includegraphics[width=0.84\textwidth]{qualitative_existing.png}
+\includegraphics[width=0.72\textwidth]{qualitative_existing.png}
 \caption{Selected test predictions with common colors and line widths and a confidence threshold of 0.25. Columns show ground-truth labels, YOLOv8n, YOLO11n, YOLO26n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours). The threshold is for display and does not define AP evaluation.}
 \label{fig:qualitative}
 \end{figure*}
 
-\begin{figure*}[!t]
+\begin{figure}[!tb]
 \centering
-\includegraphics[width=0.76\textwidth]{heatmap_comparison.png}
+\includegraphics[width=0.82\columnwidth]{heatmap_comparison.png}
 \caption{Illustrative LayerCAM-based overlays. Columns: original image, YOLOv8n, and \model (Ours). Rows, from top to bottom, are selected validation, training, and test examples. Both models use the same visualization procedure; these selected maps are not a quantitative test-set comparison.}
 \label{fig:heatmaps}
-\end{figure*}
+\end{figure}
 
 \subsection{Component Ablation}
 Table~\ref{tab:ablation} evaluates the individual and combined effects of DME and CAFR on detection performance. Introducing DME increases AP from 59.3\% to 64.1\%, while CAFR alone improves AP to 60.7\%. When both modules are incorporated, \model achieves 66.3\% AP and 96.9\% AP50, outperforming either individual modification. These results demonstrate the complementary effects of the two modules. DME enhances the representation of defect morphologies in the backbone, while CAFR adaptively reconstructs these features during multi-scale fusion. Their combination further improves the overall detection performance.
