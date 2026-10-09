@@ -311,7 +311,7 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 \end{figure*}
 
 \subsection{Component Ablation}
-Table~\ref{tab:ablation} presents the ablation results for DME and CAFR under the common YOLOv8n training and evaluation settings. Introducing DME improves AP from 59.3\% to 64.1\%, while AP50 remains nearly unchanged, indicating improved localization performance under stricter IoU thresholds. CAFR alone increases AP to 60.7\% and AP50 to 94.9\%. When both modules are incorporated, \model achieves 66.3\% AP and 96.9\% AP50. These results support complementary contributions from DME and CAFR to detection performance.
+Table~\ref{tab:ablation} evaluates the individual and combined effects of DME and CAFR on detection performance. Introducing DME increases AP from 59.3\% to 64.1\%, while CAFR alone improves AP to 60.7\%. When both modules are incorporated, \model achieves 66.3\% AP and 96.9\% AP50, outperforming either individual modification. These results demonstrate the complementary effects of the two modules. DME enhances the representation of defect morphologies in the backbone, while CAFR adaptively reconstructs these features during multi-scale fusion. Their combination further improves the overall detection performance.
 
 Fig.~\ref{fig:heatmaps} presents LayerCAM-based visualizations of YOLOv8n and \model generated using the same procedure \cite{jiang2021layercam}. The examples illustrate differences in feature responses around defect regions, providing a qualitative comparison of the two models. Heat intensity is normalized per map and is not an absolute measure of detection accuracy.
 
