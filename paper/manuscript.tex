@@ -67,7 +67,7 @@ Fig.~\ref{fig:network} shows the overall architecture. DME is introduced after t
 \end{figure*}
 
 \subsection{Defect Morphology Encoding}
-The three defect categories studied here exhibit distinct spatial morphologies, including horizontally elongated defects, vertically elongated defects, and localized hole-like defects. We therefore introduce a defect morphology encoding (DME) module to explicitly model these characteristic spatial forms. DME employs horizontal, vertical, and local branches (Fig.~\ref{fig:dme}). The $1\times7$ and $7\times1$ branches provide elongated spatial support along the horizontal and vertical image axes, respectively, while the $3\times3$ branch captures local spatial patterns without favoring an orientation. Depthwise filtering separates spatial processing from subsequent channel mixing, following the efficiency principle of depthwise-separable networks \cite{howard2017mobilenets}.
+The three defect categories considered in this work present different spatial characteristics. Horizontal and vertical defects usually extend along one dominant direction, whereas hole defects are more localized. To capture these differences, we introduce a defect morphology encoding (DME) module with three parallel branches, as shown in Fig.~\ref{fig:dme}. The horizontal and vertical branches use $1\times7$ and $7\times1$ depthwise convolutions to enlarge the receptive field along the corresponding spatial directions, while the $3\times3$ branch captures localized defect structures. Depthwise convolution is adopted to model these spatial patterns with low computational overhead before channel-wise feature fusion \cite{howard2017mobilenets}.
 
 For a C2f output $X\in\mathbb{R}^{C\times H\times W}$, the three branch responses are
 \begin{align}
