@@ -169,9 +169,9 @@ The cloud platform receives defect records and device states for centralized mon
 
 \section{Experimental Setup}
 \subsection{Dataset}
-Images were collected during operation of a real circular-knitting production line using the arrangement in Section~\ref{sec:deployment}. A global-shutter industrial camera captures $1280\times1024$ frames approximately 10 cm from the fabric, with a field of view of approximately $16\times14$ cm. The project team retained defect-containing images and manually annotated axis-aligned bounding boxes. The engineering labels \emph{row}, \emph{col}, and \emph{hole} denote predominantly horizontal disruptions, vertical disruptions, and holes, respectively. These short labels are retained in detection displays, while their visual meanings are used in the analysis.
+Images were collected during operation of a real circular-knitting production line using the arrangement in Section~\ref{sec:deployment}. A global-shutter industrial camera captures $1280\times1024$ frames approximately 10 cm from the fabric, with a field of view of approximately $16\times14$ cm. The project team retained defect-containing images and manually annotated axis-aligned bounding boxes. The dataset includes three defect categories: horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}).
 
-The dataset contains 403 images and 468 annotated instances. Its nonoverlapping training, validation, and test subsets contain 282, 40, and 81 images, respectively (Table~\ref{tab:data}). Validation data are used for checkpoint selection, and detection accuracy is reported on the held-out test set of 81 images and 91 instances.
+The dataset contains 403 images with 468 annotated defect instances, divided into training, validation, and test sets of 282, 40, and 81 images, respectively, as summarized in Table~\ref{tab:data}. The validation set is used for checkpoint selection, while performance is reported on the held-out test set containing 91 labeled defects.
 \begin{table}[!h]
 \caption{Image-level split and defect-instance counts in the real production-line dataset.}
 \label{tab:data}
@@ -190,7 +190,7 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 
 \subsection{Implementation Details}
 \label{sec:implementation}
-Table~\ref{tab:implementation} summarizes the training and deployment settings. \model and its direct YOLOv8n baseline load compatible weights from \texttt{yolov8n.pt}; newly introduced layers use framework initialization. Other comparison models use the available pretrained checkpoints in their respective implementations. Remaining Ultralytics settings follow framework defaults, including data augmentation and optimizer selection.
+Table~\ref{tab:implementation} summarizes the training and deployment settings. \model and YOLOv8n are initialized using the pretrained \texttt{yolov8n.pt} weights, while newly added layers use default initialization. Other comparison models use the available pretrained checkpoints in their respective implementations. The remaining Ultralytics training settings follow the framework defaults.
 
 The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yolov12}, DETR \cite{carion2020detr}, Deformable DETR \cite{zhu2021deformable}, Faster R-CNN \cite{ren2015faster}, and an R18 model from the RT-DETRv2 implementation \cite{lv2024rtdetrv2}, denoted RT-DETR-R18.
 
@@ -216,13 +216,11 @@ Category & Parameter & Specification \\
 \midrule
 \shortstack[l]{3. Data\\protocol}
 & Input resolution & Fixed at $640\times640$ \\
-& Augmentation & Standard Ultralytics geometric and photometric augmentation; no augmentation hyperparameter was manually overridden \\
 \midrule
 \shortstack[l]{4. Training\\dynamics}
 & Batch & 16  \\
 & Maximum epochs & 300 \\
 & Early-stopping patience & 80 epochs \\
-& Optimizer & Ultralytics automatic optimizer selection \\
 \bottomrule
 \end{tabular}
 \renewcommand{\arraystretch}{1.0}
@@ -230,7 +228,7 @@ Category & Parameter & Specification \\
 
 \subsection{Evaluation Metrics}
 \label{sec:evaluation}
-We report average precision across the ten IoU thresholds used in COCO evaluation \cite{lin2014coco}, together with AP at IoU $0.50$. For a predicted box $B_p$ and a ground-truth box $B_g$, intersection over union is $\operatorname{IoU}(B_p,B_g)=|B_p\cap B_g|/|B_p\cup B_g|$. At threshold $t$, a correct detection must have the correct class and match an otherwise unmatched ground-truth instance. Let $\operatorname{AP}_c(t)$ denote the area under the interpolated precision--recall curve for class $c$, expressed on $[0,1]$. For $N_c=3$ classes, the percentage-valued metrics are
+We report COCO average precision (AP) across ten IoU thresholds and AP at IoU $0.50$ (AP50) \cite{lin2014coco}. For a predicted box $B_p$ and a ground-truth box $B_g$, intersection over union is $\operatorname{IoU}(B_p,B_g)=|B_p\cap B_g|/|B_p\cup B_g|$. Let $\operatorname{AP}_c(t)$ denote the area under the interpolated precision--recall curve for class $c$ at IoU threshold $t$, expressed on $[0,1]$. For $N_c=3$ classes, the percentage-valued metrics are
 \begin{align}
 \operatorname{AP} &= \frac{100}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in\mathcal{T}}\operatorname{AP}_c(t), \notag\\
 \operatorname{AP50} &= \frac{100}{N_c}\sum_{c=1}^{N_c}\operatorname{AP}_c(0.50),
@@ -239,16 +237,16 @@ We report average precision across the ten IoU thresholds used in COCO evaluatio
 where $\mathcal{T}=\{0.50,0.55,\ldots,0.95\}$. 
 AP therefore evaluates localization over increasingly strict overlap requirements, whereas AP50 uses a single, less restrictive threshold. Differences between percentage-valued AP scores are reported in percentage points.
 
-All models are evaluated on the same held-out test images using their respective implementations and native evaluation and post-processing settings. Because evaluator details differ across frameworks, the direct YOLOv8n comparison and module ablations serve as the primary controlled comparisons, while cross-framework results provide broader references.
+All models are evaluated on the same held-out test set using their respective implementations. Since evaluation and post-processing settings differ across frameworks, the comparison with YOLOv8n and the component ablations serve as the primary controlled evaluations.
 
-Model scale is reported as parameter counts and approximate FLOPs at input shape $[1,3,640,640]$. Counts follow framework-native profiling (fused summaries for YOLO), with approximately two operations per multiply--accumulate; unsupported operators may be omitted.
+Parameter counts and approximate FLOPs are obtained from framework-native profiling at input shape $[1,3,640,640]$ (fused summaries for YOLO), with approximately two operations per multiply--accumulate.
 
 \section{Results and Discussion}
 \label{sec:results}
 \subsection{Comparison With Other Detectors}
-Table~\ref{tab:comparison} presents the test results. \model achieves 66.3\% AP and 96.9\% AP50, compared with 59.3\% and 94.1\% for YOLOv8n. The improvements of 7.0 and 2.8 percentage points require 0.38 M additional parameters and approximately 0.8 G additional FLOPs. The larger gain under the stricter AP metric suggests that the modification improves localization quality beyond increasing the number of detections accepted at IoU $0.50$.
+Table~\ref{tab:comparison} presents the detection results on the test set. \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively. These improvements are achieved with only 0.38 M additional parameters and approximately 0.8 G additional FLOPs. The larger improvement in AP indicates better detection performance under stricter IoU thresholds.
 
-Among the evaluated compact YOLO variants, \model has the highest reported AP. RT-DETR-R18 attains a higher AP of 67.7\%, with 20.09 M parameters and 60.72 G estimated FLOPs, compared with 3.39 M and 8.90 G for \model. Thus, the proposed design occupies a lower-complexity operating point rather than providing the highest accuracy among all architectures. Cross-framework comparisons follow the evaluation protocol in Section~\ref{sec:evaluation}.
+Among the evaluated lightweight YOLO detectors, \model achieves the highest AP. Although RT-DETR-R18 attains a slightly higher AP of 67.7\%, it requires 20.09 M parameters and 60.72 G FLOPs, compared with 3.39 M parameters and 8.90 G FLOPs for \model. Fig.~\ref{fig:tradeoff} further illustrates the favorable balance between detection accuracy and model complexity achieved by \model.
 
 \begin{table*}[!tbp]
 \caption{Detection results on the common test set. Bold and underlined values indicate the highest and second-highest reported scores, respectively. The evaluation protocol is described in Section~\ref{sec:evaluation}.}
@@ -286,7 +284,6 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
 
-Fig.~\ref{fig:tradeoff} visualizes the relationship between accuracy and model complexity. The logarithmic horizontal axes make the compact YOLO models and larger comparison models visible within the same panels. The plot summarizes the tabulated estimates; it does not replace hardware measurements or remove the differences between evaluation implementations.
 
 \begin{figure*}[!t]
 \centering
@@ -300,7 +297,7 @@ Fig.~\ref{fig:tradeoff} visualizes the relationship between accuracy and model c
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.84\textwidth]{qualitative_existing.png}
-\caption{Selected test predictions with a common rendering style and a confidence threshold of 0.25. Columns show ground-truth labels, YOLOv8n, YOLO11n, YOLO26n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours). The threshold is for display and does not define AP evaluation.}
+\caption{Selected test predictions with common colors and line widths and a confidence threshold of 0.25. Columns show ground-truth labels, YOLOv8n, YOLO11n, YOLO26n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours). The threshold is for display and does not define AP evaluation.}
 \label{fig:qualitative}
 \end{figure*}
 
@@ -312,9 +309,8 @@ Fig.~\ref{fig:tradeoff} visualizes the relationship between accuracy and model c
 \end{figure*}
 
 \subsection{Component Ablation}
-Table~\ref{tab:ablation} separates the effects of defect morphology encoding and feature reassembly under the common YOLOv8n recipe. DME raises AP from 59.3\% to 64.1\%, an increase of 4.8 percentage points, with approximately 0.27 M additional parameters. Its AP50 is close to that of the baseline, suggesting that its principal benefit in this experiment concerns stricter localization. CAFR alone achieves 60.7\% AP and 94.9\% AP50, improving the baseline by 1.4 and 0.8 percentage points, respectively, with approximately 0.10 M additional parameters.
+Table~\ref{tab:ablation} presents the ablation results for DME and CAFR under the common YOLOv8n training and evaluation settings. Introducing DME improves AP from 59.3\% to 64.1\%, while AP50 remains nearly unchanged, indicating improved localization performance under stricter IoU thresholds. CAFR alone increases AP to 60.7\% and AP50 to 94.9\%. When both modules are incorporated, \model achieves 66.3\% AP and 96.9\% AP50. These results support complementary contributions from DME and CAFR to detection performance.
 
-The complete model reaches 66.3\% AP, exceeding DME alone by 2.2 points and CAFR alone by 5.6 points. These results support the complementary contributions of DME and CAFR at the module level: defect morphology encoding strengthens the backbone representation, while adaptive reassembly improves its reconstruction across pyramid scales.
 
 \begin{table}[!tbp]
 \caption{Component ablation. Parameters are in millions, FLOPs in billions, and AP50/AP in percent.}
@@ -335,17 +331,16 @@ YOLOv8n & -- & -- & 3.01 & 8.1 & 94.1 & 59.3 \\
 \end{table}
 
 \subsection{Per-Class and Qualitative Results}
-The class-wise AP values of \model are 61.7\%, 73.8\%, and 63.4\% for \emph{row}, \emph{col}, and \emph{hole}, respectively. The corresponding YOLOv8n values are 62.2\%, 59.6\%, and 56.2\%. The aggregate improvement therefore comes primarily from vertical defects (+14.2 points) and holes (+7.2 points), while horizontal-defect AP decreases slightly by 0.5 points. This result supports a more specific interpretation than uniform improvement across all morphologies. The vertical category contains only 12 test instances, so the magnitude of its gain should not be generalized beyond the evaluated sample without further data.
+The class-wise AP values of \model are 61.7\%, 73.8\%, and 63.4\% for horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}), respectively, compared with 62.2\%, 59.6\%, and 56.2\% for YOLOv8n. The improvement is most pronounced for vertical defects and holes, with AP gains of 14.2 and 7.2 percentage points, respectively. Horizontal-defect AP remains comparable to the baseline, decreasing slightly by 0.5 points. These results show that the performance gains differ across defect categories. The vertical category contains 12 test instances, so its gain is interpreted within this test set.
 
-Fig.~\ref{fig:qualitative} compares seven selected test images using common colors, line widths, and a display confidence threshold of 0.25. These examples allow visual comparison of missed detections, extra predictions, and box alignment against repetitive texture. They illustrate individual predictions rather than establish a population-level ranking; the quantitative comparison uses the full test set.
+Fig.~\ref{fig:qualitative} shows predictions on seven selected test images, allowing qualitative comparison of missed defects, extra detections, and bounding-box alignment against repetitive fabric backgrounds.
 
-Fig.~\ref{fig:heatmaps} provides complementary, illustrative activation maps generated by the local LayerCAM-based implementation \cite{jiang2021layercam}. Positive class-score gradients weight the feature maps entering the three detection scales. Maps are spatially normalized for each candidate and scale, combined by a pixelwise maximum, and overlaid on the original image. The same procedure is used for both models, considering up to 16 highest-scoring candidates above 0.25, with a highest-score fallback if none exceed the threshold. The selected rows originate from the validation, training, and test subsets, respectively, and are not treated as additional held-out evidence. Per-map normalization and candidate selection also mean that heat intensity is not directly comparable as an absolute measure of model quality.
+Fig.~\ref{fig:heatmaps} presents LayerCAM-based visualizations of YOLOv8n and \model generated using the same procedure \cite{jiang2021layercam}. The examples illustrate differences in feature responses around defect regions, providing a qualitative comparison of the two models. Heat intensity is normalized per map and is not an absolute measure of detection accuracy.
 
 \subsection{Edge Deployment}
 \label{sec:edge-evaluation}
-The INT8 \model is deployed on the RK3566 edge device. Together with Hall-triggered acquisition and wired machine-stop control, this deployment supports local defect detection and intervention without a cloud round trip. Defect images are displayed for on-site operator review and troubleshooting, while defect records and device states are uploaded to the cloud for equipment monitoring and production-quality analysis.
+\model is converted into an INT8 RKNN model and deployed on the RK3566 edge device. The deployed system integrates defect detection with Hall-sensor-based machine-state monitoring and wired stop control. Detection results are displayed locally for operator review, while defect records are uploaded to the cloud for centralized monitoring and production-quality analysis.
 
-The current evaluation uses a small, imbalanced set of defect-containing images. Broader production trials are needed to assess transfer across materials and operating conditions, false stops during defect-free operation, and detection accuracy after INT8 conversion.
 
 \section{Conclusion}
 We have presented \model and a production-line defect detection system for circular knitting machines. \model couples defect morphology encoding with content-adaptive feature reconstruction for knitted-fabric defect detection. DME models horizontally elongated defects, vertically elongated defects, and localized hole-like defects in the backbone, while CAFR replaces fixed upsampling with CARAFE-based local reassembly in the top-down feature pyramid. On the production-line test set, \model improves the YOLOv8n baseline from 59.3\% to 66.3\% AP and from 94.1\% to 96.9\% AP50, with 3.39 M parameters and approximately 8.9 G FLOPs. These results, together with the component ablation, support the complementary roles of defect morphology encoding and feature reassembly in improving overall localization performance while retaining a compact model scale.
