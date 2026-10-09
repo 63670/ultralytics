@@ -55,9 +55,9 @@ The main contributions of our work are as follows.
 
 \section{Proposed Method}
 \subsection{TEFR-YOLO Architecture}
-\model is instantiated on YOLOv8n \cite{ultralytics2023}. Baseline selection considers hardware compatibility as well as model complexity: Rockchip's official INT8 benchmark reports 34.0 FPS for YOLOv8n and 20.6 FPS for YOLO11n on RK3566/RK3568 at $640\times640$ input \cite{rockchipmodelzoo}. YOLOv5n is faster in that benchmark (39.7 FPS), so YOLOv8n is not selected on a claim of maximum throughput. Its supported deployment path, compact architecture, and modular backbone and pyramid instead provide a practical basis for the proposed modifications. These vendor measurements concern model inference and are distinct from our deployed-model measurement.
+\model is instantiated on YOLOv8n, selected for its RK3566 deployment compatibility, compact scale, and modular structure \cite{ultralytics2023,rockchipmodelzoo}. The proposed modifications target backbone texture encoding and top-down feature reconstruction.
 
-Fig.~\ref{fig:network} shows the overall architecture. DTE follows the output of each of the four backbone C2f stages at strides 4, 8, 16, and 32. The internal C2f bottlenecks and their feature-aggregation paths remain intact; directional processing is not repeated inside every bottleneck. The spatial pyramid pooling stage is also retained. The neck follows the top-down and bottom-up multi-scale aggregation pattern associated with feature pyramids \cite{lin2017fpn,liu2018panet}. LTFR replaces only the two top-down nearest-neighbor operations: one reconstructs stride-32 features at stride 16, and the other reconstructs the fused stride-16 features at stride 8. Each performs a single $2\times$ upsampling operation. Lateral concatenation, neck C2f blocks, bottom-up aggregation, and the three-scale detection head are unchanged. For a $640\times640$ input, the final detection features have spatial sizes $80\times80$, $40\times40$, and $20\times20$.
+Fig.~\ref{fig:network} shows the overall architecture. DTE augments the output of each of the four backbone C2f stages at strides 4, 8, 16, and 32 with directional and local texture cues. The neck uses top-down and bottom-up multi-scale aggregation \cite{lin2017fpn,liu2018panet}. Within its top-down path, LTFR replaces the two nearest-neighbor upsampling operations: the first reconstructs stride-32 features at stride 16, and the second reconstructs the fused stride-16 features at stride 8. Each performs a single $2\times$ reconstruction before lateral fusion. The resulting three detection scales have spatial sizes $80\times80$, $40\times40$, and $20\times20$ for a $640\times640$ input.
 
 \begin{figure*}[!t]
 \centering
@@ -75,7 +75,7 @@ F_h &= \operatorname{DW}_{1\times7}(X), \label{eq:dte-horizontal}\\
 F_v &= \operatorname{DW}_{7\times1}(X), \label{eq:dte-vertical}\\
 F_l &= \operatorname{DW}_{3\times3}(X). \label{eq:dte-local}
 \end{align}
-Here, $\operatorname{DW}$ denotes depthwise convolution followed by batch normalization and SiLU activation. Unit stride and symmetric padding preserve the spatial dimensions. The $1\times7$ and $7\times1$ kernels extend support along the horizontal and vertical image axes, respectively, while the $3\times3$ branch encodes compact neighborhoods. All branches produce $C$ channels. Their concatenation is fused as
+Here, $\operatorname{DW}$ denotes depthwise convolution followed by batch normalization and SiLU activation. Unit stride and symmetric padding preserve the spatial dimensions. The $1\times7$ and $7\times1$ kernels extend support along the horizontal and vertical image axes, respectively, while the $3\times3$ branch encodes compact neighborhoods. These directions describe image orientations rather than yarn systems. All branches produce $C$ channels. Their concatenation is fused as
 \begin{equation}
 F_d=\phi\left([F_h,F_v,F_l]\right),
 \label{eq:dte-fusion}
@@ -86,7 +86,7 @@ Y=X+F_d.
 \label{eq:dte-residual}
 \end{equation}
 
-The identity path allows the incoming C2f representation to pass directly to the output, while the residual branch learns a texture-dependent correction. DTE is related to the use of asymmetric spatial kernels in ACNet \cite{ding2019acnet}; here, orthogonal depthwise filtering, compact local filtering, concatenation, and residual fusion are assembled after the C2f output. The horizontal and vertical terms refer to image orientations, not to warp and weft yarn systems. The kernel length of seven defines the configuration evaluated in this study; its optimality is not assumed.
+The identity path preserves the incoming C2f representation, while the residual branch learns a texture-dependent correction. DTE draws on asymmetric spatial filtering \cite{ding2019acnet}, combining orthogonal depthwise branches with compact local filtering and residual fusion after each selected backbone stage. This arrangement adds explicit texture encoding to the aggregated backbone features rather than repeating directional processing within individual bottlenecks.
 
 \begin{figure}[!t]
 \centering
@@ -134,7 +134,7 @@ Y_{c,i,j}=\sum_{u=1}^{k^2}K_{i,j,u}P_{c,i,j,u}.
 \label{eq:ltfr-reassembly}
 \end{equation}
 
-The output has shape $C\times sH\times sW$. Equation~\eqref{eq:ltfr-reassembly} allows reconstruction weights to vary with local texture content, so defect boundaries and regular knitted regions can be aggregated differently. Channel compression limits kernel-prediction overhead, while neighborhood reassembly introduces adaptive spatial mixing before lateral fusion. In \model, the role of this CARAFE-based mechanism is specifically to provide content-adaptive reconstruction at the two top-down pyramid stages.
+The output has shape $C\times sH\times sW$. Equation~\eqref{eq:ltfr-reassembly} allows reconstruction weights to vary with local texture content, so defect boundaries and regular knitted regions can be aggregated differently. Channel compression limits kernel-prediction overhead. In \model, this CARAFE-based mechanism reconstructs the texture-encoded features at the two top-down pyramid stages before lateral fusion, adapting their spatial aggregation as information passes from stride 32 to stride 16 and then to stride 8.
 
 DTE and LTFR play complementary roles: DTE enhances direction-sensitive texture representation in the backbone, while LTFR performs content-adaptive reconstruction of these features across pyramid scales.
 
@@ -147,11 +147,11 @@ DTE and LTFR play complementary roles: DTE enhances direction-sensitive texture 
 
 \subsection{Closed-Loop Detection System}
 \label{sec:deployment}
-Fig.~\ref{fig:system} shows the installed system. The operator presses the start button and the circular knitting machine begins rotating. The Hall sensor detects rotation and sends a signal to the RK3566 edge device, which switches on the LED light, acquires the camera video stream, and enters detection mode. Once a defect is detected, the edge device issues a stop command through its wired connection to the machine controller to interrupt further defect propagation. The defect image and detection result are displayed locally for operator review and troubleshooting. The operator resolves the problem and restarts the machine, completing the operational cycle. Human review follows automatic stop control rather than authorizing it in advance.
+Fig.~\ref{fig:system} shows the installed system. After the operator starts the circular knitting machine, the Hall sensor detects rotation and signals the RK3566 edge device to switch on the LED light and begin detection from the camera video stream. When a defect is detected, the device sends a stop signal to the machine controller through a wired connection to interrupt further defect propagation. It then displays the defect image and detection result for on-site operator review and troubleshooting. The operator resolves the problem and restarts the machine, completing the operational cycle.
 
-Deployment uses the conversion path PyTorch $\rightarrow$ ONNX $\rightarrow$ INT8 RKNN. The trained model is exported with a fixed $640\times640$ input and converted using Rockchip's RKNN-Toolkit2 \cite{rockchiptoolkit2}. Post-training INT8 quantization provides a reduced-precision representation for NPU execution; integer inference is a widely used approach to efficient neural-network deployment \cite{jacob2018quantization}. The RKNN model is executed by the Android application on the RK3566 edge device. Deployment throughput is reported separately from the floating-point checkpoint accuracy evaluated in Section~\ref{sec:results}.
+The deployment path is PyTorch $\rightarrow$ ONNX $\rightarrow$ INT8 RKNN. The trained model is exported with a fixed $640\times640$ input and converted using RKNN-Toolkit2 \cite{rockchiptoolkit2}, with post-training INT8 quantization for efficient NPU execution \cite{jacob2018quantization}. An Android application executes the RKNN model on the RK3566 edge device.
 
-The cloud platform receives defect records and device states for centralized supervision, defect statistics, and production-quality analysis. Fig.~\ref{fig:cloud} illustrates device-state monitoring, remote configuration, and review of uploaded defect images. These functions provide an operational digital representation of the installed equipment; no automatic process-parameter optimization is assumed. Detection and wired stop control remain local and do not require cloud availability.
+The cloud platform receives defect records and device states for centralized monitoring, defect statistics, and production-quality analysis. Its interface supports device-state visualization, remote configuration, and review of uploaded defect images (Fig.~\ref{fig:cloud}). Detection and wired stop control remain local and do not depend on cloud communication.
 
 \begin{figure*}[!t]
 \centering
@@ -293,7 +293,7 @@ Fig.~\ref{fig:tradeoff} visualizes the relationship between accuracy and model c
 \subsection{Component Ablation}
 Table~\ref{tab:ablation} separates the effects of texture encoding and feature reassembly under the common YOLOv8n recipe. DTE raises AP from 59.3\% to 64.1\%, an increase of 4.8 percentage points, with approximately 0.27 M additional parameters. Its AP50 is close to that of the baseline, suggesting that its principal benefit in this experiment concerns stricter localization. LTFR alone achieves 60.7\% AP and 94.9\% AP50, improving the baseline by 1.4 and 0.8 percentage points, respectively, with approximately 0.10 M additional parameters.
 
-The complete model reaches 66.3\% AP, exceeding DTE alone by 2.2 points and LTFR alone by 5.6 points. This pattern is consistent with complementary roles for backbone encoding and pyramid reconstruction. The evidence concerns the two complete modules: it does not isolate the contribution of each DTE branch, establish an optimal directional kernel length, or compare LTFR against every alternative upsampler.
+The complete model reaches 66.3\% AP, exceeding DTE alone by 2.2 points and LTFR alone by 5.6 points. This pattern is consistent with complementary roles for backbone encoding and pyramid reconstruction. These comparisons evaluate the complete modules at the chosen kernel configuration. DTE branch and kernel-size ablations, together with matched comparisons against nearest-neighbor, bilinear, and alternative CARAFE-based upsampling configurations, remain necessary to assess the individual design choices.
 
 \begin{table}[!tbp]
 \caption{Component ablation. Parameters are in millions, FLOPs in billions, and AP50/AP in percent.}
@@ -335,6 +335,8 @@ Fig.~\ref{fig:qualitative} compares seven selected test images using common colo
 Fig.~\ref{fig:heatmaps} provides complementary, illustrative activation maps generated by the local LayerCAM-based implementation \cite{jiang2021layercam}. Positive class-score gradients weight the feature maps entering the three detection scales. Maps are spatially normalized for each candidate and scale, combined by a pixelwise maximum, and overlaid on the original image. The same procedure is used for both models, considering up to 16 highest-scoring candidates above 0.25, with a highest-score fallback if none exceed the threshold. The selected rows originate from the validation, training, and test subsets, respectively, and are not treated as additional held-out evidence. Per-map normalization and candidate selection also mean that heat intensity is not directly comparable as an absolute measure of model quality.
 
 \subsection{Deployment and Scope of the Evidence}
+Rockchip's official INT8 benchmark reports 39.7, 34.0, and 20.6 FPS for YOLOv5n, YOLOv8n, and YOLO11n, respectively, on RK3566/RK3568 at $640\times640$ input \cite{rockchipmodelzoo}. These reference-model inference measurements provide hardware context for baseline selection and are distinct from the deployed \model measurement below.
+
 The deployed \model achieves 28 FPS on the RK3566 edge device, demonstrating that the modified detector can operate on the target embedded platform. This measurement complements the parameter and operation counts, because NPU execution also depends on operator support, data movement, and runtime scheduling. The system connects local predictions to wired machine control and preserves defect images for operator review and cloud analysis. The reported throughput is not a measurement of mechanical stopping time or a guarantee of complete detection coverage under every machine speed and camera arrangement.
 
 The evaluation is bounded by the available production-line dataset. Its small, imbalanced test set limits conclusions about rare defect variations and transfer to other materials or acquisition conditions. Because the retained images contain visible defects, image-level AP does not quantify false-stop frequency during long defect-free production intervals. Likewise, the floating-point detection results do not constitute a paired assessment of quantization-induced accuracy changes. Larger independent production samples, quantized-model accuracy evaluation, and finer-grained module ablations would extend the evidence beyond the present detector comparison and deployment demonstration.
