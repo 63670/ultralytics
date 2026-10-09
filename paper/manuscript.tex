@@ -55,9 +55,9 @@ The main contributions of our work are as follows.
 
 \section{Proposed Method}
 \subsection{DMFR-YOLO Architecture}
-\model is instantiated on YOLOv8n, selected for its RK3566 deployment compatibility, compact scale, and modular structure \cite{ultralytics2023,rockchipmodelzoo}. The proposed modifications target defect morphology encoding in the backbone and top-down feature reconstruction.
+\model is developed based on YOLOv8n, which is selected for its compatibility with RK3566 deployment, compact model size, and modular architecture \cite{ultralytics2023,rockchipmodelzoo}. The proposed modifications target defect morphology encoding in the backbone and feature reconstruction in the feature pyramid.
 
-Fig.~\ref{fig:network} shows the overall architecture. DME augments the output of each of the four backbone C2f stages at strides 4, 8, 16, and 32 with features encoding horizontally elongated, vertically elongated, and localized hole-like patterns. The neck uses top-down and bottom-up multi-scale aggregation \cite{lin2017fpn,liu2018panet}. Within its top-down path, CAFR replaces the two nearest-neighbor upsampling operations: the first reconstructs stride-32 features at stride 16, and the second reconstructs the fused stride-16 features at stride 8. Each performs a single $2\times$ reconstruction before lateral fusion. The resulting three detection scales have spatial sizes $80\times80$, $40\times40$, and $20\times20$ for a $640\times640$ input.
+Fig.~\ref{fig:network} shows the overall architecture. DME is introduced after the main backbone stages to enhance the representation of horizontally elongated, vertically elongated, and localized hole-like defects. The extracted multi-scale features are then passed to the neck for feature fusion \cite{lin2017fpn,liu2018panet}. During this process, CAFR replaces the two nearest-neighbor upsampling operations with content-adaptive feature reassembly, allowing the reconstructed features to better preserve defect boundaries and weak responses. The fused features are finally fed into the original multi-scale detection head for prediction.
 
 \begin{figure*}[!t]
 \centering
