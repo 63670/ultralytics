@@ -31,7 +31,7 @@ def main():
             ax.scatter(float(row[key]), float(row["map50_95"]), s=78 if ours else 47,
                        color=colors[i], marker="*" if ours else "o", alpha=.8,
                        edgecolor="#333333", linewidth=.55, zorder=3,
-                       label=row["model"].replace("YOLOv5n", "YOLOv5n*") )
+                       label=row["model"])
         ax.set_xscale("log")
         ax.set_xlim(*limits)
         ax.set_ylim(51, 70)

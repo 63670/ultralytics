@@ -232,7 +232,7 @@ We report average precision across the ten IoU thresholds used in COCO evaluatio
 where $\mathcal{T}=\{0.50,0.55,\ldots,0.95\}$. 
 AP therefore evaluates localization over increasingly strict overlap requirements, whereas AP50 uses a single, less restrictive threshold. Differences between percentage-valued AP scores are reported in percentage points.
 
-The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yolov12}, DETR \cite{carion2020detr}, Deformable DETR \cite{zhu2021deformable}, Faster R-CNN \cite{ren2015faster}, and an R18 model from the RT-DETRv2 implementation \cite{lv2024rtdetrv2}, denoted RT-DETR-R18. YOLOv5n refers to the implementation evaluated within Ultralytics, not a separate run of the original YOLOv5 repository.
+The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yolov12}, DETR \cite{carion2020detr}, Deformable DETR \cite{zhu2021deformable}, Faster R-CNN \cite{ren2015faster}, and an R18 model from the RT-DETRv2 implementation \cite{lv2024rtdetrv2}, denoted RT-DETR-R18.
 
 All models are tested on the same held-out images using their native evaluators. Ultralytics runs retain at most 16 detections per image; RT-DETR uses a COCO maximum of 100. The retained MMDetection reports use maxima of 100 for AP and 1000 for AP50. Native interpolation and postprocessing also differ. Consequently, cross-framework results provide contextual comparisons rather than a fully harmonized benchmark; the direct YOLOv8n comparison and module ablations share the same evaluation implementation.
 
@@ -256,7 +256,7 @@ Among the evaluated compact YOLO variants, \model has the highest reported AP. R
 Model & Params (M) & FLOPs (G) & AP50 (\%) & AP (\%) \\
 \midrule
 \multicolumn{5}{l}{\textit{Lightweight YOLO Detectors}} \\
-YOLOv5n$^{\dagger}$ & 2.50 & 7.10 & 93.1 & 58.4 \\
+YOLOv5n & 2.50 & 7.10 & 93.1 & 58.4 \\
 YOLO11n & 2.58 & 6.40 & 95.0 & 59.6 \\
 YOLO12n & 2.56 & 7.30 & 94.3 & 60.9 \\
 YOLO26n & 2.38 & 5.30 & 96.5 & 61.4 \\
@@ -277,7 +277,7 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 \bottomrule
 \end{tabular*}
 \par\smallskip
-\parbox{\textwidth}{\footnotesize $^{\dagger}$Ultralytics implementation. RT-DETR-R18 uses the RT-DETRv2 codebase. Parameter counts and FLOPs follow the profiling conventions stated in Section~III-B.}
+\parbox{\textwidth}{\footnotesize RT-DETR-R18 uses the RT-DETRv2 codebase. Parameter counts and FLOPs follow the profiling conventions stated in Section~III-B.}
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
 
