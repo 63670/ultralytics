@@ -8,14 +8,22 @@
 \usepackage{microtype}
 \usepackage{multirow}
 \usepackage{placeins}
+\usepackage[nospread]{flushend}
 \usepackage{xspace}
-\usepackage{url}
+\usepackage{xurl}
 \graphicspath{{figures/}}
 
 \newcommand{\model}{DMFR-YOLO\xspace}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
+% Keep short columns from stretching paragraph and float spacing.
+\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\floatsep}{10pt plus 2pt minus 2pt}
+\setlength{\dblfloatsep}{10pt plus 2pt minus 2pt}
+
 \begin{document}
+\raggedbottom
 
 \title{DMFR-YOLO: Defect Morphology Encoding and Feature Reassembly for Fabric Defect Detection}
 
@@ -46,6 +54,14 @@ Motivated by these characteristics, we develop \model by modifying feature encod
 
 To translate these detector improvements into production use, the model must operate in step with the machine and support local intervention. We deploy \model on an RK3566 edge device so that defect decisions do not depend on a cloud round trip \cite{shi2016edge}. Machine rotation detected by the Hall sensor activates local detection; a detected defect triggers wired stop control before the result is displayed for operator review. The IoT cloud receives defect and device records for monitoring and production-quality analysis, but does not participate in the stop decision.
 
+% Queue the architecture early enough to appear with the method opening.
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{model.png}
+\caption{Architecture of \model. DME follows the backbone C2f stages, and CAFR replaces the two top-down $2\times$ upsampling operations. The neck fusion blocks, bottom-up path, and three-scale detection head are retained from YOLOv8n.}
+\label{fig:network}
+\end{figure*}
+
 The main contributions of our work are as follows.
 \begin{itemize}
   \item We introduce DME to encode the characteristic morphologies of horizontal defects, vertical defects, and holes through horizontal, vertical, and local branches, providing a lightweight morphology-aware representation for circular-knitted defect detection.
@@ -58,13 +74,6 @@ The main contributions of our work are as follows.
 \model is developed based on YOLOv8n, which is selected for its compatibility with RK3566 deployment, compact model size, and modular architecture \cite{ultralytics2023,rockchipmodelzoo}. The proposed modifications focus on defect morphology encoding in the backbone and feature reconstruction in the feature pyramid.
 
 Fig.~\ref{fig:network} shows the overall architecture. DME is introduced after the main backbone stages to enhance the representation of different defect morphologies. The extracted multi-scale features are then passed to the neck for feature fusion \cite{lin2017fpn,liu2018panet}. Within the feature pyramid, CAFR replaces two nearest-neighbor upsampling operations with content-adaptive feature reassembly to better preserve defect boundaries and weak responses. The fused features are subsequently used by the multi-scale detection head to predict defect locations and categories.
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=\textwidth,height=0.57\textheight,keepaspectratio]{model.png}
-\caption{Architecture of \model. DME follows the backbone C2f stages, and CAFR replaces the two top-down $2\times$ upsampling operations. The neck fusion blocks, bottom-up path, and three-scale detection head are retained from YOLOv8n.}
-\label{fig:network}
-\end{figure*}
 
 \subsection{Defect Morphology Encoding}
 The three defect categories considered in this work present different spatial characteristics. Horizontal and vertical defects usually extend along one dominant direction, whereas hole defects are more localized. To capture these differences, we introduce a defect morphology encoding (DME) module with three parallel branches, as shown in Fig.~\ref{fig:dme}. The horizontal and vertical branches use $1\times7$ and $7\times1$ depthwise convolutions to enlarge the receptive field along the corresponding spatial directions, while the $3\times3$ branch captures localized defect structures. Depthwise convolution is adopted to model these spatial patterns with low computational overhead before channel-wise feature fusion \cite{howard2017mobilenets}.
@@ -346,7 +355,6 @@ The detector is deployed on an RK3566 edge device. Combined with Hall-sensor-bas
 % Place all preceding figures before the reference list without forcing a
 % single-column page break in the two-column bibliography.
 \FloatBarrier
-\IEEEtriggeratref{38}
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
