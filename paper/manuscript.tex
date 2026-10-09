@@ -17,7 +17,7 @@
 
 \begin{document}
 
-\title{TEFR-YOLO: Texture Encoding and Feature Reassembly for Fabric Defect Detection}
+\title{TEFR-YOLO: Defect Morphology Encoding and Feature Reassembly for Fabric Defect Detection}
 
 \author{Kangzhao Tan, Jiarui Zhang, Junjie Yu, Heng Wu, and Chunhua He%
 \thanks{Kangzhao Tan, Jiarui Zhang, Junjie Yu, and Chunhua He are with the School of Computer Science, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{tankangzhao@mails.gdut.edu.cn}; \protect\url{zhangjiarui1@mail2.gdut.edu.cn}; \protect\url{yujunjie2@mails.gdut.edu.cn}; \protect\url{hechunhua@pku.edu.cn}).}%
@@ -28,7 +28,7 @@
 \maketitle
 
 \begin{abstract}
-Circular knitting machines operate continuously, so defects caused by needle or yarn abnormalities may propagate over substantial fabric lengths before being discovered. To enable in-process defect detection and intervention, we develop a closed-loop defect detection system with edge inference and wired machine-stop control, and propose a lightweight detector termed \model. \model introduces directional texture encoding (DTE) to explicitly model horizontal, vertical, and compact local disruptions of repetitive knitted texture, and local texture-guided feature reassembly (LTFR) to replace fixed feature-pyramid upsampling with content-adaptive reconstruction. On a production-line fabric-defect dataset, \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively, with only 3.39 M parameters. The detector is deployed as an INT8 RKNN model on an RK3566 edge device. The resulting system couples real-time defect localization, automatic local stop control, operator review, and cloud-based quality analysis, providing a practical solution for reducing defect propagation during circular-knitting production.
+Circular knitting machines operate continuously, so defects caused by needle or yarn abnormalities may propagate over substantial fabric lengths before being discovered. To enable in-process defect detection and intervention, we develop a closed-loop defect detection system with edge inference and wired machine-stop control, and propose a lightweight detector termed \model. \model introduces defect morphology encoding (DME) to explicitly model the horizontally elongated, vertically elongated, and compact local spatial forms of fabric defects, and local texture-guided feature reassembly (LTFR) to replace fixed feature-pyramid upsampling with content-adaptive reconstruction. On a production-line fabric-defect dataset, \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively, with only 3.39 M parameters. The detector is deployed as an INT8 RKNN model on an RK3566 edge device. The resulting system couples real-time defect localization, automatic local stop control, operator review, and cloud-based quality analysis, providing a practical solution for reducing defect propagation during circular-knitting production.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -42,57 +42,57 @@ Single-stage YOLO detectors combine rapid inference with explicit bounding-box l
 
 In circular-knitted fabrics, the three defect categories considered in this work---horizontal defects, vertical defects, and holes---typically manifest as horizontally extended, vertically extended, and compact local disruptions of the surrounding texture, respectively. Conventional feature extraction can learn such patterns implicitly, but does not explicitly separate directional and compact texture responses. In addition, fixed nearest-neighbor upsampling reconstructs higher-resolution pyramid features by replicating source responses without adapting to local texture content. Such reconstruction may inadequately preserve narrow defect boundaries or weak disruptions embedded in repetitive backgrounds.
 
-Motivated by these characteristics, we develop \model by modifying feature encoding and feature reconstruction. Directional texture encoding (DTE) introduces horizontal, vertical, and local branches at selected backbone stages to strengthen the representation of the three characteristic defect morphologies. Local texture-guided feature reassembly (LTFR) replaces fixed top-down feature-pyramid upsampling with location-adaptive neighborhood aggregation. Together, the two modules enhance texture representation in the backbone and feature reconstruction across pyramid scales.
+Motivated by these characteristics, we develop \model by modifying feature encoding and feature reconstruction. Defect morphology encoding (DME) introduces horizontal, vertical, and local branches at selected backbone stages to strengthen the representation of the three characteristic defect morphologies. Local texture-guided feature reassembly (LTFR) replaces fixed top-down feature-pyramid upsampling with location-adaptive neighborhood aggregation. Together, the two modules encode the spatial forms of defects in the backbone and adaptively reconstruct these features across pyramid scales.
 
 To translate these detector improvements into production use, the model must operate in step with the machine and support local intervention. We deploy \model on an RK3566 edge device so that defect decisions do not depend on a cloud round trip \cite{shi2016edge}. Machine rotation detected by the Hall sensor activates local detection; a detected defect triggers wired stop control before the result is displayed for operator review. The IoT cloud receives defect and device records for monitoring and production-quality analysis, but does not participate in the stop decision.
 
 The main contributions of our work are as follows.
 \begin{itemize}
-  \item We introduce DTE to encode the characteristic morphologies of horizontal defects, vertical defects, and holes through horizontal, vertical, and local texture branches, providing a lightweight texture-specific representation for circular-knitted defect detection.
+  \item We introduce DME to encode the characteristic morphologies of horizontal defects, vertical defects, and holes through horizontal, vertical, and local branches, providing a lightweight morphology-aware representation for circular-knitted defect detection.
   \item We develop an LTFR pyramid that replaces fixed upsampling with local texture-conditioned reassembly, enabling adaptive feature reconstruction during multi-scale fusion.
   \item We implement a closed-loop production-line defect detection system integrating RK3566 edge inference, wired machine-stop control, operator review, and cloud-based monitoring, and demonstrate its deployment on a real circular-knitting production line.
 \end{itemize}
 
 \section{Proposed Method}
 \subsection{TEFR-YOLO Architecture}
-\model is instantiated on YOLOv8n, selected for its RK3566 deployment compatibility, compact scale, and modular structure \cite{ultralytics2023,rockchipmodelzoo}. The proposed modifications target backbone texture encoding and top-down feature reconstruction.
+\model is instantiated on YOLOv8n, selected for its RK3566 deployment compatibility, compact scale, and modular structure \cite{ultralytics2023,rockchipmodelzoo}. The proposed modifications target defect morphology encoding in the backbone and top-down feature reconstruction.
 
-Fig.~\ref{fig:network} shows the overall architecture. DTE augments the output of each of the four backbone C2f stages at strides 4, 8, 16, and 32 with directional and local texture cues. The neck uses top-down and bottom-up multi-scale aggregation \cite{lin2017fpn,liu2018panet}. Within its top-down path, LTFR replaces the two nearest-neighbor upsampling operations: the first reconstructs stride-32 features at stride 16, and the second reconstructs the fused stride-16 features at stride 8. Each performs a single $2\times$ reconstruction before lateral fusion. The resulting three detection scales have spatial sizes $80\times80$, $40\times40$, and $20\times20$ for a $640\times640$ input.
+Fig.~\ref{fig:network} shows the overall architecture. DME augments the output of each of the four backbone C2f stages at strides 4, 8, 16, and 32 with features encoding elongated and compact local defect morphologies. The neck uses top-down and bottom-up multi-scale aggregation \cite{lin2017fpn,liu2018panet}. Within its top-down path, LTFR replaces the two nearest-neighbor upsampling operations: the first reconstructs stride-32 features at stride 16, and the second reconstructs the fused stride-16 features at stride 8. Each performs a single $2\times$ reconstruction before lateral fusion. The resulting three detection scales have spatial sizes $80\times80$, $40\times40$, and $20\times20$ for a $640\times640$ input.
 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth,height=0.57\textheight,keepaspectratio]{model.png}
-\caption{Architecture of \model. DTE follows the backbone C2f stages, and LTFR replaces the two top-down $2\times$ upsampling operations. The neck fusion blocks, bottom-up path, and three-scale detection head are retained from YOLOv8n.}
+\caption{Architecture of \model. DME follows the backbone C2f stages, and LTFR replaces the two top-down $2\times$ upsampling operations. The neck fusion blocks, bottom-up path, and three-scale detection head are retained from YOLOv8n.}
 \label{fig:network}
 \end{figure*}
 
-\subsection{Directional Texture Encoding}
-The three defect categories studied here exhibit characteristic spatial forms: horizontal defects typically extend along the image width, vertical defects along the image height, and holes appear as compact local discontinuities. DTE therefore uses horizontal, vertical, and local branches (Fig.~\ref{fig:dte}) to emphasize these characteristic forms of texture disruption. The directional branches provide elongated spatial support, while the local branch captures compact neighborhoods without favoring an orientation. Depthwise filtering separates spatial processing from subsequent channel mixing, following the efficiency principle of depthwise-separable networks \cite{howard2017mobilenets}.
+\subsection{Defect Morphology Encoding}
+The three defect categories studied here exhibit distinct spatial morphologies: horizontal defects are elongated along the image width, vertical defects along the image height, while holes appear as compact local regions. We therefore introduce a defect morphology encoding (DME) module to explicitly model these characteristic spatial forms. DME employs horizontal, vertical, and local branches (Fig.~\ref{fig:dme}). The $1\times7$ and $7\times1$ branches provide elongated spatial support along the two image axes, while the $3\times3$ branch captures compact local patterns without favoring an orientation. Depthwise filtering separates spatial processing from subsequent channel mixing, following the efficiency principle of depthwise-separable networks \cite{howard2017mobilenets}.
 
 For a C2f output $X\in\mathbb{R}^{C\times H\times W}$, the three branch responses are
 \begin{align}
-F_h &= \operatorname{DW}_{1\times7}(X), \label{eq:dte-horizontal}\\
-F_v &= \operatorname{DW}_{7\times1}(X), \label{eq:dte-vertical}\\
-F_l &= \operatorname{DW}_{3\times3}(X). \label{eq:dte-local}
+F_h &= \operatorname{DW}_{1\times7}(X), \label{eq:dme-horizontal}\\
+F_v &= \operatorname{DW}_{7\times1}(X), \label{eq:dme-vertical}\\
+F_l &= \operatorname{DW}_{3\times3}(X). \label{eq:dme-local}
 \end{align}
 Here, $\operatorname{DW}$ denotes depthwise convolution followed by batch normalization and SiLU activation. Unit stride and symmetric padding preserve the spatial dimensions. The $1\times7$ and $7\times1$ kernels extend support along the horizontal and vertical image axes, respectively, while the $3\times3$ branch encodes compact neighborhoods. These directions describe image orientations rather than yarn systems. All branches produce $C$ channels. Their concatenation is fused as
 \begin{equation}
 F_d=\phi\left([F_h,F_v,F_l]\right),
-\label{eq:dte-fusion}
+\label{eq:dme-fusion}
 \end{equation}
-where $[\cdot]$ denotes channel concatenation and $\phi$ is a $1\times1$ convolution mapping $3C$ channels to $C$, followed by batch normalization and SiLU. This learnable fusion mixes the three types of texture evidence rather than assigning a fixed branch to a particular defect class. A residual connection \cite{he2016resnet} gives
+where $[\cdot]$ denotes channel concatenation and $\phi$ is a $1\times1$ convolution mapping $3C$ channels to $C$, followed by batch normalization and SiLU. This learnable fusion combines the three types of spatial evidence rather than assigning a fixed branch to a particular defect class. A residual connection \cite{he2016resnet} gives
 \begin{equation}
 Y=X+F_d.
-\label{eq:dte-residual}
+\label{eq:dme-residual}
 \end{equation}
 
-The identity path preserves the incoming C2f representation, while the residual branch learns a texture-dependent correction. DTE draws on asymmetric spatial filtering \cite{ding2019acnet}, combining orthogonal depthwise branches with compact local filtering and residual fusion after each selected backbone stage. This arrangement adds explicit texture encoding to the aggregated backbone features rather than repeating directional processing within individual bottlenecks.
+The identity path preserves the incoming C2f representation, while the residual branch augments it with morphology-aware features. DME draws on asymmetric spatial filtering \cite{ding2019acnet}, combining orthogonal depthwise branches with compact local filtering and residual fusion after each selected backbone stage. This arrangement adds explicit defect morphology encoding to the aggregated backbone features rather than repeating these spatial filters within individual bottlenecks.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{dte.png}
-\caption{DTE structure. A C2f feature is processed by horizontal, vertical, and local depthwise branches, followed by channel concatenation, $1\times1$ fusion, and residual addition.}
-\label{fig:dte}
+\caption{DME structure. A C2f feature is processed by horizontal, vertical, and local depthwise branches, followed by channel concatenation, $1\times1$ fusion, and residual addition.}
+\label{fig:dme}
 \end{figure}
 
 \subsection{Local Texture-Guided Feature Reassembly}
@@ -134,9 +134,9 @@ Y_{c,i,j}=\sum_{u=1}^{k^2}K_{i,j,u}P_{c,i,j,u}.
 \label{eq:ltfr-reassembly}
 \end{equation}
 
-The output has shape $C\times sH\times sW$. Equation~\eqref{eq:ltfr-reassembly} allows reconstruction weights to vary with local texture content, so defect boundaries and regular knitted regions can be aggregated differently. Channel compression limits kernel-prediction overhead. In \model, this CARAFE-based mechanism reconstructs the texture-encoded features at the two top-down pyramid stages before lateral fusion, adapting their spatial aggregation as information passes from stride 32 to stride 16 and then to stride 8.
+The output has shape $C\times sH\times sW$. Equation~\eqref{eq:ltfr-reassembly} allows reconstruction weights to vary with local texture content, so defect boundaries and regular knitted regions can be aggregated differently. Channel compression limits kernel-prediction overhead. In \model, this CARAFE-based mechanism reconstructs the morphology-enriched features at the two top-down pyramid stages before lateral fusion, adapting their spatial aggregation as information passes from stride 32 to stride 16 and then to stride 8.
 
-DTE and LTFR play complementary roles: DTE enhances direction-sensitive texture representation in the backbone, while LTFR performs content-adaptive reconstruction of these features across pyramid scales.
+DME and LTFR play complementary roles: DME encodes elongated and compact local defect morphologies in the backbone, while LTFR performs content-adaptive reconstruction of these features across pyramid scales.
 
 \begin{figure*}[!t]
 \centering
@@ -312,9 +312,9 @@ Fig.~\ref{fig:tradeoff} visualizes the relationship between accuracy and model c
 \end{figure*}
 
 \subsection{Component Ablation}
-Table~\ref{tab:ablation} separates the effects of texture encoding and feature reassembly under the common YOLOv8n recipe. DTE raises AP from 59.3\% to 64.1\%, an increase of 4.8 percentage points, with approximately 0.27 M additional parameters. Its AP50 is close to that of the baseline, suggesting that its principal benefit in this experiment concerns stricter localization. LTFR alone achieves 60.7\% AP and 94.9\% AP50, improving the baseline by 1.4 and 0.8 percentage points, respectively, with approximately 0.10 M additional parameters.
+Table~\ref{tab:ablation} separates the effects of defect morphology encoding and feature reassembly under the common YOLOv8n recipe. DME raises AP from 59.3\% to 64.1\%, an increase of 4.8 percentage points, with approximately 0.27 M additional parameters. Its AP50 is close to that of the baseline, suggesting that its principal benefit in this experiment concerns stricter localization. LTFR alone achieves 60.7\% AP and 94.9\% AP50, improving the baseline by 1.4 and 0.8 percentage points, respectively, with approximately 0.10 M additional parameters.
 
-The complete model reaches 66.3\% AP, exceeding DTE alone by 2.2 points and LTFR alone by 5.6 points. These results support the complementary contributions of DTE and LTFR at the module level: directional texture encoding strengthens the backbone representation, while adaptive reassembly improves its reconstruction across pyramid scales.
+The complete model reaches 66.3\% AP, exceeding DME alone by 2.2 points and LTFR alone by 5.6 points. These results support the complementary contributions of DME and LTFR at the module level: defect morphology encoding strengthens the backbone representation, while adaptive reassembly improves its reconstruction across pyramid scales.
 
 \begin{table}[!tbp]
 \caption{Component ablation. Parameters are in millions, FLOPs in billions, and AP50/AP in percent.}
@@ -324,10 +324,10 @@ The complete model reaches 66.3\% AP, exceeding DTE alone by 2.2 points and LTFR
 \setlength{\tabcolsep}{3pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lccrrrr@{}}
 \toprule
-Variant & DTE & LTFR & Params & FLOPs & AP50 & AP \\
+Variant & DME & LTFR & Params & FLOPs & AP50 & AP \\
 \midrule
 YOLOv8n & -- & -- & 3.01 & 8.1 & 94.1 & 59.3 \\
-+ DTE & \checkmark & -- & 3.28 & 8.8 & 94.2 & 64.1 \\
++ DME & \checkmark & -- & 3.28 & 8.8 & 94.2 & 64.1 \\
 + LTFR & -- & \checkmark & 3.11 & 8.2 & 94.9 & 60.7 \\
 \model & \checkmark & \checkmark & 3.39 & 8.9 & \textbf{96.9} & \textbf{66.3} \\
 \bottomrule
@@ -348,7 +348,7 @@ The INT8 \model is deployed on the RK3566 edge device. Together with Hall-trigge
 The current evaluation uses a small, imbalanced set of defect-containing images. Broader production trials are needed to assess transfer across materials and operating conditions, false stops during defect-free operation, and detection accuracy after INT8 conversion.
 
 \section{Conclusion}
-We have presented \model and a production-line defect detection system for circular knitting machines. \model couples directional texture encoding with content-adaptive feature reconstruction for knitted-fabric defect detection. DTE models horizontal, vertical, and compact local texture disruptions in the backbone, while LTFR replaces fixed upsampling with CARAFE-based local reassembly in the top-down feature pyramid. On the production-line test set, \model improves the YOLOv8n baseline from 59.3\% to 66.3\% AP and from 94.1\% to 96.9\% AP50, with 3.39 M parameters and approximately 8.9 G FLOPs. These results, together with the component ablation, support the complementary roles of texture encoding and feature reassembly in improving overall localization performance while retaining a compact model scale.
+We have presented \model and a production-line defect detection system for circular knitting machines. \model couples defect morphology encoding with content-adaptive feature reconstruction for knitted-fabric defect detection. DME models the horizontally elongated, vertically elongated, and compact local spatial forms of defects in the backbone, while LTFR replaces fixed upsampling with CARAFE-based local reassembly in the top-down feature pyramid. On the production-line test set, \model improves the YOLOv8n baseline from 59.3\% to 66.3\% AP and from 94.1\% to 96.9\% AP50, with 3.39 M parameters and approximately 8.9 G FLOPs. These results, together with the component ablation, support the complementary roles of defect morphology encoding and feature reassembly in improving overall localization performance while retaining a compact model scale.
 
 The detector is deployed on an RK3566 edge device. Combined with Hall-sensor-based machine-state detection and wired stop control, the system performs local defect detection and intervention without depending on cloud communication. Detection results are displayed for on-site operator review and troubleshooting, while defect records and device states are uploaded to the cloud for equipment monitoring and production-quality analysis. This deployment connects the detector to local machine control, supporting not only offline defect detection but also in-process defect containment during circular-knitting production. Future work will focus on broader production conditions, long-term false-stop and missed-detection behavior, quantized-model accuracy, and finer-grained analysis of the proposed modules.
 
