@@ -65,7 +65,7 @@ To translate these detector improvements into production use, the model must ope
 % Queue the architecture early enough to appear with the method opening.
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{model.png}
+\includegraphics[width=\textwidth]{model.png}
 \caption{Architecture of \model. DME follows the backbone C2f stages, and CAFR replaces the two top-down $2\times$ upsampling operations. The neck fusion blocks, bottom-up path, and three-scale detection head are retained from YOLOv8n.}
 \label{fig:network}
 \end{figure*}
@@ -157,7 +157,7 @@ Together, DME and CAFR enhance defect morphology representation and its subseque
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.92\textwidth]{ltfr.png}
+\includegraphics[width=\textwidth]{ltfr.png}
 \caption{CAFR structure. The upper path predicts location-specific $5\times5$ reassembly kernels, and the lower path unfolds local feature patches and replicates them to align with output locations. Weighted aggregation, rather than this alignment operation, produces the final $2\times$ upsampled feature.}
 \label{fig:cafr}
 \end{figure*}
@@ -258,15 +258,7 @@ All models are evaluated on the same held-out test set using their respective im
 
 Parameter counts and approximate FLOPs are obtained from framework-native profiling at input shape $[1,3,640,640]$ (fused summaries for YOLO), with approximately two operations per multiply--accumulate.
 
-\section{Results and Discussion}
-\label{sec:results}
-\subsection{Comparison With Other Detectors}
-Table~\ref{tab:comparison} presents the detection results on the test set. \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively. These improvements are achieved with only 0.38 M additional parameters and approximately 0.8 G additional FLOPs. The larger improvement in AP indicates better detection performance under stricter IoU thresholds.
-
-Among the evaluated lightweight YOLO detectors, \model achieves the highest AP. Although RT-DETR-R18 attains a slightly higher AP of 67.7\%, it requires 20.09 M parameters and 60.72 G FLOPs, compared with 3.39 M parameters and 8.90 G FLOPs for \model. Fig.~\ref{fig:tradeoff} further illustrates the favorable balance between detection accuracy and model complexity achieved by \model.
-
-Fig.~\ref{fig:qualitative} shows predictions on seven selected test images, allowing qualitative comparison of missed defects, extra detections, and bounding-box alignment against repetitive fabric backgrounds.
-
+% Queue the result floats early to keep large figures near the discussion.
 \begin{table*}[!tbp]
 \caption{Detection results on the common test set. Bold and underlined values indicate the highest and second-highest reported scores, respectively. The evaluation protocol is described in Section~\ref{sec:evaluation}.}
 \label{tab:comparison}
@@ -303,8 +295,7 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
 
-
-\begin{figure*}[!tb]
+\begin{figure*}[!b]
 \centering
 \includegraphics[width=0.87\textwidth]{efficiency.png}
 \caption{Accuracy versus parameter count (left) and approximate FLOPs (right). Both horizontal axes are logarithmic. AP corresponds to the mAP@0.5:0.95 notation in the plot; Ours denotes \model.}
@@ -313,12 +304,22 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 
 % Use a wide detector comparison and a compact single-column activation map
 % so result figures can share pages with the corresponding discussion.
-\begin{figure*}[!tb]
+\begin{figure*}[!t]
 \centering
-\includegraphics[width=0.72\textwidth]{qualitative_existing.png}
+\includegraphics[width=\textwidth]{qualitative_existing.png}
 \caption{Selected test predictions with common colors and line widths and a confidence threshold of 0.25. Columns show ground-truth labels, YOLOv8n, YOLO11n, YOLO26n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours). The threshold is for display and does not define AP evaluation.}
 \label{fig:qualitative}
 \end{figure*}
+
+\section{Results and Discussion}
+\label{sec:results}
+\subsection{Comparison With Other Detectors}
+Table~\ref{tab:comparison} presents the detection results on the test set. \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively. These improvements are achieved with only 0.38 M additional parameters and approximately 0.8 G additional FLOPs. The larger improvement in AP indicates better detection performance under stricter IoU thresholds.
+
+Among the evaluated lightweight YOLO detectors, \model achieves the highest AP. Although RT-DETR-R18 attains a slightly higher AP of 67.7\%, it requires 20.09 M parameters and 60.72 G FLOPs, compared with 3.39 M parameters and 8.90 G FLOPs for \model. Fig.~\ref{fig:tradeoff} further illustrates the favorable balance between detection accuracy and model complexity achieved by \model.
+
+Fig.~\ref{fig:qualitative} shows predictions on seven selected test images, allowing qualitative comparison of missed defects, extra detections, and bounding-box alignment against repetitive fabric backgrounds.
+
 
 \begin{figure}[!tb]
 \centering
