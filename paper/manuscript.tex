@@ -139,22 +139,21 @@ K'=E_{3\times3}(X_c).
 \end{equation}
 The resulting tensor is $K'\in\mathbb{R}^{s^2k^2\times H\times W}$. For $s=2$ and $k=5$, this corresponds to 100 weight channels at each input location.
 
-\emph{2) Reassembly Weight Generation:}
-Pixel Shuffle rearranges the predicted weights to match the spatial resolution of the upsampled feature map. With $s=2$, the 100 values predicted at each input position are distributed among its four corresponding output positions, giving 25 weights to each. For each output position $(i,j)$, Softmax normalizes the corresponding $k^2$ weights:
+\emph{2) Weight Alignment and Normalization:}
+Pixel Shuffle rearranges the predicted weights onto the higher-resolution grid, and Softmax normalizes the $k^2$ weights at each output location:
 \begin{equation}
-K_{i,j}=\operatorname{softmax}\!\left(
-[\operatorname{PS}(K')]_{:,i,j}\right).
+K=\operatorname{Softmax}\!\left(\operatorname{PS}(K')\right).
 \label{eq:cafr-kernel}
 \end{equation}
-With $k=5$, these 25 normalized weights determine the contributions of the positions within a $5\times5$ input neighborhood.
+Softmax is applied along the $k^2$ neighborhood dimension. The resulting weight tensor is $K\in\mathbb{R}^{k^2\times sH\times sW}$, with each output location assigned $k^2$ normalized weights for local feature reassembly.
 
-\emph{3) Local Feature Extraction and Reassembly:}
-In parallel with weight prediction, Unfold extracts a $k\times k$ neighborhood around each input location. Nearest-neighbor interpolation then replicates these neighborhoods onto the higher-resolution grid to align them with the predicted reassembly weights. For $s=2$, the four output locations corresponding to an input location share the same neighborhood but use their own predicted weights. Each output location aggregates the aligned neighborhood as
+\emph{3) Feature Reassembly:}
+Unfold extracts a $k\times k$ neighborhood around each input position. Nearest-neighbor upsampling then replicates the extracted neighborhoods to align them with the output resolution. The output is obtained by multiplying the predicted weights with the corresponding local features and summing over the $k^2$ neighborhood positions:
 \begin{equation}
-Y_{c,i,j}=\sum_{u=1}^{k^2}K_{i,j,u}P_{c,u,i,j}.
+Y=\sum_{u=1}^{k^2}K_u\odot P_u.
 \label{eq:cafr-reassembly}
 \end{equation}
-Here, $P\in\mathbb{R}^{C\times k^2\times sH\times sW}$ denotes the neighborhoods after replication and alignment, $u$ indexes the $k^2$ positions within each neighborhood, and $c$ denotes the feature channel. The predicted weights are shared across feature channels, producing $Y\in\mathbb{R}^{C\times sH\times sW}$. Nearest-neighbor interpolation is therefore used only for neighborhood alignment; the final output is obtained through content-adaptive weighted aggregation, allowing the four output locations to produce different feature responses.
+Here, $K_u\in\mathbb{R}^{sH\times sW}$ and $P_u\in\mathbb{R}^{C\times sH\times sW}$ denote the predicted weight map and the aligned local feature map for the $u$-th neighborhood position, respectively. The symbol $\odot$ denotes element-wise multiplication, with the weights broadcast across feature channels. The resulting output is $Y\in\mathbb{R}^{C\times sH\times sW}$. Nearest-neighbor upsampling is used only for neighborhood alignment; content-adaptive weighted aggregation produces the final output.
 
 By predicting location-specific reassembly weights, CAFR adaptively aggregates local features during upsampling, helping preserve defect-related information in multi-scale feature fusion.
 
