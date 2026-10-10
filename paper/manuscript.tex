@@ -216,19 +216,19 @@ The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yo
 \toprule
 Category & Parameter & Specification \\
 \midrule
-\shortstack[l]{1. Training\\setup}
+1. Training setup
 & Hardware & Intel i7-13700KF; NVIDIA RTX 3090 (24 GB) \\
 & Software & Ubuntu 24.04, Python 3.10.20, PyTorch 2.4.1+cu124, and Ultralytics 8.4.140 \\
 \midrule
-\shortstack[l]{2. Deployment\\setup}
+2. Deployment setup
 & Hardware & Rockchip RK3566 \\
 & System & Android 13 \\
 & Quantization & INT8 \\
 \midrule
-\shortstack[l]{3. Data\\protocol}
+3. Data protocol
 & Input resolution & Fixed at $640\times640$ \\
 \midrule
-\shortstack[l]{4. Training\\dynamics}
+4. Training dynamics
 & Batch & 16  \\
 & Maximum epochs & 300 \\
 & Early-stopping patience & 80 epochs \\
