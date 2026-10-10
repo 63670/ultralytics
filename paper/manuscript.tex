@@ -115,45 +115,40 @@ The residual connection combines the morphology-aware features with the incoming
 \subsection{Content-Adaptive Feature Reassembly}
 In the feature pyramid, nearest-neighbor upsampling enlarges feature maps by directly replicating feature values. This fixed operation does not adapt to the spatial structure of defects. To address this limitation, we introduce content-adaptive feature reassembly (CAFR), following the reassembly mechanism of CARAFE \cite{wang2019carafe}. CAFR predicts spatially varying kernels from the input features and uses them to aggregate local neighborhoods (Fig.~\ref{fig:cafr}), aiming to better preserve defect boundaries and weak responses during multi-scale fusion.
 
-In \model, CAFR is used at both top-down fusion stages with a compression ratio of four, scale factor $s=2$, and reassembly size $k=5$. Given $X\in\mathbb{R}^{C\times H\times W}$, the kernel-prediction branch first compresses the channels to $C_r=\max(\lfloor C/4\rfloor,16)$:
+In \model, CAFR replaces the upsampling operations at both top-down fusion stages, with upsampling factor $s=2$ and reassembly kernel size $k=5$. Its computation comprises two parallel paths followed by weighted aggregation: the weight-prediction path generates a normalized kernel for each output location, while the feature-extraction path obtains local neighborhoods from the original input. The predicted weights and source neighborhoods are aligned on the output grid before reassembly.
+
+\emph{1) Reassembly-weight prediction:}
+Given an input feature map $X\in\mathbb{R}^{C\times H\times W}$, a $1\times1$ convolution first reduces its channel dimension:
 \begin{equation}
 X_c=E_{1\times1}(X).
 \label{eq:cafr-compression}
 \end{equation}
-The compressor $E_{1\times1}$ includes batch normalization and SiLU. A linear $3\times3$ convolution then predicts $s^2k^2=100$ kernel logits at each input location:
+Here, $X_c\in\mathbb{R}^{C_r\times H\times W}$, where $C_r=\max(\lfloor C/4\rfloor,16)$; $E_{1\times1}$ includes batch normalization and SiLU activation. A linear $3\times3$ convolution then predicts the unnormalized reassembly weights:
 \begin{equation}
 K'=E_{3\times3}(X_c).
 \label{eq:cafr-logits}
 \end{equation}
-Pixel shuffle rearranges these logits onto the enlarged grid,
+The resulting tensor has shape $s^2k^2\times H\times W$. For $s=2$ and $k=5$, this corresponds to 100 weight channels at each input location.
+
+\emph{2) Weight alignment and normalization:}
+Pixel Shuffle rearranges $K'$ into a tensor of shape $k^2\times sH\times sW$, assigning a separate set of weight logits to each high-resolution output location. Softmax is then applied along the $k^2$ neighborhood dimension:
 \begin{equation}
-\widehat{K}=\operatorname{PS}(K'),
-\label{eq:cafr-pixelshuffle}
-\end{equation}
-where $\widehat{K}\in\mathbb{R}^{k^2\times sH\times sW}$. Softmax along the $k^2$ neighborhood dimension produces location-specific weights:
-\begin{equation}
-K_{i,j}=\operatorname{softmax}(\widehat{K}_{i,j}).
+K_{i,j}=\operatorname{softmax}\!\left(
+[\operatorname{PS}(K')]_{:,i,j}\right).
 \label{eq:cafr-kernel}
 \end{equation}
-The normalization constraint is
+Each output location $(i,j)$ thus receives $k^2=25$ nonnegative weights that sum to one and correspond to the positions in a $5\times5$ input neighborhood. Pixel Shuffle acts on the predicted weights, not on the input features or the final output.
+
+\emph{3) Local feature extraction and reassembly:}
+In parallel, Unfold extracts a $k\times k$ neighborhood around every input location, using unit stride and zero padding of $(k-1)/2$. Let $P_{c,p,q,u}$ denote the feature value in channel $c$ at neighborhood offset $u$ around source location $(p,q)$. For a zero-based output location $(i,j)$, the corresponding source location is $(\lfloor i/s\rfloor,\lfloor j/s\rfloor)$. Weighted aggregation gives
 \begin{equation}
-\sum_{u=1}^{k^2}K_{i,j,u}=1,\qquad K_{i,j,u}\geq0.
-\label{eq:cafr-normalization}
-\end{equation}
-In parallel, $\operatorname{Unfold}_{k\times k}$ extracts source neighborhoods with unit stride and zero padding of $(k-1)/2$. For a zero-based output location $(i,j)$, the corresponding source neighborhood is
-\begin{equation}
-P_{i,j}=\operatorname{Unfold}_{k\times k}(X)_{\lfloor i/s\rfloor,\lfloor j/s\rfloor},
-\label{eq:cafr-patch}
-\end{equation}
-where $P_{i,j}\in\mathbb{R}^{C\times k^2}$. The neighborhood index $u$ enumerates the $k\times k$ offsets in row-major order, consistently for the predicted weights and the unfolded patches. Nearest-neighbor replication aligns these source neighborhoods with output locations; the output features are then reconstructed through weighted aggregation rather than direct feature replication. The same spatial weights are applied to every feature channel:
-\begin{equation}
-Y_{c,i,j}=\sum_{u=1}^{k^2}K_{i,j,u}P_{c,i,j,u}.
+Y_{c,i,j}=\sum_{u=1}^{k^2}K_{i,j,u}
+P_{c,\lfloor i/s\rfloor,\lfloor j/s\rfloor,u}.
 \label{eq:cafr-reassembly}
 \end{equation}
+The index $u$ enumerates neighborhood offsets in row-major order, consistently for the predicted weights and the unfolded patches. Output locations associated with the same source location share its input neighborhood but can use different predicted weights. These weights are shared across feature channels, producing $Y\in\mathbb{R}^{C\times sH\times sW}$ rather than simply replicating individual input feature values.
 
-The output has shape $C\times sH\times sW$. Equation~\eqref{eq:cafr-reassembly} allows reconstruction weights to vary with local feature content, so defect boundaries and regular knitted regions can be aggregated differently. Channel compression limits kernel-prediction overhead. In \model, CAFR reconstructs the morphology-enriched features at the two top-down pyramid stages before lateral fusion.
-
-Together, DME and CAFR enhance defect morphology representation and its subsequent reconstruction across feature pyramid scales.
+By predicting location-specific reassembly weights, CAFR adaptively aggregates local features during upsampling, helping preserve defect-related information in multi-scale feature fusion.
 
 \begin{figure*}[!t]
 \centering
