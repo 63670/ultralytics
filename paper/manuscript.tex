@@ -123,12 +123,12 @@ Given an input feature map $X\in\mathbb{R}^{C\times H\times W}$, a $1\times1$ co
 X_c=E_{1\times1}(X).
 \label{eq:cafr-compression}
 \end{equation}
-Here, $X_c\in\mathbb{R}^{C_r\times H\times W}$, where $C_r=\max(\lfloor C/4\rfloor,16)$; $E_{1\times1}$ includes batch normalization and SiLU activation. A linear $3\times3$ convolution then predicts the unnormalized reassembly weights:
+Here, $X_c\in\mathbb{R}^{D\times H\times W}$, where $D=\max(\lfloor C/4\rfloor,16)$ denotes the compressed channel count; $E_{1\times1}$ includes batch normalization and SiLU activation. A linear $3\times3$ convolution then predicts the unnormalized reassembly weights:
 \begin{equation}
 K'=E_{3\times3}(X_c).
 \label{eq:cafr-logits}
 \end{equation}
-The resulting tensor has shape $s^2k^2\times H\times W$. For $s=2$ and $k=5$, this corresponds to 100 weight channels at each input location.
+The resulting tensor is $K'\in\mathbb{R}^{s^2k^2\times H\times W}$. For $s=2$ and $k=5$, this corresponds to 100 weight channels at each input location.
 
 \emph{2) Weight alignment and normalization:}
 Pixel Shuffle rearranges $K'$ into a tensor of shape $k^2\times sH\times sW$, assigning a separate set of weight logits to each high-resolution output location. Softmax is then applied along the $k^2$ neighborhood dimension:
