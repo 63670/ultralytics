@@ -117,7 +117,7 @@ In the feature pyramid, nearest-neighbor upsampling enlarges feature maps by dir
 
 In \model, CAFR replaces the upsampling operations at both top-down fusion stages, with upsampling factor $s=2$ and reassembly kernel size $k=5$. Its computation comprises two parallel paths followed by weighted aggregation: the weight-prediction path generates a normalized kernel for each output location, while the feature-extraction path obtains local neighborhoods from the original input. The predicted weights and source neighborhoods are aligned on the output grid before reassembly.
 
-\emph{1) Reassembly-weight prediction:}
+\emph{1) Reassembly Weight Prediction:}
 Given an input feature map $X\in\mathbb{R}^{C\times H\times W}$, a $1\times1$ convolution first reduces its channel dimension:
 \begin{equation}
 X_c=E_{1\times1}(X).
@@ -130,23 +130,23 @@ K'=E_{3\times3}(X_c).
 \end{equation}
 The resulting tensor is $K'\in\mathbb{R}^{s^2k^2\times H\times W}$. For $s=2$ and $k=5$, this corresponds to 100 weight channels at each input location.
 
-\emph{2) Weight alignment and normalization:}
-Pixel Shuffle rearranges $K'$ into a tensor of shape $k^2\times sH\times sW$, assigning a separate set of weight logits to each high-resolution output location. Softmax is then applied along the $k^2$ neighborhood dimension:
+\emph{2) Reassembly Weight Generation:}
+Pixel Shuffle rearranges the predicted weights to match the spatial resolution of the upsampled feature map. With $s=2$, the 100 values predicted at each input position are distributed among its four corresponding output positions, giving 25 weights to each. For each output position $(i,j)$, Softmax normalizes the corresponding $k^2$ weights:
 \begin{equation}
 K_{i,j}=\operatorname{softmax}\!\left(
 [\operatorname{PS}(K')]_{:,i,j}\right).
 \label{eq:cafr-kernel}
 \end{equation}
-Each output location $(i,j)$ thus receives $k^2=25$ nonnegative weights that sum to one and correspond to the positions in a $5\times5$ input neighborhood. Pixel Shuffle acts on the predicted weights, not on the input features or the final output.
+With $k=5$, these 25 normalized weights determine the contributions of the positions within a $5\times5$ input neighborhood.
 
-\emph{3) Local feature extraction and reassembly:}
-In parallel, Unfold extracts a $k\times k$ neighborhood around every input location, using unit stride and zero padding of $(k-1)/2$. Let $P_{c,p,q,u}$ denote the feature value in channel $c$ at neighborhood offset $u$ around source location $(p,q)$. For a zero-based output location $(i,j)$, the corresponding source location is $(\lfloor i/s\rfloor,\lfloor j/s\rfloor)$. Weighted aggregation gives
+\emph{3) Feature Reassembly:}
+In parallel with weight prediction, Unfold extracts a $k\times k$ neighborhood around each input position. During $2\times$ upsampling, each input position corresponds to four output positions that share the same input neighborhood but have their own predicted weights. The output feature at position $(i,j)$ is computed as
 \begin{equation}
 Y_{c,i,j}=\sum_{u=1}^{k^2}K_{i,j,u}
 P_{c,\lfloor i/s\rfloor,\lfloor j/s\rfloor,u}.
 \label{eq:cafr-reassembly}
 \end{equation}
-The index $u$ enumerates neighborhood offsets in row-major order, consistently for the predicted weights and the unfolded patches. Output locations associated with the same source location share its input neighborhood but can use different predicted weights. These weights are shared across feature channels, producing $Y\in\mathbb{R}^{C\times sH\times sW}$ rather than simply replicating individual input feature values.
+Here, $P$ denotes the extracted input neighborhoods, $u$ indexes the $k^2$ positions within each neighborhood, and $c$ denotes the feature channel. The floor indices map an output position to its corresponding source position. The predicted weights are shared across feature channels, producing $Y\in\mathbb{R}^{C\times sH\times sW}$. Unlike nearest-neighbor interpolation, CAFR aggregates the input neighborhood using a separate set of weights for each output position, allowing the four positions to produce different feature responses.
 
 By predicting location-specific reassembly weights, CAFR adaptively aggregates local features during upsampling, helping preserve defect-related information in multi-scale feature fusion.
 
