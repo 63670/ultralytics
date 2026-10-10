@@ -39,6 +39,9 @@
 
 \begin{document}
 \raggedbottom
+% Avoid isolated opening or closing lines at column and page breaks.
+\clubpenalty=10000
+\widowpenalty=10000
 
 \title{DMFR-YOLO: Defect Morphology Encoding and Feature Reassembly for Fabric Defect Detection}
 
@@ -80,11 +83,12 @@ To apply these detector improvements in production, the model must operate in co
 \end{figure*}
 
 The main contributions of our work are as follows.
-\begin{itemize}
+\begin{enumerate}
+  \renewcommand{\labelenumi}{(\arabic{enumi})}
   \item We introduce DME to encode the characteristic morphologies of horizontal defects, vertical defects, and holes through horizontal, vertical, and local branches, providing a lightweight morphology-aware representation for circular-knitted defect detection.
   \item We incorporate CAFR into the feature pyramid to replace fixed upsampling with locally predicted reassembly weights, enabling content-adaptive reconstruction during multi-scale fusion.
   \item We implement a closed-loop production-line defect detection system integrating RK3566 edge inference, wired machine-stop control, operator review, and cloud-based monitoring, and demonstrate its deployment on a real circular-knitting production line.
-\end{itemize}
+\end{enumerate}
 
 \section{Proposed Method}
 \subsection{DMFR-YOLO Architecture}
@@ -326,7 +330,10 @@ Table~\ref{tab:comparison} presents the detection results on the test set. \mode
 
 Among the evaluated lightweight YOLO detectors, \model achieves the highest AP. Although RT-DETR-R18 attains a slightly higher AP of 67.7\%, it requires 20.09 M parameters and 60.72 G FLOPs, compared with 3.39 M parameters and 8.90 G FLOPs for \model. Fig.~\ref{fig:tradeoff} further illustrates the favorable balance between detection accuracy and model complexity achieved by \model.
 
+\begin{samepage}
 Fig.~\ref{fig:qualitative} compares the detection results of different models on seven selected test images, highlighting differences in detection accuracy and bounding-box localization.
+\par
+\end{samepage}
 
 
 
