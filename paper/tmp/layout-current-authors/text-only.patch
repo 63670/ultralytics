@@ -1,0 +1,6 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -52,1 +52,1 @@
+-\IEEEaftertitletext{\vspace{-8pt}}
++\IEEEaftertitletext{\vspace{-24pt}}

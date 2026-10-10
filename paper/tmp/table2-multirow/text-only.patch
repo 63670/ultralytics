@@ -1,0 +1,12 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -219,1 +219,1 @@
+-1. Training setup
++\multirow[t]{2}{0.21\columnwidth}{1. Training setup}
+@@ -223,1 +223,1 @@
+-2. Deployment setup
++\multirow[t]{3}{0.21\columnwidth}{2. Deployment setup}
+@@ -231,1 +231,1 @@
+-4. Training dynamics
++\multirow[t]{3}{0.21\columnwidth}{4. Training dynamics}

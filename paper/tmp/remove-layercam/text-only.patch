@@ -1,0 +1,24 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -251,8 +251,9 @@
+-We report COCO average precision (AP) across ten IoU thresholds and AP at IoU $0.50$ (AP50) \cite{lin2014coco}. For a predicted box $B_p$ and a ground-truth box $B_g$, intersection over union is $\operatorname{IoU}(B_p,B_g)=|B_p\cap B_g|/|B_p\cup B_g|$. Let $\operatorname{AP}_c(t)$ denote the area under the interpolated precision--recall curve for class $c$ at IoU threshold $t$, expressed on $[0,1]$. For $N_c=3$ classes, the percentage-valued metrics are
+-\begin{align}
+-\operatorname{AP} &= \frac{100}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in\mathcal{T}}\operatorname{AP}_c(t), \notag\\
+-\operatorname{AP50} &= \frac{100}{N_c}\sum_{c=1}^{N_c}\operatorname{AP}_c(0.50),
+-\label{eq:metrics}
+-\end{align}
+-where $\mathcal{T}=\{0.50,0.55,\ldots,0.95\}$. 
+-AP therefore evaluates localization over increasingly strict overlap requirements, whereas AP50 uses a single, less restrictive threshold. Differences between percentage-valued AP scores are reported in percentage points.
++We report COCO average precision (AP) across ten IoU thresholds and AP at IoU $0.50$ (AP50) \cite{lin2014coco}. For a predicted box $B_p$ and a ground-truth box $B_g$, intersection over union is $\operatorname{IoU}(B_p,B_g)=|B_p\cap B_g|/|B_p\cup B_g|$. Let $\operatorname{AP}_c(t)$ denote the average precision for class $c$ at IoU threshold $t$, and let $N_c$ denote the number of defect categories. The metrics are defined as follows:
++\begin{align}
++\operatorname{AP} &= \frac{1}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in T}\operatorname{AP}_c(t),
++\label{eq:ap}\\
++\operatorname{AP}_{50} &= \frac{1}{N_c}\sum_{c=1}^{N_c}\operatorname{AP}_c(0.50),
++\label{eq:metrics}
++\end{align}
++where $T=\{0.50,0.55,\ldots,0.95\}$ and $N_c=3$ in this study. All AP values are reported as percentages.
++AP therefore evaluates localization over increasingly strict overlap requirements, whereas AP50 uses a single, less restrictive threshold. Differences between reported AP values are expressed in percentage points.
+@@ -337,1 +338,1 @@
+-Fig.~\ref{fig:heatmaps} presents LayerCAM-based visualizations of YOLOv8n and \model generated using the same procedure \cite{jiang2021layercam}. The examples illustrate differences in feature responses around defect regions, providing a qualitative comparison of the two models. Heat intensity is normalized per map and is not an absolute measure of detection accuracy.
++Fig.~\ref{fig:heatmaps} presents LayerCAM-based visualizations of YOLOv8n and \model generated using the same procedure . The examples illustrate differences in feature responses around defect regions, providing a qualitative comparison of the two models. Heat intensity is normalized per map and is not an absolute measure of detection accuracy.

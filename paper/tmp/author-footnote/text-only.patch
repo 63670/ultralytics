@@ -1,0 +1,14 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -38,5 +38,5 @@
+-\author{Kangzhao Tan, Jiarui Zhang, Junjie Yu, Heng Wu, and Chunhua He%
+-\thanks{Kangzhao Tan, Jiarui Zhang, Junjie Yu, and Chunhua He are with the School of Computer Science, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{tankangzhao@mails.gdut.edu.cn}; \protect\url{zhangjiarui1@mail2.gdut.edu.cn}; \protect\url{yujunjie2@mails.gdut.edu.cn}; \protect\url{hechunhua@pku.edu.cn}).}%
+-\thanks{Heng Wu is with the School of Automation, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{heng.wu@foxmail.com}).}%
+-\thanks{Corresponding author: Chunhua He.}%
+-}
++\author{Kangzhao Tan, Jiarui Zhang, Junjie Yu, Heng Wu, and Chunhua He%
++% Replace the date placeholder with the actual journal receipt date.
++\thanks{Manuscript received [Month day, year]. \textit{(Corresponding author: Chunhua He.)}}%
++\thanks{\begingroup\urlstyle{same}Kangzhao Tan, Jiarui Zhang, Junjie Yu, and Chunhua He are with the School of Computer Science, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{tankangzhao@mails.gdut.edu.cn}; \protect\url{zhangjiarui1@mail2.gdut.edu.cn}; \protect\url{yujunjie2@mails.gdut.edu.cn}; \protect\url{hechunhua@pku.edu.cn}). Heng Wu is with the School of Automation, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{heng.wu@foxmail.com}).\endgroup}%
++}

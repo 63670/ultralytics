@@ -1,0 +1,459 @@
+                                                                                                                                        1
+
+
+
+
+TFRA-YOLO: Textile Feature Refinement and Reassembly YOLO for
+Closed-Loop Fabric Defect Inspection on Circular Knitting Machines
+                            Kangzhao Tan, Jiarui Zhang, Junjie Yu, Heng Wu, and Chunhua He
+
+
+
+   Abstract—Circular knitting machines are foundational produc-          steel surfaces, and large stamped parts [2]–[4]. In fabric-
+tion infrastructure in the textile industry. A fabric defect arising     defect detection, existing studies have adapted YOLO through
+during production can propagate during continuous knitting and           lightweight or tiny-model designs [5]–[7], adaptive or de-
+cause substantial fabric loss if it is not detected and handled
+promptly. To address this issue, we design and implement a cloud-        formable feature extraction [8], [9], and enhanced multi-scale
+edge collaborative inspection system integrating a Hall sensor,          fusion or prediction for weak and small defects [10]–[16].
+adjustable supplementary lighting, an industrial high-definition         These studies establish the suitability of the YOLO route
+camera, an RK3566 edge terminal, a textile-specific detector,            for bounding-box localization under industrial latency and
+and an IoT cloud platform. When the Hall sensor indicates                resource constraints. However, most existing modifications
+that the machine is operating, the edge terminal activates the
+camera and supplementary light. Once a defect is detected, it            primarily strengthen generic feature representations rather
+stops the machine through the local wired control path and               than explicitly exploiting the directional texture structure of
+reports the defect to the cloud platform for defect statistics           circular-knitted fabrics.
+and production-quality analysis. The proposed TFRA-YOLO                     For circular-knitted fabric inspection, two texture-specific
+starts from YOLOv8n and combines directional texture encoding            limitations remain in conventional YOLO feature encoding and
+(DTE) with local texture-guided feature reassembly (LTFR) to
+retain directional knitted-texture cues and adaptively reconstruct       top-down reconstruction. First, circular-knitted fabrics exhibit
+the feature pyramid. On images collected from a real textile             highly repetitive texture patterns with dominant horizontal
+production line, TFRA-YOLO achieves 66.3% AP and 96.9%                   and vertical orientations. Defects typically disrupt this reg-
+AP50, improving YOLOv8n by 7.0 and 2.8 percentage points,                ular texture in horizontally extended, vertically extended, or
+respectively. The proposed system provides a practical route from        compact local forms such as holes. Standard convolutional
+delayed post-production inspection toward traceable, in-process
+defect containment for circular knitting.                                feature extraction can learn these patterns implicitly, but it
+                                                                         does not explicitly introduce an orientation-aware inductive
+   Index Terms—Industrial defect detection, YOLO, deep learn-            bias for separately modeling directional and compact texture
+ing, edge computing, Internet of Things.
+                                                                         disruptions. Second, nearest-neighbor upsampling in the top-
+                                                                         down feature pyramid reconstructs higher-resolution features
+                        I. I NTRODUCTION                                 with a content-independent copying rule rather than adapting
+      IRCULAR knitting machines are foundational produc-                 reconstruction weights to local texture structure. Such content-
+C     tion infrastructure in the textile industry: they con-
+tinuously manufacture the knitted fabrics used in T-shirts,
+                                                                         independent reconstruction may inadequately preserve narrow
+                                                                         defect boundaries or weak local disruptions embedded in
+sportswear, and other daily garments. The latest International           repetitive texture. These observations motivate explicit direc-
+Textile Manufacturers Federation (ITMF) statistics report                tional texture encoding during feature extraction and content-
+28,000 global shipments of large circular knitting machines              adaptive reconstruction during top-down fusion.
+in 2024 [1]. Conventional inspection is commonly performed                  Based on this motivation, we develop TFRA-YOLO to
+after production. Consequently, a defect arising early in pro-           introduce texture-specific inductive biases at both feature
+duction may continue propagating as the machine operates,                encoding and feature reconstruction stages. To address the
+leading to substantial fabric waste before it is discovered. An          first limitation, we introduce a directional texture encoding
+effective inspection system must therefore detect and localize           (DTE) module after selected backbone stages. DTE separately
+defects during machine operation with sufficiently low latency           models horizontal, vertical, and compact local texture evi-
+to enable timely intervention before defective fabric continues          dence, while residual fusion retains the baseline representation
+to accumulate.                                                           and augments it with directional texture cues. To address
+   Single-stage YOLO detectors are particularly attractive for           the second limitation, we introduce a local texture-guided
+this setting because they jointly provide real-time inference            feature reassembly (LTFR) pyramid that replaces fixed nearest-
+and explicit defect localization. YOLO-based detectors have              neighbor top-down upsampling with location-specific feature
+been adopted for industrial surface inspection of steel strips,          reassembly. TFRA-YOLO preserves the lightweight single-
+                                                                         stage YOLO detection paradigm while introducing directional
+  K. Tan, J. Zhang, J. Yu, and C. He are with the School of              texture encoding in the backbone and content-adaptive recon-
+Computer Science, Guangdong University of Technology, Guangzhou
+510006, China. H. Wu is with the School of Automation,                   struction in the top-down feature pyramid.
+Guangdong University of Technology, Guangzhou 510006, China.                Beyond detector design, practical deployment on circular
+Corresponding author: C. He (e-mail: hechunhua@pku.edu.cn).              knitting machines requires inspection to be synchronized with
+E-mails:     K.  Tan     (tankangzhao@mails.gdut.edu.cn), J.   Zhang
+(zhangjiarui1@mail2.gdut.edu.cn), J. Yu (yujunjie2@mails.gdut.edu.cn),   machine rotation and to support low-latency local intervention.
+H. Wu (heng.wu@foxmail.com), and C. He (hechunhua@pku.edu.cn).           We therefore integrate TFRA-YOLO into a cloud-edge in-
+                                                                                                                                2
+
+
+
+spection system that combines image acquisition synchronized      structures with horizontal, vertical, and local branches. For a
+with machine rotation, RK3566-based edge inference, and           C2f output X ∈ RC×H×W , DTE first forms three depthwise
+cloud-based IoT monitoring. The latency-critical intervention     branch responses:
+loop remains entirely local, while defect records and device
+                                                                                       Fh = DW1×7 (X),                        (1)
+states are synchronized with the cloud IoT platform for status
+visualization and production-quality analysis.                                         Fv = DW7×1 (X),                        (2)
+   The main contributions of our work are as follows.                                   Fl = DW3×3 (X).                       (3)
+   • We introduce a directional texture encoding (DTE) mod-
+                                                                  The 1 × 7 and 7 × 1 branches enlarge the receptive field along
+     ule that explicitly models horizontal, vertical, and com-
+                                                                  the horizontal and vertical directions, respectively, while the
+     pact local texture cues and fuses them with the baseline
+                                                                  3 × 3 branch preserves compact local texture information.
+     backbone representation, providing a lightweight texture-
+                                                                  The three responses are concatenated and fused by a 1 × 1
+     specific inductive bias for circular-knitted defect detec-
+                                                                  convolution:
+     tion.
+                                                                                     Fd = ϕ ([Fh , Fv , Fl ]) ,               (4)
+   • We develop a local texture-guided feature reassembly
+     (LTFR) pyramid that replaces fixed nearest-neighbor up-      where [·] denotes channel concatenation and ϕ denotes point-
+     sampling with location-adaptive reconstruction, enabling     wise convolution followed by normalization and activation.
+     content-adaptive reconstruction of local defect structures   Depthwise filtering keeps the directional branches lightweight,
+     during top-down multi-scale fusion.                          while the pointwise operation mixes the branch responses
+   • We implement a cloud-edge inspection prototype that          across channels. The fused response is added to the original
+     keeps the latency-critical intervention loop local while     C2f feature through a residual connection:
+     supporting centralized defect statistics and device super-
+                                                                                          Y = X + Fd .                        (5)
+     vision.
+                                                                    This preserves the baseline representation while introducing
+                        II. M ETHOD                               additional direction-sensitive texture cues with limited com-
+                                                                  putational overhead. Although DTE is related to asymmetric
+A. TFRA-YOLO Architecture
+                                                                  convolution [19], it differs in using depthwise horizontal,
+   TFRA-YOLO is built on YOLOv8n [17] and consists of             vertical, and local branches together with three-way fusion
+three main components: a directional texture encoding back-       and residual integration within the C2f backbone.
+bone, a local texture-guided reassembly pyramid, and a multi-
+scale detection head. YOLOv8n is selected as the baseline
+                                                                  C. Local Texture-Guided Feature Reassembly
+because it provides favorable inference efficiency on the
+target RK3566 platform while retaining sufficient architectural      In the feature pyramid, fixed nearest-neighbor upsam-
+flexibility for texture-specific modification. [18] As shown in   pling reconstructs higher-resolution features using a content-
+Fig. 1, the directional texture encoding backbone introduces      independent copying rule, without adapting to local texture
+DTE after selected C2f stages to strengthen the representation    structure. This can be suboptimal for multi-scale fusion in
+of horizontally extended, vertically extended, and compact        repetitive knitted textures, where narrow defect boundaries
+local texture disruptions. The local texture-guided reassem-      may occupy only a small portion of the local region. LTFR
+bly pyramid replaces the fixed nearest-neighbor upsampling        therefore replaces the two fixed upsampling operations with
+operations with LTFR, allowing higher-resolution features to      content-adaptive feature reassembly.
+be reconstructed according to local content before multi-scale       LTFR adopts content-aware feature reassembly to recon-
+fusion. The fused pyramid features are then forwarded to          struct each output location from a locally predicted neighbor-
+the detection head for defect classification and localization.    hood. This formulation follows the content-aware reassembly
+The two proposed components target different stages of fea-       principle introduced in CARAFE [19]. Given X ∈ RC×H×W ,
+ture processing. DTE focuses on extracting direction-sensitive    a 1 × 1 compressor first reduces the kernel-prediction feature
+texture cues from the repetitive knitted background, whereas      to Cr = max(C/4, 16) channels:
+LTFR focuses on reconstructing and propagating these cues                                Xc = E1×1 (X).                       (6)
+across feature scales.
+                                                                  A 3 × 3 encoder then predicts s2 k 2 kernel logits, where the
+                                                                  scale factor is s = 2 and the reassembly kernel size is k = 5:
+B. Directional Texture Encoding
+   The visual cue of a defect in circular-knitted fabric is                             K ′ = E3×3 (Xc ).                     (7)
+often a local disruption of repetitive texture rather than an     Pixel shuffle expands the logits to the upsampled grid,
+isolated object boundary. Such disruptions commonly appear
+in horizontally elongated, vertically elongated, or compact                               b = PS(K ′ ),
+                                                                                          K                                   (8)
+local forms. A standard C2f block can learn these patterns                                      2
+                                                                  and a softmax across the k kernel positions produces a
+implicitly through local feature aggregation, but it does not
+                                                                  distinct normalized reassembly kernel at each output location:
+explicitly separate directional and compact texture responses.
+DTE is therefore introduced to encode these complementary                                           b i,j ).
+                                                                                     Ki,j = softmax(K                         (9)
+                                                                                                                                                    3
+
+
+
+
+Fig. 1. Architecture of TFRA-YOLO. The Knitted Texture Fusion Backbone uses C2f–DTE blocks to encode horizontal, vertical, and local texture cues. The
+Local Texture Reassembly Pyramid replaces the two top-down fixed upsampling operations with LTFR, while the bottom-up path and three-scale detection
+head follow YOLOv8n.
+
+
+The normalization constraint is                                             is then obtained by the location-specific weighted sum
+                             2
+                           k                                                                                  2
+                           X                                                                                k
+                                 Ki,j,u = 1.                        (10)                                    X
+                                                                                                   Yi,j =         Ki,j,u Pi,j,u .                (12)
+                           u=1
+                                                                                                            u=1
+Here, E1×1 and E3×3 denote the compression and kernel-
+encoding layers, respectively, and PS denotes pixel shuffle. In                Unlike a spatially shared interpolation kernel, Eq. (12)
+parallel, a local k × k feature patch is extracted from X and               allows the reconstruction weights to vary with local texture
+aligned with the enlarged grid:                                             content, so defect boundaries and regular knitted regions
+                                                                            can be aggregated differently. The channel-compression stage
+                     Pi,j = Unfoldk×k (X)i,j .                      (11)    bounds the overhead of predicting these kernels, while the
+                                                                            5 × 5 neighborhood provides more local support than a copied
+                       2
+where Pi,j ∈ RC×k denotes the local feature neighborhood                    source pixel. In TFRA-YOLO, this reassembly mechanism is
+associated with output location (i, j). The reassembled feature             applied specifically to the two feature-pyramid upsampling
+                                                                                                                                                       4
+
+
+
+                                                                                                               TABLE I
+                                                                                    I MAGE - LEVEL SPLIT AND DEFECT- INSTANCE COUNTS IN THE REAL
+                                                                                                       PRODUCTION - LINE DATASET.
+
+
+                                                                                         Split          Images     Instances     Row   Col   Hole
+                                                                                         Train            282           329      174   75     80
+                                                                                         Validation        40            48       24   13     11
+                                                                                         Test              81            91       60   12     19
+
+
+
+                                                                                   While defect detection and stop control are handled locally,
+                                                                                 non-latency-critical information is synchronized to the cloud
+                                                                                 platform. As shown in Fig. 5, the cloud IoT platform receives
+                                                                                 defect records and device states from the edge terminal for
+                                                                                 centralized visualization, defect statistics, and production-
+                                                                                 quality analysis.
+
+                                                                                                      III. E XPERIMENTAL S ETUP
+                                                                                 A. Dataset
+                                                                                    The dataset was collected from a real circular-knitting
+Fig. 2. DTE structure. A C2f feature is processed by horizontal, vertical, and   production line using the deployed image-acquisition system
+local depthwise branches, followed by channel concatenation, 1 × 1 fusion,
+and residual addition.                                                           described in Section II-D. Images were captured during ma-
+                                                                                 chine operation and manually annotated with axis-aligned
+                                                                                 bounding boxes by the project team. The dataset contains
+stages to preserve local defect structure during multi-scale                     three engineering defect categories: row, col, and hole, which
+fusion.                                                                          generally appear as horizontal disruptions, vertical disruptions,
+   DTE and LTFR play complementary roles: DTE enhances                           and compact local damage, respectively. A total of 403 images
+direction-sensitive texture representation in the backbone,                      containing 468 defect instances were divided into training,
+while LTFR performs content-adaptive reconstruction of these                     validation, and test sets with 282, 40, and 81 images, re-
+features across pyramid scales.                                                  spectively. The corresponding instance statistics are listed in
+                                                                                 Table I. The validation set was used for checkpoint selection,
+D. Closed-Loop Inspection System                                                 whereas all quantitative results in this paper were obtained on
+                                                                                 the held-out test set containing 81 images and 91 instances.
+   Fig. 4 shows the inspection system installed on a circular                    The implementation protocol and training hyperparameters are
+knitting machine, comprising a Hall sensor, an industrial                        summarized in Table II.
+camera, and an RK3566 edge device. The workflow begins
+when the operator starts the machine. The Hall sensor detects
+machine rotation and signals the RK3566, which activates                         B. Evaluation Metrics
+the supplementary illumination, acquires camera frames, and                         We use the COCO detection protocol [20]. For a predicted
+performs real-time defect inspection. Once a defect is detected,                 box Bp and a ground-truth box Bg , intersection over union
+the RK3566 immediately issues a stop command through the                         (IoU) is defined as IoU(Bp , Bg ) = |Bp ∩ Bg |/|Bp ∪ Bg |. At
+wired connection to the machine controller. The corresponding                    an IoU threshold t, a prediction is counted as a true positive
+defect frame is then displayed locally for operator inspection                   only when it has the correct class and is matched one-to-one
+and troubleshooting. After the problem is resolved and the ma-                   to an as-yet unmatched ground-truth instance; all remaining
+chine is restarted, the inspection cycle resumes. The complete                   predictions are false positives and unmatched ground-truth
+defect-to-stop loop is executed locally and does not depend on                   instances are false negatives. For each class c, APc (t) is the
+cloud communication.                                                             area under its interpolated precision–recall curve. With C = 3
+   To support real-time inference on the RK3566 NPU, the                         classes, the reported AP and AP50 are
+trained detector is converted from the training framework to                                                           C
+an edge-executable representation. The PyTorch model is first                                                     1 XX
+                                                                                                       AP =              APc (t),
+exported to ONNX at an input resolution of 640×640, and then                                                     10C c=1
+                                                                                                                           t∈T
+converted to RKNN using the official RKNN-Toolkit2 [20].                                                           C
+Post-training INT8 quantization is applied during conversion,                                                    1 X
+                                                                                                  AP50 =               APc (0.50),                  (13)
+with representative training images used for calibration [21].                                                   C c=1
+The resulting RKNN model is loaded by the Android edge ap-
+plication and executed on the RK3566 NPU. The deployment                         where T = {0.50, 0.55, . . . , 0.95}. Thus, AP measures lo-
+pipeline is therefore                                                            calization and classification quality across increasingly strict
+                                                                                 overlap thresholds, whereas AP50 emphasizes detection at
+    PyTorch → ONNX → INT8 RKNN → RK3566 NPU.                                     IoU = 0.50. Both are written as percentages in the tables.
+                                                                                                                                                            5
+
+
+
+
+Fig. 3. LTFR structure. The upper path predicts location-specific 5 × 5 reassembly kernels, and the lower path unfolds and aligns local feature patches. Their
+element-wise product is summed along the kernel dimension to produce a 2× upsampled feature.
+
+
+
+
+Fig. 4. Actual deployment on the circular knitting machine. The insets highlight the start button, Hall sensor, industrial camera, and RK3566 edge device,
+respectively.
+
+
+
+We additionally report trainable parameters and FLOPs at                                          IV. R ESULTS AND D ISCUSSION
+[1, 3, 640, 640] to characterize model scale and computational                  A. Comparison With Detectors
+cost; these are not substitutes for measured edge-device la-
+tency.                                                                             Table III compares TFRA-YOLO with the retained base-
+                                                                                lines. TFRA-YOLO achieves 66.3% AP and 96.9% AP50.
+                                                                                Relative to its direct YOLOv8n baseline, AP improves by
+                                                                                7.0 points and AP50 by 2.8 points for 0.38 M additional
+   For each model, the retained best-validation checkpoint is                   parameters and 0.8 G additional FLOPs. Among the compact
+evaluated once on the same held-out test split. FLOPs and                       YOLO variants evaluated here, TFRA-YOLO has the highest
+parameter counts are reported at [1, 3, 640, 640]. The values                   AP. RT-DETR-R18 obtains 67.7% AP, 1.4 points higher than
+are suitable for a coarse efficiency comparison, but cross-                     TFRA-YOLO, but requires 20.09 M parameters and 60.72 G
+framework FLOP accounting can omit unsupported operators;                       FLOPs. This is a useful trade-off rather than a claim that
+no cross-framework latency claim is made. DETR, Deformable                      TFRA-YOLO dominates every detector.
+DETR, Faster R-CNN, and RT-DETRv2 follow their respec-                             Fig. 6 visualizes the parameter- and operation-accuracy
+tive repositories and pretrained backbones [21]–[24].                           trade-off without shifting any data coordinates. The position
+                                                                                                                                                           6
+
+
+
+
+Fig. 5. Cloud IoT platform for the deployed inspection system. The four panels show the platform portal, defect-count trend dashboard, device-state and
+remote-configuration interface, and uploaded defect-record review interface, respectively. Cloud communication supports status visualization, statistics, and
+authorized supervision, whereas the defect-to-stop control path remains local and wired.
+
+                                                                      TABLE II
+                                               I MPLEMENTATION PROTOCOL AND TRAINING HYPERPARAMETERS .
+
+    Item                                      Specification
+    Training hardware                         NVIDIA GeForce RTX 3090 GPU (24 GB)
+    Software                                  Ubuntu 24.04, Python 3.10.20, PyTorch 2.4.1+cu124, and Ultralytics 8.4.140
+    Model initialization                      TFRA-YOLO and YOLOv8n: yolov8n.pt; other baselines: the available official pretrained checkpoint in
+                                              the corresponding repository
+    Input resolution                          640 × 640
+    Batch size / data workers                 16 / 8
+    Maximum epochs / early stopping           300 / 80 epochs
+    patience
+    Optimizer                                 Ultralytics automatic optimizer selection
+    Data augmentation                         Standard Ultralytics geometric and photometric augmentations; no augmentation hyperparameter was manually
+                                              overridden
+    Checkpoint retained for testing           Framework-selected best validation checkpoint
+    Test protocol                             Held-out test split, maximum 16 detections per image
+
+
+                                                               TABLE III
+ T EST- SET COMPARISON ON 81 IMAGES AND 91 INSTANCES . AP IS COCO AP@[.50:.95]. A LL VALUES ARE PERCENTAGES EXCEPT PARAMETERS AND
+                FLOP S . B OLD AND UNDERLINED VALUES DENOTE THE BEST AND SECOND - BEST AP/AP50 RESULTS , RESPECTIVELY.
+
+                                      Model                         Params (M)      FLOPs (G)      AP50 (%)      AP (%)
+                                      Lightweight Real-Time Detectors
+                                      YOLOv5n                         2.50                 7.10          93.1        58.4
+                                      YOLO11n                         2.58                 6.40          95.0        59.6
+                                      YOLO12n                         2.56                 7.30          94.3        60.9
+                                      YOLO26n                         2.38                 5.30          96.5        61.4
+                                      End-to-End Detectors
+                                      RT-DETR-R18                         20.09           60.72          95.2        67.7
+                                      DETR-R50                            41.28           77.25          96.4        53.6
+                                      Deformable DETR-R50                 39.82          158.66          96.8        64.3
+                                      Two-Stage Detector
+                                      Faster R-CNN-R50                    41.13          181.45          96.1        64.7
+                                      Baseline
+                                      YOLOv8n                               3.01           8.10          94.1        59.3
+                                      Ours
+                                      TFRA-YOLO                             3.39           8.90          96.9        66.3
+
+
+
+of TFRA-YOLO in the low-parameter region is consistent                             B. Ablation
+with the tabulated result. Because the horizontal axes are
+logarithmic, the visual is intended to show scale rather than                        Table IV isolates the two modifications within the same
+imply a linear performance-efficiency relationship.                                YOLOv8n family. DTE contributes the larger isolated im-
+                                                                                   provement (+4.8 AP), while LTFR contributes +1.6 AP. Com-
+                                                                                                                                                          7
+
+
+
+
+Fig. 6. Accuracy-efficiency trade-off of the retained test results. Both horizontal axes use a logarithmic scale. Marker coordinates are the exact values in
+Table III; the plot does not contain manual coordinate compression.
+
+
+
+                           TABLE IV                                            left to right. These maps are used only as qualitative evidence
+  A BLATION ON THE COMMON HELD - OUT TEST SPLIT USING THE SAME                 of where the detectors respond; the AP results in Tables III
+                   YOLOV 8 N TRAINING RECIPE .
+                                                                               and IV remain the basis for the quantitative comparison.
+   Variant          DTE     LTFR      Params    FLOPs      AP50      AP
+   YOLOv8n           –        –          3.01       8.1     94.1    59.3       D. Limitations and Submission-Ready Validation
+   + DTE             ✓        –          3.28       8.8     94.2    64.1
+   + LTFR            –        ✓          3.11       8.2     94.3    60.9          The present evidence supports a promising lightweight
+   TFRA-YOLO         ✓        ✓          3.39       8.9     96.9    66.3       detector on a real production-line image set, but it does
+                                                                               not yet establish production reliability. First, the test split is
+                                                                               small and category-imbalanced, and its image-level partition
+bining both gives 66.3% AP, which is 0.6 points above the                      does not establish isolation of adjacent video frames. Second,
+arithmetic sum of the isolated gains. This indicates that the                  FLOPs are not a substitute for end-to-end edge latency, es-
+texture representation and adaptive reassembly are comple-                     pecially when image capture, preprocessing, postprocessing,
+mentary: DTE supplies direction-specific texture cues, whereas                 control communication, and physical stopping are part of
+LTFR transfers them through the top-down path. The current                     the operational loop. Third, the current ablation isolates the
+study establishes module-level complementarity; branch-level                   two modules but does not yet separately quantify each DTE
+DTE and alternative-upsampling ablations are required before                   branch or compare LTFR with alternative interpolation and
+making more granular claims about individual directional                       reassembly operators. Finally, operator troubleshooting records
+branches, the directional kernel length, or the choice of                      can support defect statistics and production-quality analysis,
+content-adaptive reassembly.                                                   but their completeness and operational value have not yet
+                                                                               been measured. These points define a concrete validation plan,
+C. Per-Class and Qualitative Results                                           rather than weaknesses that should be concealed.
+   The TFRA-YOLO checkpoint obtains 61.7%, 73.8%, and
+63.4% AP for row (horizontal), col (vertical), and hole de-                                                V. C ONCLUSION
+fects, respectively. The notably high col-defect AP should                        This work presents a closed-loop framework for defect
+be interpreted with care because the test category has only                    inspection on a circular knitting machine and TFRA-YOLO,
+12 instances. Fig. 7 presents seven selected images and the                    a compact direction- and content-adaptive detector. The work-
+available standardized renderings. The visual comparison is                    flow couples rotation-aware edge inspection, automatic local
+illustrative rather than a replacement for the full quantitative               wired stop signaling, on-site operator inspection and trou-
+test set. It is particularly useful for examining thin col-type                bleshooting, and a cloud digital twin for live status visu-
+defects, long row-type defects, and holes against repetitive                   alization, defect statistics, production-quality analysis, and
+background texture.                                                            authorized remote supervisory control. The detector combines
+   Fig. 8 further compares the activation visualizations pro-                  DTE for horizontal, vertical, and local knitted-texture encoding
+duced by the official Ultralytics visualization routine for the                with LTFR for adaptive feature-pyramid reconstruction. On
+YOLOv8n baseline and TFRA-YOLO. Each row corresponds                           the retained test split, TFRA-YOLO improves YOLOv8n from
+to the same test image, with the original image, baseline                      59.3% to 66.3% AP at 3.39 M parameters and 8.9 G FLOPs.
+visualization, and TFRA-YOLO visualization arranged from                       The next step is not merely more offline accuracy: it is a
+                                                                                                                                                        8
+
+
+
+
+Fig. 7. Qualitative comparison on selected test images. Columns are labels, YOLOv8n, YOLO11n, YOLO26n, RT-DETR-R18, Faster R-CNN-R50, and
+TFRA-YOLO. The figure uses a common renderer for visual consistency; it should be updated after finalizing the exact sample-selection protocol and display
+confidence threshold.
+
+
+disciplined site evaluation of sensing-to-stop latency, false-
+stop behavior, operator-troubleshooting workflow, production-
+quality-analysis value, and grouped generalization across pro-
+duction conditions.
+                                                                                                                                                               9
+
+
+
+
+Fig. 8. Qualitative activation visualization on three selected test images. The left, middle, and right columns show the original images, YOLOv8n visualizations,
+and TFRA-YOLO visualizations, respectively. Each visualization is generated with the same official Ultralytics routine.
+
+
+
+                              R EFERENCES                                           [7] C. Chen, Q. Zhou, L. Xiao et al., “LWFDD-YOLO: A lightweight defect
+                                                                                        detection algorithm based on improved YOLOv8,” Textile Research
+ [1] International Textile Manufacturers Federation, “International textile             Journal, vol. 95, no. 9–10, pp. 1125–1142, 2025.
+     machinery shipment statistics (ITMSS), vol. 47/2024,” 2025, [Online].          [8] X. Luo, Z. Cheng, Q. Ni et al., “Defect detection algorithm for fabric
+     Available:       https://www.itmf.org/publications/statistics-publications/        based on deformable convolutional network,” Textile Research Journal,
+     international-textile-machinery-shipment-statistics-itmss-2024.                    vol. 93, no. 9–10, pp. 2342–2354, 2023.
+ [2] S. Gao, M. Chu, and L. Zhang, “A detection network for small defects
+     of steel surface based on YOLOv7,” Digital Signal Processing, vol. 149,        [9] Z. Zhang, T. Huang, W. Zhang et al., “DGHR-YOLO: Fabric defect
+     p. 104484, 2024.                                                                   detection based on high-level screening-feature pyramid networks and
+ [3] C. Li, A. Xu, Q. Zhang, and Y. Cai, “Steel surface defect detection                deformable convolution,” Nondestructive Testing and Evaluation, 2025.
+     method based on improved YOLOX,” IEEE Access, vol. 12, pp. 37 643–            [10] X. Yue, Q. Wang, L. He, Y. Li, and D. Tang, “Research on tiny
+     37 652, 2024.                                                                      target detection technology of fabric defects based on improved YOLO,”
+ [4] X. Dong, C. Zhang, J. Wang, Y. Chen, and D. Wang, “Real-time                       Applied Sciences, vol. 12, no. 13, p. 6823, 2022.
+     detection of surface cracking defects for large-sized stamped parts,”         [11] K. Yu, W. Lyu, X. Yu, Q. Guo, W. Xu, and L. Zhang, “FA-YOLO:
+     Computers in Industry, vol. 159, p. 104105, 2024.                                  A high-precision and efficient method for fabric defect detection in
+ [5] X. Kang and J. Li, “AYOLOv7-tiny: Towards efficient defect detection               textile industry,” IEICE Transactions on Fundamentals of Electronics,
+     in solid color circular weft fabric,” Text. Res. J., vol. 94, pp. 225–245,         Communications and Computer Sciences, vol. E107.A, no. 6, pp. 890–
+     2024.                                                                              898, 2024.
+ [6] H. Yang, J. Jing, Z. Wang et al., “YOLOV4-TinyS: A new convolutional          [12] C. Chen, Q. Zhou, S. Li, D. Luo, G. Tan et al., “Fabric defect detection
+     neural architecture for real-time detection of fabric defects in edge              algorithm based on improved YOLOv8,” Textile Research Journal,
+     devices,” Text. Res. J., vol. 94, pp. 49–68, 2024.                                 vol. 95, no. 3–4, pp. 235–251, 2025.
+                                                                                 10
+
+
+
+[13] L. Zhou, B. Ma, Y. Dong, Z. Yin, and F. Lu, “DCFE-YOLO: A novel
+     fabric defect detection method,” PLOS ONE, vol. 20, no. 1, p. e0314525,
+     2025.
+[14] Z. Gao, S. Zhang, J. Su, B. Li, J. Wang, and Z. Song, “Research on
+     improved YOLOv8 fabric surface defect detection algorithm,” Textile
+     Research Journal, vol. 96, no. 17–18, 2026.
+[15] S. Xu, C. Wan, W. Feng, J. Li, and J. Gao, “YOLO-DLL: An effective
+     detection method for fabric defects,” Textile Research Journal, 2025.
+[16] T. Wang et al., “SRSE-YOLO: An improved fabric defect detection
+     method for YOLOv8,” Textile Research Journal, 2025.
+[17] Ultralytics, “Ultralytics yolo,” [Online]. Available: https://github.com/
+     ultralytics/ultralytics, 2023, accessed: 2026-09-24.
+[18] Rockchip, “Rknn model zoo,” [Online]. Available: https://github.com/
+     airockchip/rknn model zoo, 2026, accessed: 2026-09-27.
+[19] J. Wang, K. Chen, R. Xu, Z. Liu, C. C. Loy, and D. Lin, “Carafe:
+     Content-aware reassembly of features,” in Proc. IEEE/CVF Int. Conf.
+     Comput. Vis., 2019, pp. 3007–3016.
+[20] T.-Y. Lin, M. Maire, S. Belongie et al., “Microsoft coco: Common
+     objects in context,” in Proc. Eur. Conf. Comput. Vis., 2014, pp. 740–
+     755.
+[21] N. Carion, F. Massa, G. Synnaeve, N. Usunier, A. Kirillov, and
+     S. Zagoruyko, “End-to-end object detection with transformers,” in Proc.
+     Eur. Conf. Comput. Vis., 2020, pp. 213–229.
+[22] X. Zhu, W. Su, L. Lu, B. Li, X. Wang, and J. Dai, “Deformable detr:
+     Deformable transformers for end-to-end object detection,” in Proc. Int.
+     Conf. Learn. Representations, 2021.
+[23] S. Ren, K. He, R. Girshick, and J. Sun, “Faster r-cnn: Towards real-
+     time object detection with region proposal networks,” in Adv. Neural
+     Inf. Process. Syst., vol. 28, 2015.
+[24] W. Lv, Y. Xu, Y. Yang, G. Li, J. Wang, L. Chen et al., “Rt-detrv2:
+     Improved baseline with bag-of-freebies for real-time detection trans-
+     former,” arXiv preprint arXiv:2407.17140, 2024.
+

@@ -1,0 +1,15 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -219,1 +219,1 @@
+-\shortstack[l]{1. Training\\setup}
++1. Training setup
+@@ -223,1 +223,1 @@
+-\shortstack[l]{2. Deployment\\setup}
++2. Deployment setup
+@@ -228,1 +228,1 @@
+-\shortstack[l]{3. Data\\protocol}
++3. Data protocol
+@@ -231,1 +231,1 @@
+-\shortstack[l]{4. Training\\dynamics}
++4. Training dynamics

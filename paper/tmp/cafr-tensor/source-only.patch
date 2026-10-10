@@ -1,0 +1,18 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -151,7 +151,7 @@
+-\emph{3) Local Feature Extraction and Reassembly:}
+-In parallel with weight prediction, Unfold extracts a $k\times k$ neighborhood around each input location. Nearest-neighbor interpolation then replicates these neighborhoods onto the higher-resolution grid to align them with the predicted reassembly weights. For $s=2$, the four output locations corresponding to an input location share the same neighborhood but use their own predicted weights. Each output location aggregates the aligned neighborhood as
+-\begin{equation}
+-Y_{c,i,j}=\sum_{u=1}^{k^2}K_{i,j,u}P_{c,u,i,j}.
+-\label{eq:cafr-reassembly}
+-\end{equation}
+-Here, $P\in\mathbb{R}^{C\times k^2\times sH\times sW}$ denotes the neighborhoods after replication and alignment, $u$ indexes the $k^2$ positions within each neighborhood, and $c$ denotes the feature channel. The predicted weights are shared across feature channels, producing $Y\in\mathbb{R}^{C\times sH\times sW}$. Nearest-neighbor interpolation is therefore used only for neighborhood alignment; the final output is obtained through content-adaptive weighted aggregation, allowing the four output locations to produce different feature responses.
++\emph{3) Feature Reassembly:}
++Unfold extracts a $k\times k$ neighborhood around each input position. Nearest-neighbor upsampling then replicates the extracted neighborhoods to align them with the output resolution. The output is obtained by multiplying the predicted weights with the corresponding local features and summing over the $k^2$ neighborhood positions:
++\begin{equation}
++Y=\sum_{u=1}^{k^2}K_u\odot P_u.
++\label{eq:cafr-reassembly}
++\end{equation}
++Here, $K_u\in\mathbb{R}^{sH\times sW}$ and $P_u\in\mathbb{R}^{C\times sH\times sW}$ denote the predicted weight map and the aligned local feature map for the $u$-th neighborhood position, respectively. The symbol $\odot$ denotes element-wise multiplication, with the weights broadcast across feature channels. The resulting output is $Y\in\mathbb{R}^{C\times sH\times sW}$. Nearest-neighbor upsampling is used only for neighborhood alignment; content-adaptive weighted aggregation produces the final output.

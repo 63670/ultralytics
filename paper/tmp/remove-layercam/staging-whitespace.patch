@@ -1,0 +1,6 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -338,1 +338,1 @@
+-Fig.~\ref{fig:heatmaps} presents LayerCAM-based visualizations of YOLOv8n and \model generated using the same procedure . The examples illustrate differences in feature responses around defect regions, providing a qualitative comparison of the two models. Heat intensity is normalized per map and is not an absolute measure of detection accuracy.
++Fig.~\ref{fig:heatmaps} presents LayerCAM-based visualizations of YOLOv8n and \model generated using the same procedure. The examples illustrate differences in feature responses around defect regions, providing a qualitative comparison of the two models. Heat intensity is normalized per map and is not an absolute measure of detection accuracy.

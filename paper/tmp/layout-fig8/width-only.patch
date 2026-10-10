@@ -1,0 +1,6 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -326,1 +326,1 @@
+-\includegraphics[width=0.82\columnwidth]{heatmap_comparison.png}
++\includegraphics[width=\columnwidth]{heatmap_comparison.png}

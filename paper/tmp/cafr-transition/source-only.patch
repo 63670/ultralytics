@@ -1,0 +1,6 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -127,1 +127,1 @@
+-In \model, CAFR replaces the upsampling operations at both top-down fusion stages, with upsampling factor $s=2$ and reassembly kernel size $k=5$. Its computation comprises two parallel paths followed by weighted aggregation: the weight-prediction path generates a normalized kernel for each output location, while the feature-extraction path obtains local neighborhoods from the original input. The predicted weights and source neighborhoods are aligned on the output grid before reassembly.
++In \model, CAFR replaces the upsampling operations at both top-down fusion stages, with an upsampling factor of $s=2$ and a reassembly kernel size of $k=5$. As shown in Fig.~\ref{fig:cafr}, CAFR consists of two parallel branches for kernel prediction and local feature extraction. Their outputs are subsequently combined through weighted aggregation to generate the upsampled features. The two branches and their subsequent feature reassembly are described as follows.

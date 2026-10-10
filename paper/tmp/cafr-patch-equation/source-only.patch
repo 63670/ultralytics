@@ -1,0 +1,16 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -147,2 +147,10 @@
+-\emph{2) Local Feature Extraction:}
+-In parallel, Unfold extracts a $k\times k$ neighborhood around each input position. The extracted patches are reshaped to group the channel and neighborhood dimensions, then upsampled using nearest-neighbor interpolation to match the spatial resolution of the predicted kernels. A final reshape produces the aligned patch tensor $P\in\mathbb{R}^{C\times k^2\times sH\times sW}$, where the $k^2$ dimension represents the positions within each local neighborhood. Nearest-neighbor interpolation is used only for neighborhood alignment, not to generate the final output features.
++\emph{2) Local Feature Extraction:}
++In parallel, the patch branch extracts local neighborhoods from the input feature map using Unfold. The extracted patches are reshaped and upsampled using nearest-neighbor interpolation to match the spatial resolution of the predicted reassembly kernels:
++\begin{equation}
++\begin{aligned}
++P' &= \operatorname{Reshape}\!\left(\operatorname{Unfold}_{k\times k}(X)\right),\\
++P &= \operatorname{Reshape}\!\left(\operatorname{Nearest}_{s}(P')\right).
++\end{aligned}
++\label{eq:cafr-patches}
++\end{equation}
++Here, $\operatorname{Unfold}_{k\times k}$ extracts a $k\times k$ neighborhood around each input position, and $\operatorname{Nearest}_{s}$ denotes nearest-neighbor upsampling with scale factor $s=2$. The first reshape produces $P'\in\mathbb{R}^{Ck^2\times H\times W}$; the final reshape gives the aligned patch tensor $P\in\mathbb{R}^{C\times k^2\times sH\times sW}$, where $k^2$ indexes the positions within each local neighborhood. Nearest-neighbor interpolation is used only for neighborhood alignment, not to generate the final output features.

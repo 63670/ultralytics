@@ -1,0 +1,9 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -126,1 +126,1 @@
+-Here, $X_c\in\mathbb{R}^{C_r\times H\times W}$, where $C_r=\max(\lfloor C/4\rfloor,16)$; $E_{1\times1}$ includes batch normalization and SiLU activation. A linear $3\times3$ convolution then predicts the unnormalized reassembly weights:
++Here, $X_c\in\mathbb{R}^{D\times H\times W}$, where $D=\max(\lfloor C/4\rfloor,16)$ denotes the compressed channel count; $E_{1\times1}$ includes batch normalization and SiLU activation. A linear $3\times3$ convolution then predicts the unnormalized reassembly weights:
+@@ -131,1 +131,1 @@
+-The resulting tensor has shape $s^2k^2\times H\times W$. For $s=2$ and $k=5$, this corresponds to 100 weight channels at each input location.
++The resulting tensor is $K'\in\mathbb{R}^{s^2k^2\times H\times W}$. For $s=2$ and $k=5$, this corresponds to 100 weight channels at each input location.

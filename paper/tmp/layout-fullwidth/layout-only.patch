@@ -1,0 +1,41 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -68,1 +68,1 @@
+-\includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{model.png}
++\includegraphics[width=\textwidth]{model.png}
+@@ -160,1 +160,1 @@
+-\includegraphics[width=0.92\textwidth]{ltfr.png}
++\includegraphics[width=\textwidth]{ltfr.png}
+@@ -261,9 +261,1 @@
+-\section{Results and Discussion}
+-\label{sec:results}
+-\subsection{Comparison With Other Detectors}
+-Table~\ref{tab:comparison} presents the detection results on the test set. \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively. These improvements are achieved with only 0.38 M additional parameters and approximately 0.8 G additional FLOPs. The larger improvement in AP indicates better detection performance under stricter IoU thresholds.
+-
+-Among the evaluated lightweight YOLO detectors, \model achieves the highest AP. Although RT-DETR-R18 attains a slightly higher AP of 67.7\%, it requires 20.09 M parameters and 60.72 G FLOPs, compared with 3.39 M parameters and 8.90 G FLOPs for \model. Fig.~\ref{fig:tradeoff} further illustrates the favorable balance between detection accuracy and model complexity achieved by \model.
+-
+-Fig.~\ref{fig:qualitative} shows predictions on seven selected test images, allowing qualitative comparison of missed defects, extra detections, and bounding-box alignment against repetitive fabric backgrounds.
+-
++% Queue the result floats early to keep large figures near the discussion.
+@@ -306,2 +298,1 @@
+-
+-\begin{figure*}[!tb]
++\begin{figure*}[!b]
+@@ -316,1 +307,1 @@
+-\begin{figure*}[!tb]
++\begin{figure*}[!t]
+@@ -318,1 +309,1 @@
+-\includegraphics[width=0.72\textwidth]{qualitative_existing.png}
++\includegraphics[width=\textwidth]{qualitative_existing.png}
+@@ -322,0 +314,10 @@
++\section{Results and Discussion}
++\label{sec:results}
++\subsection{Comparison With Other Detectors}
++Table~\ref{tab:comparison} presents the detection results on the test set. \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively. These improvements are achieved with only 0.38 M additional parameters and approximately 0.8 G additional FLOPs. The larger improvement in AP indicates better detection performance under stricter IoU thresholds.
++
++Among the evaluated lightweight YOLO detectors, \model achieves the highest AP. Although RT-DETR-R18 attains a slightly higher AP of 67.7\%, it requires 20.09 M parameters and 60.72 G FLOPs, compared with 3.39 M parameters and 8.90 G FLOPs for \model. Fig.~\ref{fig:tradeoff} further illustrates the favorable balance between detection accuracy and model complexity achieved by \model.
++
++Fig.~\ref{fig:qualitative} shows predictions on seven selected test images, allowing qualitative comparison of missed defects, extra detections, and bounding-box alignment against repetitive fabric backgrounds.
++
++

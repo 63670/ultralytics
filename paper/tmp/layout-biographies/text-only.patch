@@ -1,0 +1,22 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -21,1 +21,2 @@
+-\usepackage{xurl}
++\usepackage{xurl}
++\usepackage{etoolbox}
+@@ -25,1 +26,7 @@
+-\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
++\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
++
++% Keep biography spacing compact rather than stretching it to fill a column.
++\patchcmd{\IEEEbiographynophoto}
++  {\vskip 4\baselineskip plus 1fil minus 0\baselineskip}
++  {\vskip 1.5\baselineskip}
++  {}{\PackageError{manuscript}{Unable to set biography spacing}{Check the IEEEtran biography environment.}}
+@@ -366,2 +373,3 @@
+-% Preserve reading order when references and biographies share the final page.
+-\raggedend
++% Finish the reference column before the biographies; do not rebalance their order.
++\raggedend
++\newpage

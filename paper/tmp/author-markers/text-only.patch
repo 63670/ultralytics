@@ -1,0 +1,9 @@
+diff --git a/paper/manuscript.tex b/paper/manuscript.tex
+--- a/paper/manuscript.tex
++++ b/paper/manuscript.tex
+@@ -45,1 +45,1 @@
+-\author{Kangzhao Tan\textsuperscript{*}, Jiarui Zhang\textsuperscript{*}, Junjie Yu, Heng Wu, Jing Lin, and Chunhua He%
++\author{Kangzhao Tan\textsuperscript{\#}, Jiarui Zhang\textsuperscript{\#}, Junjie Yu, Heng Wu, Jing Lin\textsuperscript{*}, and Chunhua He\textsuperscript{*}%
+@@ -47,1 +47,1 @@
+-\thanks{Manuscript received [Month day, year]. \textsuperscript{*}These authors contributed equally to this work. \textit{(Corresponding authors: Jing Lin and Chunhua He.)}}%
++\thanks{Manuscript received [Month day, year]. \textsuperscript{\#}These authors contributed equally to this work. \textsuperscript{*}\textit{(Corresponding authors: Jing Lin and Chunhua He.)}}%
