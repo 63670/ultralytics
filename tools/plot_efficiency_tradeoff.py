@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot mAP--parameter and mAP--FLOPs trade-off scatter plots from a CSV file."""
+"""Plot AP--parameter and AP--FLOPs trade-off scatter plots from a CSV file."""
 from __future__ import annotations
 
 import argparse
@@ -115,7 +115,7 @@ def draw_panel(ax, rows: list[dict[str, str]], x_key: str, x_label: str, panel: 
         ax.spines["left"].set_visible(False)
     if not no_text:
         ax.set_xlabel(x_label, fontweight="bold")
-        ax.set_ylabel("mAP@0.5:0.95 (%)", fontweight="bold")
+        ax.set_ylabel("AP (%)", fontweight="bold")
         ax.set_title(panel, loc="left", fontsize=11, fontweight="bold")
     ax.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.45, zorder=0)
     ax.set_ylim(50, 70)
@@ -138,11 +138,11 @@ def main() -> None:
     plt.rcParams.update({"font.family": "DejaVu Serif", "font.size": 9})
     if not args.compress_gap:
         figure, axes = plt.subplots(1, 2, figsize=(12.5, 4.8), constrained_layout=True)
-        labels_left = draw_panel(axes[0], rows, "params_m", "Param.(M)",
-                   "(a) Performance-Efficiency Trade-off (mAP vs Param.(M))", args.no_text,
+        labels_left = draw_panel(axes[0], rows, "params_m", "Parameters (M)",
+                   "(a) AP vs. Parameters", args.no_text,
                    soft_compress=args.soft_compress, model_labels=args.model_labels)
         labels_right = draw_panel(axes[1], rows, "flops_g", "FLOPs (G)",
-                   "(b) Performance-Efficiency Trade-off (mAP vs FLOPs)", args.no_text,
+                   "(b) AP vs. FLOPs", args.no_text,
                    soft_compress=args.soft_compress, model_labels=args.model_labels)
         if args.model_labels and not args.no_text:
             figure.canvas.draw()
