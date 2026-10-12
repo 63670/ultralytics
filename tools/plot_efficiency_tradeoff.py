@@ -138,8 +138,8 @@ def main() -> None:
     plt.rcParams.update({"font.family": "DejaVu Serif", "font.size": 9})
     if not args.compress_gap:
         figure, axes = plt.subplots(1, 2, figsize=(12.5, 4.8), constrained_layout=True)
-        labels_left = draw_panel(axes[0], rows, "params_m", "Parameters (M)",
-                   "(a) AP vs. Parameters", args.no_text,
+        labels_left = draw_panel(axes[0], rows, "params_m", "Params(M)",
+                   "(a) AP vs. Params", args.no_text,
                    soft_compress=args.soft_compress, model_labels=args.model_labels)
         labels_right = draw_panel(axes[1], rows, "flops_g", "FLOPs (G)",
                    "(b) AP vs. FLOPs", args.no_text,
