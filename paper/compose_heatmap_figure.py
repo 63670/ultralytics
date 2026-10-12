@@ -1,4 +1,4 @@
-"""Compose source, YOLOv8n, and TFRA-YOLO heatmaps into a paper figure."""
+"""Compose source, YOLOv8n, and DMFR-YOLO heatmaps into a paper figure."""
 
 from __future__ import annotations
 
@@ -9,9 +9,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 COLUMNS = (
-    ("src", "", "Original image"),
+    ("src", "", "Origin"),
     ("yolov8n", "_cam", "YOLOv8n"),
-    ("ours", "_cam", "Ours"),
+    ("ours", "_cam", "DMFR-YOLO"),
 )
 
 
@@ -46,7 +46,11 @@ def main() -> None:
     parser.add_argument("--input", type=Path, required=True, help="Directory containing src/, yolov8n/, and ours/.")
     parser.add_argument("--output", type=Path, required=True, help="PNG output path.")
     parser.add_argument("--gap", type=int, default=12, help="White spacing between panels in pixels.")
+    parser.add_argument("--label-font-size", type=int, default=64,
+                        help="Column-label font size in pixels (default: 64).")
     args = parser.parse_args()
+    if args.label_font_size <= 0 or args.gap < 0:
+        parser.error("Label font size must be positive and gap must be nonnegative.")
 
     root = args.input.expanduser().resolve()
     stems = collect_rows(root)
@@ -59,7 +63,7 @@ def main() -> None:
                 if image.size != (panel_w, panel_h):
                     raise ValueError(f"Unexpected image size: {path} is {image.size}, expected {(panel_w, panel_h)}")
 
-    label_h = 74
+    label_h = args.label_font_size + 40
     width = panel_w * len(COLUMNS) + args.gap * (len(COLUMNS) - 1)
     height = panel_h * len(stems) + args.gap * (len(stems) - 1) + label_h
     canvas = Image.new("RGB", (width, height), "white")
@@ -72,12 +76,15 @@ def main() -> None:
                 canvas.paste(image.convert("RGB"), (x, y))
 
     draw = ImageDraw.Draw(canvas)
-    font = load_font(30)
-    label_y = height - label_h + 19
+    font = load_font(args.label_font_size)
     for col, (_, _, label) in enumerate(COLUMNS):
         x_center = col * (panel_w + args.gap) + panel_w / 2
         bbox = draw.textbbox((0, 0), label, font=font)
-        draw.text((x_center - (bbox[2] - bbox[0]) / 2, label_y), label, fill="black", font=font)
+        text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        if text_w > panel_w:
+            raise ValueError(f"Column label is wider than its panel: {label}")
+        label_y = height - label_h + (label_h - text_h) / 2 - bbox[1]
+        draw.text((x_center - text_w / 2 - bbox[0], label_y), label, fill="black", font=font)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(args.output, quality=95)
