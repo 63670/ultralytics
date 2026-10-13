@@ -70,11 +70,64 @@ Single-stage YOLO detectors combine rapid inference with explicit bounding-box l
 
 In circular-knitted fabrics, the three defect categories considered in this work exhibit distinct spatial morphologies: horizontally elongated defects, vertically elongated defects, and localized hole-like defects. Conventional feature extraction can learn these patterns, but it does not explicitly encode their spatial characteristics. In addition, nearest-neighbor upsampling enlarges feature maps through fixed replication without adapting to local feature content. This may limit the preservation of thin defect boundaries and weak responses during multi-scale feature fusion.
 
-Motivated by these characteristics, we develop \model by modifying feature encoding and feature reconstruction. Defect morphology encoding (DME) introduces horizontal, vertical, and local branches at selected backbone stages to strengthen the representation of the three characteristic defect morphologies. Content-adaptive feature reassembly (CAFR) predicts reassembly weights from local feature content and replaces fixed top-down feature-pyramid upsampling with location-adaptive neighborhood aggregation. Together, the two modules encode the spatial forms of defects in the backbone and adaptively reconstruct these features across pyramid scales.
+For production-line operation, defect detection must be coordinated with the machine and support local intervention. We implement a hardware and detection system comprising an industrial camera with LED illumination, a Hall sensor, and an RK3566 edge device. Machine rotation detected by the Hall sensor activates local detection. When a defect is detected, the system issues a wired stop command and displays the detection result for operator review. The IoT cloud receives defect and device records for monitoring and production-quality analysis, but does not participate in the stop decision \cite{shi2016edge}.
 
-To apply these detector improvements in production, the model must operate in coordination with the machine and support local intervention. We deploy \model on an RK3566 edge device so that defect decisions do not depend on a cloud round trip \cite{shi2016edge}. Machine rotation detected by the Hall sensor activates local detection. When a defect is detected, the system issues a wired stop command and displays the detection result for operator review. The IoT cloud receives defect and device records for monitoring and production-quality analysis, but does not participate in the stop decision. This integration enables the proposed detector to support real-time defect detection and timely intervention during circular-knitting production.
+Within this system, we develop \model by modifying feature encoding and feature reconstruction. Defect morphology encoding (DME) introduces horizontal, vertical, and local branches at selected backbone stages to strengthen the representation of the three characteristic defect morphologies. Content-adaptive feature reassembly (CAFR) predicts reassembly weights from local feature content and replaces fixed top-down feature-pyramid upsampling with location-adaptive neighborhood aggregation. Together, the two modules encode the spatial forms of defects in the backbone and adaptively reconstruct these features across pyramid scales.
 
-% Queue the architecture early enough to appear with the method opening.
+The main contributions of our work are as follows.
+\begin{enumerate}
+  \renewcommand{\labelenumi}{(\arabic{enumi})}
+  \item We design and implement a production-line defect detection system integrating an industrial camera with LED illumination, Hall-sensor-based machine monitoring, RK3566 edge inference, wired machine-stop control, operator review, and cloud-based monitoring, and demonstrate its deployment on a real circular-knitting production line.
+  \item We introduce DME to encode the characteristic morphologies of horizontal defects, vertical defects, and holes through horizontal, vertical, and local branches, providing a lightweight morphology-aware representation for circular-knitted defect detection.
+  \item We incorporate CAFR into the feature pyramid to replace fixed upsampling with locally predicted reassembly weights, enabling content-adaptive reconstruction during multi-scale fusion.
+\end{enumerate}
+
+\section{Hardware and Detection System}
+\label{sec:system-design}
+\subsection{Hardware Configuration}
+The system combines image acquisition, machine-state sensing, edge computation, and a wired connection to the knitting-machine controller. Fig.~\ref{fig:hardware} shows the camera assembly and edge-device hardware. The industrial camera and LED light are integrated in the front assembly (A). A camera-side interface board (B) provides a serializer and a coaxial connector, while the RK3566 edge board (C) includes a deserializer for the camera connection. This arrangement connects the camera mounted near the fabric to the edge device responsible for detection and machine control.
+
+The RK3566 edge board integrates flash memory, power management, and input/output interfaces, together with a 4G module, SIM-card slot, and antenna connector for cloud communication. The Hall sensor provides the machine-rotation signal, and a wired connection to the machine controller carries the stop signal. Image processing and the stop decision remain on the edge device; cloud communication is used for device monitoring and defect records rather than for latency-critical control.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{hardware.png}
+\caption{Hardware of the production-line defect detection system: (A) industrial camera with LED illumination; (B) camera-side interface board with a serializer and coaxial connector; and (C) RK3566 edge board with the labeled communication, memory, camera-interface, input/output, and power-management components.}
+\label{fig:hardware}
+\end{figure*}
+
+\subsection{Closed-Loop Detection Workflow}
+Fig.~\ref{fig:system} shows the installation of our defect detection system on a circular knitting machine production line. After the operator starts the circular knitting machine, the Hall sensor detects rotation and signals the RK3566 edge device to switch on the LED light and begin detection from the camera video stream. When a defect is detected, the device sends a stop signal to the machine controller through a wired connection to interrupt further defect propagation. The defect image and detection result are displayed locally for operator review and troubleshooting. The operator resolves the problem and restarts the machine, completing the operational cycle.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{overview.png}
+\caption{Actual deployment on the circular knitting machine. The insets highlight the start button, Hall sensor, industrial camera, and RK3566 edge device, respectively.}
+\label{fig:system}
+\end{figure*}
+
+\subsection{Edge Deployment and Cloud Platform}
+\label{sec:deployment}
+The detector described in Section~\ref{sec:method} is deployed locally on the RK3566 edge device. To enable on-device inference, the trained model is converted from PyTorch to ONNX and then to an INT8 RKNN model. The trained model is exported with a fixed $640\times640$ input and converted using RKNN-Toolkit2 \cite{rockchiptoolkit2}, with post-training INT8 quantization for efficient NPU execution \cite{jacob2018quantization}. An Android application executes the RKNN model on the RK3566 edge device.
+
+The cloud platform receives defect records and device states for centralized monitoring, defect statistics, and production-quality analysis. Its interface supports device-state visualization, remote configuration, and review of uploaded defect images (Fig.~\ref{fig:cloud}).
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{cloud.png}
+\caption{IoT cloud interface: device-state monitoring and remote configuration (left), and uploaded defect records (right). Cloud functions support centralized supervision and quality analysis.}
+\label{fig:cloud}
+\end{figure*}
+
+% Complete the system figures before introducing the detector architecture.
+\FloatBarrier
+\section{Proposed Method}
+\label{sec:method}
+\subsection{DMFR-YOLO Architecture}
+\model is developed based on YOLOv8n, which is selected for its compatibility with RK3566 deployment, compact model size, and modular architecture \cite{ultralytics2023,rockchipmodelzoo}. The proposed modifications focus on defect morphology encoding in the backbone and feature reconstruction in the feature pyramid.
+
+Fig.~\ref{fig:network} shows the overall architecture. DME is introduced after the main backbone stages to enhance the representation of different defect morphologies. The extracted multi-scale features are then passed to the neck for feature fusion \cite{lin2017fpn,liu2018panet}. Within the feature pyramid, CAFR replaces two nearest-neighbor upsampling operations with content-adaptive feature reassembly to better preserve defect boundaries and weak responses. The fused features are subsequently used by the multi-scale detection head to predict defect locations and categories.
+
 \begin{figure*}[!t]
 \centering
 % Trim the unused lower canvas and unrelated CAFR legend; retain the original PNG.
@@ -82,20 +135,6 @@ To apply these detector improvements in production, the model must operate in co
 \caption{Architecture of \model with an enlarged view of DME. DME follows the backbone C2f stages, and CAFR replaces the two top-down upsampling operations. The neck fusion blocks, bottom-up path, and three-scale detection head are retained from YOLOv8n.}
 \label{fig:network}
 \end{figure*}
-
-The main contributions of our work are as follows.
-\begin{enumerate}
-  \renewcommand{\labelenumi}{(\arabic{enumi})}
-  \item We introduce DME to encode the characteristic morphologies of horizontal defects, vertical defects, and holes through horizontal, vertical, and local branches, providing a lightweight morphology-aware representation for circular-knitted defect detection.
-  \item We incorporate CAFR into the feature pyramid to replace fixed upsampling with locally predicted reassembly weights, enabling content-adaptive reconstruction during multi-scale fusion.
-  \item We implement a closed-loop production-line defect detection system integrating RK3566 edge inference, wired machine-stop control, operator review, and cloud-based monitoring, and demonstrate its deployment on a real circular-knitting production line.
-\end{enumerate}
-
-\section{Proposed Method}
-\subsection{DMFR-YOLO Architecture}
-\model is developed based on YOLOv8n, which is selected for its compatibility with RK3566 deployment, compact model size, and modular architecture \cite{ultralytics2023,rockchipmodelzoo}. The proposed modifications focus on defect morphology encoding in the backbone and feature reconstruction in the feature pyramid.
-
-Fig.~\ref{fig:network} shows the overall architecture. DME is introduced after the main backbone stages to enhance the representation of different defect morphologies. The extracted multi-scale features are then passed to the neck for feature fusion \cite{lin2017fpn,liu2018panet}. Within the feature pyramid, CAFR replaces two nearest-neighbor upsampling operations with content-adaptive feature reassembly to better preserve defect boundaries and weak responses. The fused features are subsequently used by the multi-scale detection head to predict defect locations and categories.
 
 \subsection{Defect Morphology Encoding}
 The three defect categories considered in this work present different spatial characteristics. Horizontal and vertical defects usually extend along one dominant direction, whereas hole defects are more localized. To capture these differences, we introduce a defect morphology encoding (DME) module with three parallel branches, as shown in the enlarged view in Fig.~\ref{fig:network}. The horizontal and vertical branches use $1\times7$ and $7\times1$ depthwise convolutions to enlarge the receptive field along the corresponding spatial directions, while the $3\times3$ branch captures localized defect structures. Depthwise convolution is adopted to model these spatial patterns with low computational overhead before channel-wise feature fusion \cite{howard2017mobilenets}.
@@ -118,6 +157,14 @@ Y=X+F_d.
 \end{equation}
 
 The residual connection combines the morphology-aware features with the incoming C2f output, allowing DME to enhance the backbone representation without discarding the features learned by the preceding layers. The directional branches are based on asymmetric convolution designs\cite{ding2019acnet}.
+
+% Queue the module diagram before its equations to avoid delaying result floats.
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{ltfr.png}
+\caption{CAFR structure. The upper path predicts location-specific $5\times5$ reassembly kernels, and the lower path unfolds local feature patches and replicates them to align with output locations. Weighted aggregation, rather than this alignment operation, produces the final $2\times$ upsampled feature.}
+\label{fig:cafr}
+\end{figure*}
 
 \subsection{Content-Adaptive Feature Reassembly}
 In the feature pyramid, nearest-neighbor upsampling enlarges feature maps by directly replicating feature values. This fixed operation does not adapt to the spatial structure of defects. To address this limitation, we introduce content-adaptive feature reassembly (CAFR), following the reassembly mechanism of Content-Aware ReAssembly of FEatures(CARAFE) \cite{wang2019carafe}. CAFR predicts spatially varying kernels from the input features and uses them to aggregate local neighborhoods (Fig.~\ref{fig:cafr}), aiming to better preserve defect boundaries and weak responses during multi-scale fusion.
@@ -162,35 +209,6 @@ Y=\sum_{u=1}^{k^2}K_u\odot P_u.
 Here, $K_u\in\mathbb{R}^{sH\times sW}$ and $P_u\in\mathbb{R}^{C\times sH\times sW}$ denote the weight map and corresponding local feature map for the $u$-th neighborhood position, respectively. The symbol $\odot$ denotes element-wise multiplication, with the weights broadcast across feature channels, producing an output feature map $Y\in\mathbb{R}^{C\times sH\times sW}$.
 
 By predicting location-specific reassembly weights, CAFR adaptively aggregates local features during upsampling, helping preserve defect-related information in multi-scale feature fusion.
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=\textwidth]{ltfr.png}
-\caption{CAFR structure. The upper path predicts location-specific $5\times5$ reassembly kernels, and the lower path unfolds local feature patches and replicates them to align with output locations. Weighted aggregation, rather than this alignment operation, produces the final $2\times$ upsampled feature.}
-\label{fig:cafr}
-\end{figure*}
-
-\subsection{Closed-Loop Detection System}
-\label{sec:deployment}
-Fig.~\ref{fig:system} shows the installation of our defect detection system on a circular knitting machine production line. After the operator starts the circular knitting machine, the Hall sensor detects rotation and signals the RK3566 edge device to switch on the LED light and begin detection from the camera video stream. When a defect is detected, the device sends a stop signal to the machine controller through a wired connection to interrupt further defect propagation. The defect image and detection result are displayed locally for operator review and troubleshooting. The operator resolves the problem and restarts the machine, completing the operational cycle.
-
-To enable on-device inference, the trained model is converted from PyTorch to ONNX and then to an INT8 RKNN model. The trained model is exported with a fixed $640\times640$ input and converted using RKNN-Toolkit2 \cite{rockchiptoolkit2}, with post-training INT8 quantization for efficient NPU execution \cite{jacob2018quantization}. An Android application executes the RKNN model on the RK3566 edge device.
-
-The cloud platform receives defect records and device states for centralized monitoring, defect statistics, and production-quality analysis. Its interface supports device-state visualization, remote configuration, and review of uploaded defect images (Fig.~\ref{fig:cloud}).
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=\textwidth]{overview.png}
-\caption{Actual deployment on the circular knitting machine. The insets highlight the start button, Hall sensor, industrial camera, and RK3566 edge device, respectively.}
-\label{fig:system}
-\end{figure*}
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=\textwidth]{cloud.png}
-\caption{IoT cloud interface: device-state monitoring and remote configuration (left), and uploaded defect records (right). Cloud functions support centralized supervision and quality analysis.}
-\label{fig:cloud}
-\end{figure*}
 
 \section{Experimental Setup}
 \subsection{Dataset}
@@ -251,20 +269,6 @@ Category & Parameter & Specification \\
 \renewcommand{\arraystretch}{1.0}
 \end{table}
 
-\subsection{Evaluation Metrics}
-\label{sec:evaluation}
-We report COCO average precision (AP) across ten IoU thresholds and AP at IoU $0.50$ (AP50) \cite{lin2014coco}. For a predicted box $B_p$ and a ground-truth box $B_g$, intersection over union is $\operatorname{IoU}(B_p,B_g)=|B_p\cap B_g|/|B_p\cup B_g|$. Let $\operatorname{AP}_c(t)$ denote the average precision for class $c$ at IoU threshold $t$, and let $N_c$ denote the number of defect categories. The metrics are defined as follows:
-\begin{align}
-\operatorname{AP} &= \frac{1}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in T}\operatorname{AP}_c(t),
-\label{eq:ap}\\
-\operatorname{AP}_{50} &= \frac{1}{N_c}\sum_{c=1}^{N_c}\operatorname{AP}_c(0.50),
-\label{eq:metrics}
-\end{align}
-where $T=\{0.50,0.55,\ldots,0.95\}$ and $N_c=3$ in this study. All AP values are reported as percentages.
-AP therefore evaluates localization over increasingly strict overlap requirements, whereas AP50 uses a single, less restrictive threshold. Differences between reported AP values are expressed in percentage points.
-
-Model parameters and FLOPs are measured using the respective frameworks with an input resolution of 640 × 640.
-
 % Queue the result floats early to keep large figures near the discussion.
 \begin{table*}[!tbp]
 \caption{Detection results on the test set. Bold and underlined values indicate the highest and second-highest reported scores, respectively.}
@@ -317,6 +321,20 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 \label{fig:qualitative}
 \end{figure*}
 
+\subsection{Evaluation Metrics}
+\label{sec:evaluation}
+We report COCO average precision (AP) across ten IoU thresholds and AP at IoU $0.50$ (AP50) \cite{lin2014coco}. For a predicted box $B_p$ and a ground-truth box $B_g$, intersection over union is $\operatorname{IoU}(B_p,B_g)=|B_p\cap B_g|/|B_p\cup B_g|$. Let $\operatorname{AP}_c(t)$ denote the average precision for class $c$ at IoU threshold $t$, and let $N_c$ denote the number of defect categories. The metrics are defined as follows:
+\begin{align}
+\operatorname{AP} &= \frac{1}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in T}\operatorname{AP}_c(t),
+\label{eq:ap}\\
+\operatorname{AP}_{50} &= \frac{1}{N_c}\sum_{c=1}^{N_c}\operatorname{AP}_c(0.50),
+\label{eq:metrics}
+\end{align}
+where $T=\{0.50,0.55,\ldots,0.95\}$ and $N_c=3$ in this study. All AP values are reported as percentages.
+AP therefore evaluates localization over increasingly strict overlap requirements, whereas AP50 uses a single, less restrictive threshold. Differences between reported AP values are expressed in percentage points.
+
+Model parameters and FLOPs are measured using the respective frameworks with an input resolution of 640 × 640.
+
 \section{Results and Discussion}
 \label{sec:results}
 \subsection{Comparison With Other Detectors}
@@ -331,13 +349,6 @@ Fig.~\ref{fig:qualitative} compares the detection results of different models on
 
 
 
-
-\begin{figure}[!tb]
-\centering
-\includegraphics[width=\columnwidth]{heatmap_comparison.png}
-\caption{Feature visualization of YOLOv8n and DMFR-YOLO. From left to right: original image (Origin), YOLOv8n, and \model.}
-\label{fig:heatmaps}
-\end{figure}
 
 \subsection{Component Ablation}
 Table~\ref{tab:ablation} evaluates the individual and combined effects of DME and CAFR on detection performance. Introducing DME increases AP from 59.3\% to 64.1\%, while CAFR alone improves AP to 60.7\%. When both modules are incorporated, \model achieves 66.3\% AP and 96.9\% AP50, outperforming either individual modification. These results demonstrate the complementary effects of the two modules. DME enhances the representation of defect morphologies in the backbone, while CAFR adaptively reconstructs these features during multi-scale fusion. Their combination further improves the overall detection performance.
@@ -367,15 +378,21 @@ This paper presents \model and a defect detection system for circular knitting m
 
 The proposed detector is deployed on an RK3566 edge device and integrated with machine monitoring and wired stop control. The system enables automatic defect detection and timely intervention without relying on cloud communication. Detection results are displayed locally for operators, while the cloud platform supports equipment monitoring and production quality analysis. By integrating defect detection with machine control and quality management, this work provides a complete and practical solution for fabric defect detection in circular knitting production. Future work will explore the application of \model to different knitted fabrics with varying texture patterns and defect characteristics to evaluate its generalization across production conditions.
 
-% Place all preceding figures before the reference list without forcing a
-% single-column page break in the two-column bibliography.
-\FloatBarrier
+% Finish wide result floats, then place the heatmap without a float-only page.
+% The following reference text can fill the remaining space beside the image.
+% Reset the two-column page state after flushing the wide comparison figure.
+\onecolumn\twocolumn
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{heatmap_comparison.png}
+\caption{Feature visualization of YOLOv8n and DMFR-YOLO. From left to right: original image (Origin), YOLOv8n, and \model.}
+\label{fig:heatmaps}
+\end{figure}
+
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
-% Finish the reference column before the biographies; do not rebalance their order.
-\raggedend
-\newpage
+% Continue biographies after the references without creating a blank column.
 % Author biographies follow the reference list in author order.
 \begin{IEEEbiographynophoto}{Kangzhao Tan}
 received the B.S. degree from Guangzhou University, Guangzhou, China, in 2022. From 2022 to 2024, he worked as a cloud computing R\&D engineer with Sangfor Technologies Inc., Shenzhen, China. He is currently pursuing the M.S. degree in computer technology with the School of Computer Science, Guangdong University of Technology, Guangzhou, China. His research interests include deep learning, computer vision, and industrial defect detection.
