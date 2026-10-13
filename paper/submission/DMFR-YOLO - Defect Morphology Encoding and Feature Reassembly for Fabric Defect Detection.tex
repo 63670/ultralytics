@@ -77,8 +77,9 @@ To apply these detector improvements in production, the model must operate in co
 % Queue the architecture early enough to appear with the method opening.
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth]{fig1.png}
-\caption{Architecture of \model. DME follows the backbone C2f stages, and CAFR replaces the two top-down upsampling operations. The neck fusion blocks, bottom-up path, and three-scale detection head are retained from YOLOv8n.}
+% Trim the unused lower canvas and unrelated CAFR legend; retain the original PNG.
+\includegraphics[trim=0 866bp 0 0,clip,width=\textwidth]{fig1.png}
+\caption{Architecture of \model with an enlarged view of DME. DME follows the backbone C2f stages, and CAFR replaces the two top-down upsampling operations. The neck fusion blocks, bottom-up path, and three-scale detection head are retained from YOLOv8n.}
 \label{fig:network}
 \end{figure*}
 
@@ -97,7 +98,7 @@ The main contributions of our work are as follows.
 Fig.~\ref{fig:network} shows the overall architecture. DME is introduced after the main backbone stages to enhance the representation of different defect morphologies. The extracted multi-scale features are then passed to the neck for feature fusion \cite{lin2017fpn,liu2018panet}. Within the feature pyramid, CAFR replaces two nearest-neighbor upsampling operations with content-adaptive feature reassembly to better preserve defect boundaries and weak responses. The fused features are subsequently used by the multi-scale detection head to predict defect locations and categories.
 
 \subsection{Defect Morphology Encoding}
-The three defect categories considered in this work present different spatial characteristics. Horizontal and vertical defects usually extend along one dominant direction, whereas hole defects are more localized. To capture these differences, we introduce a defect morphology encoding (DME) module with three parallel branches, as shown in Fig.~\ref{fig:dme}. The horizontal and vertical branches use $1\times7$ and $7\times1$ depthwise convolutions to enlarge the receptive field along the corresponding spatial directions, while the $3\times3$ branch captures localized defect structures. Depthwise convolution is adopted to model these spatial patterns with low computational overhead before channel-wise feature fusion \cite{howard2017mobilenets}.
+The three defect categories considered in this work present different spatial characteristics. Horizontal and vertical defects usually extend along one dominant direction, whereas hole defects are more localized. To capture these differences, we introduce a defect morphology encoding (DME) module with three parallel branches, as shown in the enlarged view in Fig.~\ref{fig:network}. The horizontal and vertical branches use $1\times7$ and $7\times1$ depthwise convolutions to enlarge the receptive field along the corresponding spatial directions, while the $3\times3$ branch captures localized defect structures. Depthwise convolution is adopted to model these spatial patterns with low computational overhead before channel-wise feature fusion \cite{howard2017mobilenets}.
 
 For a C2f output $X\in\mathbb{R}^{C\times H\times W}$, the three branch responses are
 \begin{align}
@@ -117,13 +118,6 @@ Y=X+F_d.
 \end{equation}
 
 The residual connection combines the morphology-aware features with the incoming C2f output, allowing DME to enhance the backbone representation without discarding the features learned by the preceding layers. The directional branches are based on asymmetric convolution designs\cite{ding2019acnet}.
-
-\begin{figure}[!t]
-\centering
-\includegraphics[width=\columnwidth]{fig2.png}
-\caption{DME structure. A C2f feature is processed by horizontal, vertical, and local depthwise branches, followed by channel concatenation, $1\times1$ fusion, and residual addition.}
-\label{fig:dme}
-\end{figure}
 
 \subsection{Content-Adaptive Feature Reassembly}
 In the feature pyramid, nearest-neighbor upsampling enlarges feature maps by directly replicating feature values. This fixed operation does not adapt to the spatial structure of defects. To address this limitation, we introduce content-adaptive feature reassembly (CAFR), following the reassembly mechanism of Content-Aware ReAssembly of FEatures(CARAFE) \cite{wang2019carafe}. CAFR predicts spatially varying kernels from the input features and uses them to aggregate local neighborhoods (Fig.~\ref{fig:cafr}), aiming to better preserve defect boundaries and weak responses during multi-scale fusion.
@@ -171,7 +165,7 @@ By predicting location-specific reassembly weights, CAFR adaptively aggregates l
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth]{fig3.png}
+\includegraphics[width=\textwidth]{fig2.png}
 \caption{CAFR structure. The upper path predicts location-specific $5\times5$ reassembly kernels, and the lower path unfolds local feature patches and replicates them to align with output locations. Weighted aggregation, rather than this alignment operation, produces the final $2\times$ upsampled feature.}
 \label{fig:cafr}
 \end{figure*}
@@ -186,14 +180,14 @@ The cloud platform receives defect records and device states for centralized mon
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth]{fig4.png}
+\includegraphics[width=\textwidth]{fig3.png}
 \caption{Actual deployment on the circular knitting machine. The insets highlight the start button, Hall sensor, industrial camera, and RK3566 edge device, respectively.}
 \label{fig:system}
 \end{figure*}
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth]{fig5.png}
+\includegraphics[width=\textwidth]{fig4.png}
 \caption{IoT cloud interface: device-state monitoring and remote configuration (left), and uploaded defect records (right). Cloud functions support centralized supervision and quality analysis.}
 \label{fig:cloud}
 \end{figure*}
@@ -309,7 +303,7 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 
 \begin{figure*}[!b]
 \centering
-\includegraphics[width=0.87\textwidth]{fig6.png}
+\includegraphics[width=0.87\textwidth]{fig5.png}
 \caption{AP versus Params (left) and FLOPs (right). Both horizontal axes are logarithmic. Ours denotes \model.}
 \label{fig:tradeoff}
 \end{figure*}
@@ -318,7 +312,7 @@ YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
 % so result figures can share pages with the corresponding discussion.
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth]{fig7.png}
+\includegraphics[width=\textwidth]{fig6.png}
 \caption{Qualitative comparison of detection results on selected test images. From left to right, the columns show ground-truth annotations, YOLOv8n, YOLO11n, YOLO26n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours).}
 \label{fig:qualitative}
 \end{figure*}
@@ -340,7 +334,7 @@ Fig.~\ref{fig:qualitative} compares the detection results of different models on
 
 \begin{figure}[!tb]
 \centering
-\includegraphics[width=\columnwidth]{fig8.png}
+\includegraphics[width=\columnwidth]{fig7.png}
 \caption{Feature visualization of YOLOv8n and DMFR-YOLO. From left to right: original image (Origin), YOLOv8n, and \model.}
 \label{fig:heatmaps}
 \end{figure}
