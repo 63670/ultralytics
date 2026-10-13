@@ -96,6 +96,15 @@ The RK3566 edge board integrates flash memory, power management, and input/outpu
 \label{fig:hardware}
 \end{figure*}
 
+Fig.~\ref{fig:interactions} summarizes the interconnections among the system components. Camera data pass through the camera-side serializer, coaxial link, and edge-side deserializer before reaching the RK3566 processor. The Hall sensor supplies the rotation signal through the input/output interface, which also connects the edge device to the knitting-machine controller for local stop control. The power adapter supplies the camera assembly and edge device. The 4G module provides cloud connectivity, while the machine-control path remains local.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{system.png}
+\caption{System component interconnections. The camera stream reaches the RK3566 edge device through the serializer, coaxial link, and deserializer. Wired input/output connections carry the Hall-sensor signal and stop command, while the power adapter supplies the camera and edge hardware.}
+\label{fig:interactions}
+\end{figure*}
+
 \subsection{Closed-Loop Detection Workflow}
 Fig.~\ref{fig:system} shows the installation of our defect detection system on a circular knitting machine production line. After the operator starts the circular knitting machine, the Hall sensor detects rotation and signals the RK3566 edge device to switch on the LED light and begin detection from the camera video stream. When a defect is detected, the device sends a stop signal to the machine controller through a wired connection to interrupt further defect propagation. The defect image and detection result are displayed locally for operator review and troubleshooting. The operator resolves the problem and restarts the machine, completing the operational cycle.
 
@@ -130,8 +139,7 @@ Fig.~\ref{fig:network} shows the overall architecture. DME is introduced after t
 
 \begin{figure*}[!t]
 \centering
-% Trim the unused lower canvas and unrelated CAFR legend; retain the original PNG.
-\includegraphics[trim=0 866bp 0 0,clip,width=\textwidth]{overall.png}
+\includegraphics[width=\textwidth]{overall.png}
 \caption{Architecture of \model with an enlarged view of DME. DME follows the backbone C2f stages, and CAFR replaces the two top-down upsampling operations. The neck fusion blocks, bottom-up path, and three-scale detection head are retained from YOLOv8n.}
 \label{fig:network}
 \end{figure*}
@@ -378,10 +386,7 @@ This paper presents \model and a defect detection system for circular knitting m
 
 The proposed detector is deployed on an RK3566 edge device and integrated with machine monitoring and wired stop control. The system enables automatic defect detection and timely intervention without relying on cloud communication. Detection results are displayed locally for operators, while the cloud platform supports equipment monitoring and production quality analysis. By integrating defect detection with machine control and quality management, this work provides a complete and practical solution for fabric defect detection in circular knitting production. Future work will explore the application of \model to different knitted fabrics with varying texture patterns and defect characteristics to evaluate its generalization across production conditions.
 
-% Finish wide result floats, then place the heatmap without a float-only page.
-% The following reference text can fill the remaining space beside the image.
-% Reset the two-column page state after flushing the wide comparison figure.
-\onecolumn\twocolumn
+% Let the heatmap and references follow the conclusion without a forced page break.
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{heatmap_comparison.png}
