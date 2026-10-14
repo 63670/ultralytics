@@ -119,14 +119,7 @@ Fig.~\ref{fig:system} shows the installation of our defect detection system on a
 \label{sec:deployment}
 The detector described in Section~\ref{sec:method} is deployed locally on the RK3588 edge device. To enable on-device inference, the trained model is converted from PyTorch to ONNX and then to an INT8 RKNN model. The trained model is exported with a fixed $640\times640$ input and converted using RKNN-Toolkit2 \cite{rockchiptoolkit2}, with post-training INT8 quantization for efficient NPU execution \cite{jacob2018quantization}. An Android application executes the RKNN model on the RK3588 edge device.
 
-The cloud platform receives defect records and device states for centralized monitoring, defect statistics, and production-quality analysis. Its interface supports device-state visualization, remote configuration, and review of uploaded defect images (Fig.~\ref{fig:cloud}).
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=\textwidth]{cloud.png}
-\caption{IoT cloud interface: device-state monitoring and remote configuration (left), and uploaded defect records (right). Cloud functions support centralized supervision and quality analysis.}
-\label{fig:cloud}
-\end{figure*}
+The cloud platform receives defect records and device states for centralized monitoring, defect statistics, and production-quality analysis. Its interface supports device-state visualization, remote configuration, and review of uploaded defect images.
 
 \subsection{Comparison With Existing Defect Detection Hardware}
 Published defect detection studies use different computing and imaging arrangements. Song et al. deploy EfficientDet on a Jetson TX2 for fabric defect detection \cite{song2021edgefabric}, while Machado et al. use a Jetson Orin Nano with two RealSense D435i cameras for textile defect detection \cite{machado2025edgefabric}. In other defect detection applications, Li et al. evaluate an insulator detector on a Jetson TX2 NX \cite{li2024liteyolo}, Wang et al. employ a Jetson Xavier NX for rail surface defects \cite{wang2024rail}, and Zhao et al. implement glass defect segmentation on a ZCU102 FPGA platform \cite{zhao2025kamnet}. Table~\ref{tab:hardware-platforms} identifies the task associated with each platform; unrelated object detection applications are not included.
