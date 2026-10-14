@@ -340,37 +340,21 @@ Category & Parameter & Specification \\
 \toprule
 Model & Params (M) & FLOPs (G) & AP50 (\%) & AP (\%) \\
 \midrule
-\multicolumn{5}{@{}l}{\footnotesize\textbf{\textit{Lightweight YOLO Detectors}}} \\
 YOLOv5n & 2.50 & 7.10 & 93.1 & 58.4 \\
 YOLO11n & 2.58 & 6.40 & 95.0 & 59.6 \\
 YOLO12n & 2.56 & 7.30 & 94.3 & 60.9 \\
 YOLO26n & 2.38 & 5.30 & 96.5 & 61.4 \\
-\addlinespace[2pt]
-\multicolumn{5}{@{}l}{\footnotesize\textbf{\textit{Transformer Detectors}}} \\
 RT-DETR-R18 & 20.09 & 60.72 & 95.2 & \textbf{67.7} \\
 DETR-R50 & 41.28 & 77.25 & 96.4 & 53.6 \\
 Deformable DETR-R50 & 39.82 & 158.66 & \underline{96.8} & 64.3 \\
-\addlinespace[2pt]
-\multicolumn{5}{@{}l}{\footnotesize\textbf{\textit{Two-Stage Detector}}} \\
 Faster R-CNN-R50 & 41.13 & 181.45 & 96.1 & 64.7 \\
-\addlinespace[2pt]
-\multicolumn{5}{@{}l}{\footnotesize\textbf{\textit{Baseline}}} \\
-YOLOv8n & 3.01 & 8.10 & 94.1 & 59.3 \\
-\addlinespace[2pt]
-\multicolumn{5}{@{}l}{\footnotesize\textbf{\textit{Ours}}} \\
+YOLOv8n (Baseline) & 3.01 & 8.10 & 94.1 & 59.3 \\
 \model & 3.39 & 8.90 & \textbf{96.9} & \underline{66.3} \\
 \bottomrule
 \end{tabular*}
 \par\smallskip
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
-
-\begin{figure*}[!b]
-\centering
-\includegraphics[width=0.87\textwidth]{efficiency.png}
-\caption{AP versus Params (left) and FLOPs (right). Both horizontal axes are logarithmic. Ours denotes \model.}
-\label{fig:tradeoff}
-\end{figure*}
 
 % Use a wide detector comparison and a compact single-column activation map
 % so result figures can share pages with the corresponding discussion.
@@ -400,7 +384,7 @@ Model parameters and FLOPs are measured using the respective frameworks with an 
 \subsection{Comparison With Other Detectors}
 Table~\ref{tab:comparison} presents the detection results on the test set. \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively. These improvements are achieved with only 0.38 M additional parameters and approximately 0.8 G additional FLOPs. The larger improvement in AP indicates better detection performance under stricter IoU thresholds.
 
-Among the evaluated lightweight YOLO detectors, \model achieves the highest AP. Although RT-DETR-R18 attains a slightly higher AP of 67.7\%, it requires 20.09 M parameters and 60.72 G FLOPs, compared with 3.39 M parameters and 8.90 G FLOPs for \model. Fig.~\ref{fig:tradeoff} further illustrates the favorable balance between detection accuracy and model complexity achieved by \model.
+Among the evaluated lightweight YOLO detectors, \model achieves the highest AP. Although RT-DETR-R18 attains a slightly higher AP of 67.7\%, it requires 20.09 M parameters and 60.72 G FLOPs, compared with 3.39 M parameters and 8.90 G FLOPs for \model.
 
 \begin{samepage}
 Fig.~\ref{fig:qualitative} compares the detection results of different models on seven selected test images, highlighting differences in detection accuracy and bounding-box localization.
