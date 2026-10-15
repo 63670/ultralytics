@@ -39,6 +39,7 @@ __all__ = (
     "C2fDirectional",
     "C2fDirectionalPre",
     "C2fPartialAxis",
+    "C2fAxisResidual",
     "C2fDetailFusion",
     "C2fWWTE",
     "C2fWWTEGated",
@@ -435,10 +436,49 @@ class C2fPartialAxis(C2f):
         self.m = nn.ModuleList(PartialAxisBottleneck(self.c, shortcut, partial, context) for _ in range(n))
 
 
+class C2fAxisResidual(C2f):
+    """Add zero-gated axial context inside C2f while retaining every original bottleneck and parameter name."""
+
+    def __init__(self, c1: int, c2: int, n: int = 1, shortcut: bool = False, partial: float = 0.25):
+        """Modulate only part of the final hidden branch, starting from exactly the original C2f mapping."""
+        super().__init__(c1, c2, n, shortcut)
+        if not 0 < partial <= 1:
+            raise ValueError("partial must be in (0, 1].")
+        self.active = max(1, int(self.c * partial))
+        self.bypass = self.c - self.active
+        self.row = nn.Conv2d(self.active, self.active, (3, 1), padding=(1, 0), groups=self.active)
+        self.column = nn.Conv2d(self.active, self.active, (1, 3), padding=(0, 1), groups=self.active)
+        self.gate = nn.Hardsigmoid()
+        self.gamma = nn.Parameter(torch.zeros(1, self.active, 1, 1))
+
+    def _aggregate(self, branches: list[torch.Tensor]) -> torch.Tensor:
+        """Keep the original feature path and learn how much compressed axial context to introduce."""
+        branches.extend(m(branches[-1]) for m in self.m)
+        if self.bypass:
+            active, bypass = branches[-1].split((self.active, self.bypass), dim=1)
+        else:
+            active = branches[-1]
+        row = self.row(active.mean(dim=3, keepdim=True))
+        column = self.column(active.mean(dim=2, keepdim=True))
+        active = active + self.gamma * active * (2.0 * self.gate(row + column) - 1.0)
+        branches[-1] = torch.cat((active, bypass), dim=1) if self.bypass else active
+        return self.cv2(torch.cat(branches, dim=1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Aggregate unchanged bottlenecks and one gated directional residual."""
+        return self._aggregate(list(self.cv1(x).chunk(2, dim=1)))
+
+    def forward_split(self, x: torch.Tensor) -> torch.Tensor:
+        """Retain axial context when the exporter uses explicit split sizes."""
+        return self._aggregate(list(self.cv1(x).split((self.c, self.c), dim=1)))
+
+
 class C2fDetailFusion(C2f):
     """Fuse a compressed stride-4 detail path into the stride-8 C2f neck output."""
 
-    def __init__(self, c1: int, c2: int, n: int = 1, detail_c: int = 32, detail_channels: int = 8):
+    def __init__(
+        self, c1: int, c2: int, n: int = 1, detail_c: int = 32, detail_channels: int = 8, detail_init: float = 0.1
+    ):
         """Preserve the main C2f path and downsample the shallow feature after channel compression."""
         super().__init__(c1, c2, n)
         if detail_channels < 1:
@@ -448,7 +488,7 @@ class C2fDetailFusion(C2f):
             Conv(detail_channels, detail_channels, 3, 2, g=detail_channels),
             Conv(detail_channels, c2, 1, act=False),
         )
-        self.detail_scale = nn.Parameter(torch.tensor(0.1))
+        self.detail_scale = nn.Parameter(torch.tensor(float(detail_init)))
 
     def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
         """Add shallow local detail without creating another full-resolution detection head."""

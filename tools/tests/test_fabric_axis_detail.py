@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import torch
 
-from ultralytics.nn.modules import C2f, C2fDetailFusion, C2fPartialAxis
+from ultralytics.nn.modules import C2f, C2fAxisResidual, C2fDetailFusion, C2fPartialAxis
 from ultralytics.nn.modules.block import PartialAxisBottleneck
 from ultralytics.nn.tasks import DetectionModel
 from ultralytics.utils import DEFAULT_CFG_DICT
@@ -16,6 +16,8 @@ from ultralytics.utils import DEFAULT_CFG_DICT
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "ultralytics/cfg/models/v8/yolov8n-fabric-axis-detail.yaml"
 BASELINE = ROOT / "ultralytics/cfg/models/v8/yolov8n-fabric-baseline.yaml"
+AXIS_ONLY = CONFIG.with_name("yolov8n-fabric-axis-residual.yaml")
+VERSION2 = CONFIG.with_name("yolov8n-fabric-axis-detail-v2.yaml")
 
 
 class FabricAxisDetailTests(unittest.TestCase):
@@ -91,6 +93,66 @@ class FabricAxisDetailTests(unittest.TestCase):
             self.assertEqual(tuple(rectangular.shape), (1, 7, 1680))
             fused = copy.deepcopy(model).fuse(verbose=False)
             torch.testing.assert_close(fused(image)[0], actual, atol=1e-3, rtol=1e-4)
+
+    def test_zero_gated_variants_preserve_all_baseline_weights_and_predictions(self):
+        baseline = DetectionModel(str(BASELINE), verbose=False).eval()
+        image = torch.rand(1, 3, 128, 160)
+        with torch.no_grad():
+            expected = baseline(image)[0]
+            for config in (AXIS_ONLY, VERSION2):
+                with self.subTest(config=config.name):
+                    model = DetectionModel(str(config), verbose=False).eval()
+                    model.load(baseline, verbose=False)
+                    state = model.state_dict()
+                    for name, weight in baseline.state_dict().items():
+                        torch.testing.assert_close(state[name], weight, rtol=0, atol=0)
+                    torch.testing.assert_close(model(image)[0], expected, rtol=0, atol=0)
+                    self.assertEqual(model.stride.tolist(), [8, 16, 32])
+
+    def test_zero_gates_learn_before_context_and_detail_weights(self):
+        model = DetectionModel(str(VERSION2), verbose=False).train()
+        model.args = SimpleNamespace(**DEFAULT_CFG_DICT)
+        batch = {
+            "img": torch.rand(2, 3, 160, 160),
+            "batch_idx": torch.tensor([0.0, 0.0, 1.0]),
+            "cls": torch.tensor([[0.0], [1.0], [2.0]]),
+            "bboxes": torch.tensor([[0.5, 0.3, 0.65, 0.05], [0.3, 0.5, 0.05, 0.65], [0.7, 0.7, 0.15, 0.15]]),
+        }
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+        gates = [model.model[4].gamma, model.model[6].gamma, model.model[15].detail_scale]
+        branch_weights = [model.model[4].row.weight, model.model[15].detail[0].conv.weight]
+        for step in range(2):
+            optimizer.zero_grad()
+            loss, _ = model(batch)
+            self.assertTrue(torch.isfinite(loss).all())
+            loss.sum().backward()
+            for parameter in gates:
+                self.assertTrue(torch.isfinite(parameter.grad).all())
+                self.assertGreater(parameter.grad.abs().sum().item(), 0)
+            for parameter in branch_weights:
+                self.assertTrue(torch.isfinite(parameter.grad).all())
+                if step == 0:
+                    self.assertEqual(parameter.grad.abs().sum().item(), 0)
+                else:
+                    self.assertGreater(parameter.grad.abs().sum().item(), 0)
+            optimizer.step()
+
+    def test_v2_export_split_and_fusion_with_nonzero_gates(self):
+        model = DetectionModel(str(VERSION2), verbose=False).eval()
+        image = torch.rand(1, 3, 640, 640)
+        with torch.no_grad():
+            for module in model.modules():
+                if isinstance(module, C2fAxisResidual):
+                    module.gamma.fill_(0.1)
+            model.model[15].detail_scale.fill_(0.1)
+            expected = model(image)[0]
+            for module in model.modules():
+                if isinstance(module, C2f):
+                    module.forward = module.forward_split
+            torch.testing.assert_close(model(image)[0], expected)
+            self.assertEqual(tuple(model(torch.rand(1, 3, 256, 320))[0].shape), (1, 7, 1680))
+            fused = copy.deepcopy(model).fuse(verbose=False)
+            torch.testing.assert_close(fused(image)[0], expected, atol=1e-3, rtol=1e-4)
 
 
 if __name__ == "__main__":
