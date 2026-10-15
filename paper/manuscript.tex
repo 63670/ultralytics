@@ -130,6 +130,17 @@ The RK3588 edge board integrates flash memory, power management, and input/outpu
 \label{fig:hardware}
 \end{figure*}
 
+\subsection{Frame-Rate Requirement}
+\label{sec:coverage}
+We determine the required detection frame rate from the circular-knitting geometry and operating speed. For a design diameter of 40 in ($D=1.016$ m) and a rotation period of $T=2$ s, the fabric travels approximately $\pi D=3.192$ m per revolution. The camera is installed approximately 10 cm from the fabric, giving a $16\times12$ cm field of view with a width of $w=0.16$ m along the horizontal direction of motion. The minimum frame rate for circumferential coverage is therefore
+\begin{equation}
+f_{\min}=\frac{\pi D}{Tw}
+=\frac{\pi\times1.016}{2\times0.16}
+\approx9.97\ \mathrm{frames/s}.
+\label{eq:coverage-rate}
+\end{equation}
+We therefore set the effective detection-throughput requirement to 10 frames/s, corresponding to 20 processed frames per revolution. This requirement guides camera and edge-device selection. Persistent needle or yarn abnormalities can cause defects to propagate as knitting continues, providing further opportunities for detection during subsequent inspection cycles.
+
 \subsection{Signal and Power Connections}
 Fig.~\ref{fig:interactions} summarizes the interconnections among the system components. Camera data pass through the camera-side serializer, coaxial link, and edge-side deserializer before reaching the RK3588 processor. The Hall sensor supplies the rotation signal through the input/output interface, which also connects the edge device to the knitting-machine controller for local stop control. The power adapter supplies the camera assembly and edge device. The 4G module provides cloud connectivity, while the machine-control path remains local.
 
@@ -253,7 +264,7 @@ The cloud platform receives defect records and device states for centralized mon
 
 \section{Experimental Setup}
 \subsection{Dataset}
-Images were collected during operation of a real circular-knitting production line. A global-shutter industrial camera captures $1280\times1024$ frames approximately 10 cm from the fabric, with a field of view of approximately $16\times14$ cm. We selected images with visible defects and manually annotated their bounding boxes. The dataset includes three defect categories: horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}).
+Images were collected during operation of a real circular-knitting production line. A global-shutter industrial camera captures $1280\times1024$ frames approximately 10 cm from the fabric, with a field of view of approximately $16\times12$ cm, where the 16 cm dimension follows the circumferential motion. We selected images with visible defects and manually annotated their bounding boxes. The dataset includes three defect categories: horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}).
 
 The dataset contains 403 images with 468 annotated defect instances, divided into training, validation, and test sets of 282, 40, and 81 images, respectively, as summarized in Table~\ref{tab:data}. The validation set is used for checkpoint selection, while performance is reported on the test set containing 91 labeled defects. Because the selected images contain visible defects, this test set evaluates defect localization and classification; it does not measure false-stop frequency during continuous inspection of normal fabric.
 \begin{table}[!htbp]
