@@ -122,15 +122,15 @@ The detector described in Section~\ref{sec:method} is deployed locally on the RK
 The cloud platform receives defect records and device states for centralized monitoring, defect statistics, and production-quality analysis. Its interface supports device-state visualization, remote configuration, and review of uploaded defect images.
 
 \subsection{Comparison With Existing Defect Detection Hardware}
-Published defect detection studies use different computing and imaging arrangements. Song et al. deploy EfficientDet on a Jetson TX2 for fabric defect detection \cite{song2021edgefabric}, while Machado et al. use a Jetson Orin Nano with two RealSense D435i cameras for textile defect detection \cite{machado2025edgefabric}. In other defect detection applications, Li et al. evaluate an insulator detector on a Jetson TX2 NX \cite{li2024liteyolo}, Wang et al. employ a Jetson Xavier NX for rail surface defects \cite{wang2024rail}, and Zhao et al. implement glass defect segmentation on a ZCU102 FPGA platform \cite{zhao2025kamnet}. Table~\ref{tab:hardware-platforms} identifies the task associated with each platform; unrelated object detection applications are not included.
+Published defect detection studies use different computing and imaging arrangements. Song et al. deploy EfficientDet on a Jetson TX2 for fabric defect detection \cite{song2021edgefabric}, while Machado et al. use a Jetson Orin Nano with two RealSense D435i cameras for textile defect detection \cite{machado2025edgefabric}. Yan et al. use Huawei Ascend 310 with an Atlas AI platform for warp-knitted lace detection and production-equipment linkage \cite{yan2026warplace}. In other defect detection applications, Li et al. evaluate an insulator detector on a Jetson TX2 NX \cite{li2024liteyolo}, Wang et al. employ a Jetson Xavier NX for rail surface defects \cite{wang2024rail}, and Zhao et al. implement glass defect segmentation on a ZCU102 FPGA platform \cite{zhao2025kamnet}. Table~\ref{tab:hardware-platforms} identifies the task associated with each platform; unrelated object detection applications are not included.
 
 \begin{table*}[!t]
-\caption{Processing platforms in selected defect detection studies and our system. Prices are indicative component reference prices, not the costs of the complete systems in the cited studies.}
+\caption{Processing platforms for defect detection. Prices are indicative component prices, not complete-system costs.}
 \label{tab:hardware-platforms}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.12}
+\renewcommand{\arraystretch}{1.0}
 \begin{tabular}{@{}L{0.23\textwidth}L{0.25\textwidth}L{0.12\textwidth}L{0.25\textwidth}L{\dimexpr0.15\textwidth-24pt\relax}@{}}
 \toprule
 Detection task & Platform & Memory (GB) & Compute capability & Price (USD) \\
@@ -139,6 +139,7 @@ Fabric defects & Jetson TX2\cite{song2021edgefabric} & 8 & 1.33 TFLOPS (FP16) & 
 Insulator defects & Jetson TX2 NX\cite{li2024liteyolo} & 4 & 1.33 TFLOPS (FP16) & 249 \\
 Rail surface defects & Jetson Xavier NX\cite{wang2024rail} & 8 & 21 TOPS (INT8) & 399 \\
 Textile defects & Jetson Orin Nano\cite{machado2025edgefabric} & 8 & 40 TOPS (INT8) & 499 \\
+Warp-knitted lace defects & Huawei Ascend 310 / Atlas\cite{yan2026warplace} & NR & 16 TOPS (INT8) & NR \\
 Glass defects & Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{\textdagger} & 3.45 TOPS (INT8)\textsuperscript{\textdaggerdbl} & 3234 \\
 Circular-knitted fabric defects & RK3588 edge device(Ours) & 4 & 6 TOPS (INT8 NPU) & 149 \\
 \bottomrule
@@ -147,6 +148,7 @@ Circular-knitted fabric defects & RK3588 edge device(Ours) & 4 & 6 TOPS (INT8 NP
 \begin{minipage}{\textwidth}
 \footnotesize
 \textsuperscript{\textdagger}ZCU102 memory is the sum of 4 GB PS DDR4 and 0.5 GB PL DDR4; these are separate memory banks, not a unified pool \cite{amdzcu102guide}. \textsuperscript{\textdaggerdbl}The 3.45 TOPS value is AMD's reference INT8 peak for three B4096 DPU cores, not a measured or precision-converted result for KAM-Net's custom 16-bit fixed-point accelerator \cite{amdzcu102dpu,zhao2025kamnet}. Compute ratings describe reference configurations rather than measured application throughput. FP16 TFLOPS and INT8 TOPS are different quantities; the Orin Nano rating uses sparse INT8 operations \cite{nvidiatx2spec,nvidiaxaviernx,nvidiaorinnanolaunch}. The RK3588 NPU rating follows the manufacturer specification \cite{rockchiprk3588}. Prices are indicative component reference values, not complete-system costs.
+\par NR: not reported. Ascend 310 compute capability is the per-chip rating; the cited study does not specify the Atlas model, deployment-device memory, or price.
 \end{minipage}
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
