@@ -56,7 +56,7 @@
 \maketitle
 
 \begin{abstract}
-Circular knitting machines are widely used in continuous fabric production. Needle or yarn abnormalities can cause repeated defects along the fabric before they are detected, resulting in material waste and economic losses. To enable in-process defect detection and intervention, we develop a closed-loop defect detection system with edge inference and wired machine-stop control, and propose a lightweight detector termed \model. \model introduces defect morphology encoding (DME) into the backbone to explicitly model horizontally elongated defects, vertically elongated defects, and localized hole-like defects. In the feature pyramid, content-adaptive feature reassembly (CAFR) replaces fixed upsampling with content-adaptive reconstruction, improving the preservation of defect boundaries and weak responses during multi-scale feature fusion. Evaluated on a self-collected fabric defect dataset from a real-world circular knitting machine production line, \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively, with 3.39 M parameters. The detector is deployed as an INT8 RKNN model on an RK3588 edge device. The resulting system integrates on-device detection, local stop control, operator review, and cloud-based quality analysis to support intervention during circular-knitting production.
+Circular knitting machines are widely used in continuous fabric production. Needle or yarn abnormalities can cause repeated defects along the fabric before they are detected, resulting in material waste and economic losses. To enable in-process defect detection and intervention, we develop a closed-loop defect detection system with edge inference and wired machine-stop control, and propose a lightweight detector termed \model. \model introduces defect morphology encoding (DME) into the backbone to explicitly model horizontally elongated defects, vertically elongated defects, and localized hole-like defects. In the feature pyramid, content-adaptive feature reassembly (CAFR) replaces fixed upsampling with content-adaptive reconstruction, improving the preservation of defect boundaries and weak responses during multi-scale feature fusion. Evaluated on a self-collected fabric defect dataset from a real-world circular knitting machine production line, \model achieves 66.3\% AP and 96.9\% AP50, improving the YOLOv8n baseline by 7.0 and 2.8 percentage points, respectively, with 3.39 M parameters. The detector is deployed as an INT8 RKNN model on an RK3566 edge device. The resulting system integrates on-device detection, local stop control, operator review, and cloud-based quality analysis to support intervention during circular-knitting production.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -74,12 +74,12 @@ At the algorithm level, YOLO-based detectors provide efficient inference and exp
 
 The defects considered in this work appear as horizontally elongated defects, vertically elongated defects, and localized holes. Standard convolutional feature extraction can learn these patterns implicitly, but it does not explicitly separate their spatial responses. In addition, the nearest-neighbor upsampling used in conventional feature pyramids reconstructs higher-resolution features through fixed replication rather than local content-dependent aggregation. Preserving thin defect boundaries and weak local responses under a limited computational budget therefore motivates morphology-specific feature encoding and adaptive reconstruction during multi-scale fusion.
 
-Based on these hardware and algorithm considerations, we design and implement a dedicated defect detection system for circular knitting machines and propose a lightweight detector, \model. The system integrates an industrial camera with LED illumination, a Hall sensor, a coaxial video link, and a self-developed RK3588 edge board. Machine rotation activates detection, and a detected defect triggers a local wired stop command and displays the result for operator review. The cloud receives defect and device records for monitoring and production-quality analysis without participating in the stop decision \cite{shi2016edge}. Within the detector, defect morphology encoding (DME) introduces horizontal, vertical, and local branches into the backbone, while content-adaptive feature reassembly (CAFR) replaces fixed top-down upsampling with locally predicted neighborhood aggregation. The hardware integration and compact detector jointly support detection and intervention during knitting.
+Based on these hardware and algorithm considerations, we design and implement a dedicated defect detection system for circular knitting machines and propose a lightweight detector, \model. The system integrates an industrial camera with LED illumination, a Hall sensor, a coaxial video link, and a self-developed RK3566 edge board. Machine rotation activates detection, and a detected defect triggers a local wired stop command and displays the result for operator review. The cloud receives defect and device records for monitoring and production-quality analysis without participating in the stop decision \cite{shi2016edge}. Within the detector, defect morphology encoding (DME) introduces horizontal, vertical, and local branches into the backbone, while content-adaptive feature reassembly (CAFR) replaces fixed top-down upsampling with locally predicted neighborhood aggregation. The hardware integration and compact detector jointly support detection and intervention during knitting.
 
 The main contributions of our work are as follows.
 \begin{enumerate}
   \renewcommand{\labelenumi}{(\arabic{enumi})}
-  \item We design and implement a dedicated detection system for circular knitting machines, integrating image acquisition, camera transmission, RK3588 edge inference, and local machine-stop control on application-specific hardware, and demonstrate its deployment on a real production line.
+  \item We design and implement a dedicated detection system for circular knitting machines, integrating image acquisition, camera transmission, RK3566 edge inference, and local machine-stop control on application-specific hardware, and demonstrate its deployment on a real production line.
   \item We introduce DME to encode the characteristic morphologies of horizontal defects, vertical defects, and holes through horizontal, vertical, and local branches, providing a lightweight morphology-aware representation for circular-knitted defect detection.
   \item We incorporate CAFR into the feature pyramid to replace fixed upsampling with locally predicted reassembly weights, enabling content-adaptive reconstruction during multi-scale fusion.
 \end{enumerate}
@@ -88,11 +88,9 @@ The remainder of the paper first describes the hardware platform, then develops 
 
 \section{Hardware Platform}
 \label{sec:system-design}
-The hardware must provide illuminated fabric imaging, machine-state input, local computation, and a wired stop interface. These requirements establish the operating context for the detector introduced in Section~\ref{sec:method}.
+The hardware design follows the acquisition and processing requirements of circular-knitting production: clear images of moving fabric, camera transmission over factory cabling, and local computation matched to the required inspection rate. The selected camera, SerDes link, and RK3566 edge board also support machine-state input and wired stop control.
 
-\subsection{Platform Selection and Integration Requirements}
-Table~\ref{tab:hardware-platforms} summarizes the hardware specifications of the computing platforms used in the reviewed defect detection studies. The entries provide hardware context across applications; they do not compare detection accuracy or measured system throughput. The listed platform prices also do not establish the cost of a complete inspection system. Our implementation focuses on integrating the camera link, edge computation, and machine-control interfaces for installation on circular knitting machines.
-
+% Queue the hardware illustrations together near their first discussion.
 \begin{table*}[!t]
 \caption{Hardware platforms used in related defect detection studies.}
 \label{tab:hardware-platforms}
@@ -110,6 +108,7 @@ Jetson Xavier NX\cite{wang2024rail} & 8 & 21 TOPS (INT8) & 399 \\
 Jetson Orin Nano\cite{machado2025edgefabric} & 8 & 40 TOPS (INT8) & 499 \\
 Huawei Ascend 310\cite{yan2026warplace} & 8 & 16 TOPS (INT8) & 550 \\
 Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{\textdagger} & 3.45 TOPS (INT8)\textsuperscript{\textdaggerdbl} & 3234 \\
+Self-developed RK3566 edge device (Ours) & 4 & 1 TOPS (INT8) & 60 \\
 \bottomrule
 \end{tabular}
 \par\vspace{1pt}
@@ -120,45 +119,48 @@ Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{\textdagger} & 3.45 TOP
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
 
-\subsection{Hardware Configuration}
-The system combines image acquisition, machine-state sensing, edge computation, and a wired connection to the knitting-machine controller. Fig.~\ref{fig:hardware} shows the camera assembly and our self-developed RK3588 edge-device hardware. The industrial camera and LED light are integrated in the front assembly (A). We use a VEYE MV-MIPI-SC130M monochrome camera with a SmartSens SC130GS-M global-shutter sensor and a $1280\times1024$ imaging resolution. A camera-side interface board (B) provides a serializer and a coaxial connector, while the RK3588 edge board (C) includes a deserializer for the camera connection. This arrangement connects the camera mounted near the fabric to the edge device responsible for detection and machine control.
-
-The RK3588 edge board integrates flash memory, power management, and input/output interfaces, together with a 4G module, SIM-card slot, and antenna connector for cloud communication. The Hall sensor provides the machine-rotation signal, and a wired connection to the machine controller carries the stop signal. Image processing and the stop decision remain on the edge device; cloud communication is used for device monitoring and defect records rather than for latency-critical control.
-
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.95\textwidth]{hardware.png}
-\caption{Hardware of the production-line defect detection system: (A) industrial camera with LED illumination; (B) camera-side interface board with a serializer and coaxial connector; and (C) RK3588 edge board with the labeled communication, memory, camera-interface, input/output, and power-management components.}
+\includegraphics[width=0.92\textwidth]{hardware.png}
+\caption{Hardware of the production-line defect detection system: (A) industrial camera with LED illumination; (B) camera-side interface board with a serializer and coaxial connector; and (C) RK3566 edge board with the labeled communication, memory, camera-interface, input/output, and power-management components.}
 \label{fig:hardware}
 \end{figure*}
 
-\subsection{Frame-Rate Requirement}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.92\textwidth]{system.png}
+\caption{System component interconnections. The camera stream reaches the RK3566 edge device through the serializer, coaxial link, and deserializer. Wired input/output connections carry the Hall-sensor signal and stop command, while the power adapter supplies the camera and edge hardware.}
+\label{fig:interactions}
+\end{figure*}
+
+\subsection{High-Resolution Global-Shutter Imaging}
+Rapid fabric motion requires imaging that preserves defect geometry and fine spatial detail. We therefore select a high-resolution global-shutter camera, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure \cite{baslerglobalshutter}. The front assembly in Fig.~\ref{fig:hardware}(A) combines LED illumination with a VEYE MV-MIPI-SC130M monochrome camera using a SmartSens SC130GS-M global-shutter sensor at $1280\times1024$ resolution. The illumination supports short-exposure imaging of the moving fabric.
+
+\subsection{SerDes Camera Transmission}
+Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore select serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment \cite{verma2017serdes}. The camera-side interface board in Fig.~\ref{fig:hardware}(B) serializes the image data for transmission; the deserializer on the edge board (C) recovers the stream for processing. This arrangement connects the camera near the fabric to the edge device and machine-control interfaces.
+
+\subsection{Frame-Rate Requirement and SoC Selection}
 \label{sec:coverage}
-We determine the required detection frame rate from the circular-knitting geometry and operating speed. For a design diameter of 40 in ($D=1.016$ m) and a rotation period of $T=2$ s, the fabric travels approximately $\pi D=3.192$ m per revolution. The camera is installed approximately 10 cm from the fabric, giving a $16\times12$ cm field of view with a width of $w=0.16$ m along the horizontal direction of motion. The minimum frame rate for circumferential coverage is therefore
+The camera field of view determines the detection-throughput requirement. For a design diameter of 40 in ($D=1.016$ m) and a rotation period of $T=2$ s, the fabric travels approximately $\pi D=3.192$ m per revolution. At a camera-to-fabric distance of 10 cm, the $16\times12$ cm field of view provides a width of $w=0.16$ m along the horizontal direction of motion. The required frame rate is therefore
 \begin{equation}
 f_{\min}=\frac{\pi D}{Tw}
 =\frac{\pi\times1.016}{2\times0.16}
 \approx9.97\ \mathrm{frames/s}.
 \label{eq:coverage-rate}
 \end{equation}
-We therefore set the effective detection-throughput requirement to 10 frames/s, corresponding to 20 processed frames per revolution. This requirement guides camera and edge-device selection. Persistent needle or yarn abnormalities can cause defects to propagate as knitting continues, providing further opportunities for detection during subsequent inspection cycles.
+We set the effective detection-throughput requirement to 10 frames/s, corresponding to 20 processed frames per revolution. Persistent needle or yarn abnormalities cause defects to propagate during knitting, providing further opportunities for detection in subsequent inspection cycles.
 
-\subsection{Signal and Power Connections}
-Fig.~\ref{fig:interactions} summarizes the interconnections among the system components. Camera data pass through the camera-side serializer, coaxial link, and edge-side deserializer before reaching the RK3588 processor. The Hall sensor supplies the rotation signal through the input/output interface, which also connects the edge device to the knitting-machine controller for local stop control. The power adapter supplies the camera assembly and edge device. The 4G module provides cloud connectivity, while the machine-control path remains local.
+For this throughput target, we select the Rockchip RK3566 to balance processing capability, camera connectivity, and hardware cost. It integrates a quad-core Cortex-A55 CPU, an NPU rated at 1 TOPS for INT8 operations, and camera input interfaces \cite{rockchiprk3566}. Table~\ref{tab:hardware-platforms} compares hardware specifications of the referenced platforms and our edge device. The 10 frames/s value is the system design requirement.
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.95\textwidth]{system.png}
-\caption{System component interconnections. The camera stream reaches the RK3588 edge device through the serializer, coaxial link, and deserializer. Wired input/output connections carry the Hall-sensor signal and stop command, while the power adapter supplies the camera and edge hardware.}
-\label{fig:interactions}
-\end{figure*}
+\subsection{System Integration and Machine-Control Interfaces}
+Fig.~\ref{fig:interactions} shows the complete connections. The RK3566 board integrates the deserializer, flash memory, power management, input/output interfaces, and 4G connectivity. The Hall sensor provides the rotation signal, while a wired interface sends stop commands to the machine controller. The power adapter supplies the camera and edge device. Detection and stop decisions remain local; 4G supports monitoring and defect records.
 
 % Keep hardware illustrations within the hardware section.
 \FloatBarrier
 \section{Proposed Method}
 \label{sec:method}
 \subsection{DMFR-YOLO Architecture}
-\model is developed based on YOLOv8n, which provides a compact, modular baseline and an existing RK3588 deployment reference \cite{ultralytics2023,rockchipmodelzoo}. Within the local-computation setting established by the hardware platform, the proposed modifications focus on defect morphology encoding in the backbone and feature reconstruction in the feature pyramid.
+\model is developed based on YOLOv8n, which provides a compact, modular baseline and an existing Rockchip RKNN deployment reference \cite{ultralytics2023,rockchipmodelzoo}. Within the local-computation setting established by the hardware platform, the proposed modifications focus on defect morphology encoding in the backbone and feature reconstruction in the feature pyramid.
 
 Fig.~\ref{fig:network} shows the overall architecture. DME is introduced after the main backbone stages to enhance the representation of different defect morphologies. The extracted multi-scale features are then passed to the neck for feature fusion \cite{lin2017fpn,liu2018panet}. Within the feature pyramid, CAFR replaces two nearest-neighbor upsampling operations with content-adaptive feature reassembly to better preserve defect boundaries and weak responses. The fused features are subsequently used by the multi-scale detection head to predict defect locations and categories.
 
@@ -249,15 +251,15 @@ By predicting location-specific reassembly weights, CAFR adaptively aggregates l
 The detector defined in Section~\ref{sec:method} supplies defect predictions to the hardware platform described in Section~\ref{sec:system-design}. This section describes the model conversion and its integration into the machine workflow.
 
 \subsection{Model Conversion and On-Device Inference}
-\model is deployed locally on the RK3588 edge device. After training, its PyTorch model is exported to ONNX with a fixed $640\times640$ input, then converted to an RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2}, with post-training INT8 quantization for efficient NPU execution \cite{jacob2018quantization}. An Android 13 application executes the RKNN model on the RK3588 edge device.
+\model is deployed locally on the RK3566 edge device. After training, its PyTorch model is exported to ONNX with a fixed $640\times640$ input, then converted to an RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2}, with post-training INT8 quantization for efficient NPU execution \cite{jacob2018quantization}. An Android 13 application executes the RKNN model on the RK3566 edge device.
 
 \subsection{Closed-Loop Detection Workflow}
-Fig.~\ref{fig:system} shows the installation of our defect detection system on a circular knitting machine production line. After the operator starts the circular knitting machine, the Hall sensor detects rotation and signals the RK3588 edge device to switch on the LED light and begin detection from the camera video stream. When a defect is detected, the device sends a stop signal to the machine controller through a wired connection to interrupt further defect propagation. The defect image and detection result are displayed locally for operator review and troubleshooting. The operator resolves the problem and restarts the machine, completing the operational cycle.
+Fig.~\ref{fig:system} shows the installation of our defect detection system on a circular knitting machine production line. After the operator starts the circular knitting machine, the Hall sensor detects rotation and signals the RK3566 edge device to switch on the LED light and begin detection from the camera video stream. When a defect is detected, the device sends a stop signal to the machine controller through a wired connection to interrupt further defect propagation. The defect image and detection result are displayed locally for operator review and troubleshooting. The operator resolves the problem and restarts the machine, completing the operational cycle.
 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{site.png}
-\caption{Actual deployment on the circular knitting machine. The insets highlight the start button, Hall sensor, industrial camera, and RK3588 edge device, respectively.}
+\caption{Actual deployment on the circular knitting machine. The insets highlight the start button, Hall sensor, industrial camera, and RK3566 edge device, respectively.}
 \label{fig:system}
 \end{figure*}
 
@@ -307,7 +309,7 @@ Category & Parameter & Specification \\
 & Software & Ubuntu 24.04, Python 3.10.20, PyTorch 2.4.1+cu124, and Ultralytics 8.4.140 \\
 \midrule
 \multirow[t]{3}{0.21\columnwidth}{Deployment setup}
-& Hardware & Rockchip RK3588 \\
+& Hardware & Rockchip RK3566 \\
 & System & Android 13 \\
 & Quantization & INT8 \\
 \midrule
@@ -431,12 +433,15 @@ YOLOv8n & -- & -- & 3.01 & 8.1 & 94.1 & 59.3 \\
 \section{Conclusion}
 This paper presents \model and a defect detection system for circular knitting machines. \model introduces defect morphology encoding (DME) to capture the spatial characteristics of horizontal defects, vertical defects, and holes. Content-adaptive feature reassembly (CAFR) improves feature reconstruction during multi-scale fusion. Experiments on the production line dataset show that \model achieves 66.3\% AP and 96.9\% AP50, outperforming YOLOv8n by 7.0 and 2.8 percentage points, respectively, with 3.39 M parameters and 8.9 G FLOPs. The combined DME and CAFR configuration achieves higher AP than either individual modification in the reported ablation.
 
-The proposed detector is deployed on an RK3588 edge device and integrated with machine monitoring and wired stop control. Defect inference and the stop decision execute locally without relying on cloud communication. Detection results are displayed locally for operators, while the cloud platform supports equipment monitoring and production quality analysis. The reported results establish test-set detection performance and describe the deployment workflow. Quantized-model accuracy, end-to-end response time, physical stopping delay, and false-stop frequency remain to be quantified before drawing conclusions about production performance. Future work will also evaluate generalization across knitted fabrics, texture patterns, and production conditions.
+The proposed detector is deployed on an RK3566 edge device and integrated with machine monitoring and wired stop control. Defect inference and the stop decision execute locally without relying on cloud communication. Detection results are displayed locally for operators, while the cloud platform supports equipment monitoring and production quality analysis. The reported results establish test-set detection performance and describe the deployment workflow. Quantized-model accuracy, end-to-end response time, physical stopping delay, and false-stop frequency remain to be quantified before drawing conclusions about production performance. Future work will also evaluate generalization across knitted fabrics, texture patterns, and production conditions.
 
+% Keep the reference list complete before the author biographies.
+\raggedend
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
-% Continue biographies after the references without creating a blank column.
+% Start biographies in a fresh column after the complete reference list.
+\newpage
 % Author biographies follow the reference list in author order.
 \begin{IEEEbiographynophoto}{Kangzhao Tan}
 received the B.S. degree from Guangzhou University, Guangzhou, China, in 2022. From 2022 to 2024, he worked as a cloud computing R\&D engineer with Sangfor Technologies Inc., Shenzhen, China. He is currently pursuing the M.S. degree in computer technology with the School of Computer Science, Guangdong University of Technology, Guangzhou, China. His research interests include deep learning, computer vision, and industrial defect detection.
