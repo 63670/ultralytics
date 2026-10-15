@@ -131,24 +131,24 @@ Published defect detection studies use different computing and imaging arrangeme
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.0}
-\begin{tabular}{@{}L{0.28\textwidth}L{0.30\textwidth}L{0.14\textwidth}L{\dimexpr0.28\textwidth-18pt\relax}@{}}
+\begin{tabular}{@{}L{0.23\textwidth}L{0.30\textwidth}L{0.10\textwidth}L{0.23\textwidth}L{\dimexpr0.14\textwidth-24pt\relax}@{}}
 \toprule
-Detection task & Platform & Memory (GB) & Compute capability \\
+Detection task & Platform & Memory (GB) & Compute capability & Price (USD) \\
 \midrule
-Fabric defects & Jetson TX2\cite{song2021edgefabric} & 8 & 1.33 TFLOPS (FP16) \\
-Insulator defects & Jetson TX2 NX\cite{li2024liteyolo} & 4 & 1.33 TFLOPS (FP16) \\
-Rail surface defects & Jetson Xavier NX\cite{wang2024rail} & 8 & 21 TOPS (INT8) \\
-Textile defects & Jetson Orin Nano\cite{machado2025edgefabric} & 8 & 40 TOPS (INT8) \\
-Warp-knitted lace defects & Huawei Ascend 310\cite{yan2026warplace} & 8 & 16 TOPS (INT8) \\
-Glass defects & Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{\textdagger} & 3.45 TOPS (INT8)\textsuperscript{\textdaggerdbl} \\
-Circular-knitted fabric defects & RK3588 edge device(Ours) & 4 & 6 TOPS (INT8 NPU) \\
+Fabric defects & Jetson TX2\cite{song2021edgefabric} & 8 & 1.33 TFLOPS (FP16) & 599 \\
+Insulator defects & Jetson TX2 NX\cite{li2024liteyolo} & 4 & 1.33 TFLOPS (FP16) & 249 \\
+Rail surface defects & Jetson Xavier NX\cite{wang2024rail} & 8 & 21 TOPS (INT8) & 399 \\
+Textile defects & Jetson Orin Nano\cite{machado2025edgefabric} & 8 & 40 TOPS (INT8) & 499 \\
+Warp-knitted lace defects & Huawei Ascend 310\cite{yan2026warplace} & 8 & 16 TOPS (INT8) & 550 \\
+Glass defects & Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{\textdagger} & 3.45 TOPS (INT8)\textsuperscript{\textdaggerdbl} & 3234 \\
+Circular-knitted fabric defects & Self-developed RK3588 edge device(Ours) & 4 & 6 TOPS (INT8 NPU) & 149 \\
 \bottomrule
 \end{tabular}
-\par\smallskip
+\par\vspace{1pt}
 \begin{minipage}{\textwidth}
 \footnotesize
 \textsuperscript{\textdagger}ZCU102 memory is the sum of 4 GB PS DDR4 and 0.5 GB PL DDR4. \textsuperscript{\textdaggerdbl}The 3.45 TOPS value is AMD's reference INT8 peak for three B4096 DPU cores.
-\par Ascend 310 compute capability is the per-chip rating; the cited study does not specify the Atlas model.
+\par Prices are indicative hardware references, not complete-system costs reported by the cited studies. Ascend 310 memory/price refer to an Atlas 200 reference configuration; compute is per chip, and the cited deployment model is unspecified.
 \end{minipage}
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
