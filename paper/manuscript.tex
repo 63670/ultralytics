@@ -66,7 +66,7 @@ Industrial defect detection, YOLO, deep learning, edge computing, Internet of Th
 \section{Introduction}
 \IEEEPARstart{C}{ircular} knitting machines are important production infrastructure for high-volume weft-knit fabrics used in T-shirts and sportswear \cite{cottonworksKnitBasics,woolmarkCircularKnitting,cottonworksSingleDouble}. The International Textile Manufacturers Federation reported approximately 24,500 global shipments of large circular knitting machines in 2025 \cite{itmf2025press}. Globally, approximately 92 million tonnes of textile waste are generated annually, highlighting the importance of reducing avoidable material losses \cite{unep2025textilewaste}. Conventional quality checks are often performed after knitting is completed. A persistent needle or yarn abnormality can therefore generate repeated defects along a fabric roll before discovery, accumulating substantial fabric waste and economic losses \cite{takeuchi2018knitted,akter2022material,xiang2023hooknet}. Real-time detection during knitting is needed to identify these defects and enable intervention before further defective fabric is produced.
 
-Recent studies have explored edge computing for fabric defect detection. Song et al. deploy EfficientDet on an NVIDIA Jetson TX2 \cite{song2021edgefabric}, while Machado et al. integrate a Jetson Orin Nano with cameras and local visualization on a fabric rolling line \cite{machado2025edgefabric}. Beyond textiles, embedded defect detection has been evaluated on Jetson Xavier NX for rail surfaces \cite{wang2024rail}, Jetson TX2 NX for insulators \cite{li2024liteyolo}, and the ZCU102 FPGA platform for glass \cite{zhao2025kamnet}. These studies demonstrate the feasibility of local inference, but their hardware configurations and installation requirements differ from those of circular knitting machines. In circular knitting, \c{C}elik et al. report a line-scan camera system with encoder-triggered acquisition and a desktop computer \cite{celik2022circular}. However, compact, integrated edge solutions combining image acquisition, on-device inference, and automatic machine-stop control remain insufficiently explored for this production setting. This motivates a dedicated system that brings these functions together within the installation and cost constraints of circular knitting machines.
+Recent studies have explored edge computing for fabric defect detection. Song et al. deploy EfficientDet on an NVIDIA Jetson TX2 \cite{song2021edgefabric}, while Machado et al. integrate a Jetson Orin Nano with cameras and local visualization on a fabric rolling line \cite{machado2025edgefabric}. Beyond textiles, embedded defect detection has been evaluated on Jetson Xavier NX for rail surfaces \cite{wang2024rail}, Jetson TX2 NX for insulators \cite{li2024liteyolo}, and the ZCU102 FPGA platform for glass \cite{zhao2025kamnet}. These studies demonstrate the feasibility of local inference, but their hardware configurations and installation requirements differ from those of circular knitting machines. Compact, integrated edge solutions combining image acquisition, on-device inference, and automatic machine-stop control remain insufficiently explored for this production setting. This motivates a dedicated system that brings these functions together within the installation and computing constraints of circular knitting machines.
 
 At the algorithm level, YOLO-based detectors provide efficient inference and explicit defect localization \cite{redmon2016yolo}. Recent studies have incorporated YOLOv3 into an optical detection system for LCD module defects \cite{zhu2022lcdaoi}, combined template assistance and attention with YOLOv7 for paper defects \cite{li2024paperyolo}, and introduced feature prefusion and mask guidance into a Scaled-YOLOv4-style detector for camera-decoration surface defects \cite{wang2024fmn}. Lightweight convolution and structural reparameterization have further supported insulator and rail defect detection on embedded platforms \cite{li2024liteyolo,wang2024rail}. These works demonstrate the practicality of the YOLO route and improve defect representation or inference efficiency. For circular-knitted fabrics, our focus is to retain this efficiency while explicitly representing the characteristic shapes of defects in repetitive backgrounds.
 
@@ -85,7 +85,7 @@ The main contributions of our work are as follows.
 \section{Hardware and Detection System}
 \label{sec:system-design}
 \subsection{Hardware Configuration}
-The system combines image acquisition, machine-state sensing, edge computation, and a wired connection to the knitting-machine controller. Fig.~\ref{fig:hardware} shows the camera assembly and our self-developed RK3588 edge-device hardware. The industrial camera and LED light are integrated in the front assembly (A). We use a VEYE MV-MIPI-SC130M monochrome camera with a SmartSens SC130GS-M global-shutter sensor and a $1280\times1024$ imaging resolution \cite{veyesc130m}. A camera-side interface board (B) provides a serializer and a coaxial connector, while the RK3588 edge board (C) includes a deserializer for the camera connection. This arrangement connects the camera mounted near the fabric to the edge device responsible for detection and machine control.
+The system combines image acquisition, machine-state sensing, edge computation, and a wired connection to the knitting-machine controller. Fig.~\ref{fig:hardware} shows the camera assembly and our self-developed RK3588 edge-device hardware. The industrial camera and LED light are integrated in the front assembly (A). We use a VEYE MV-MIPI-SC130M monochrome camera with a SmartSens SC130GS-M global-shutter sensor and a $1280\times1024$ imaging resolution. A camera-side interface board (B) provides a serializer and a coaxial connector, while the RK3588 edge board (C) includes a deserializer for the camera connection. This arrangement connects the camera mounted near the fabric to the edge device responsible for detection and machine control.
 
 The RK3588 edge board integrates flash memory, power management, and input/output interfaces, together with a 4G module, SIM-card slot, and antenna connector for cloud communication. The Hall sensor provides the machine-rotation signal, and a wired connection to the machine controller carries the stop signal. Image processing and the stop decision remain on the edge device; cloud communication is used for device monitoring and defect records rather than for latency-critical control.
 
@@ -125,62 +125,35 @@ The cloud platform receives defect records and device states for centralized mon
 Published defect detection studies use different computing and imaging arrangements. Song et al. deploy EfficientDet on a Jetson TX2 for fabric defect detection \cite{song2021edgefabric}, while Machado et al. use a Jetson Orin Nano with two RealSense D435i cameras for textile defect detection \cite{machado2025edgefabric}. Yan et al. use Huawei Ascend 310 with an Atlas AI platform for warp-knitted lace detection and production-equipment linkage \cite{yan2026warplace}. In other defect detection applications, Li et al. evaluate an insulator detector on a Jetson TX2 NX \cite{li2024liteyolo}, Wang et al. employ a Jetson Xavier NX for rail surface defects \cite{wang2024rail}, and Zhao et al. implement glass defect segmentation on a ZCU102 FPGA platform \cite{zhao2025kamnet}. Table~\ref{tab:hardware-platforms} identifies the task associated with each platform; unrelated object detection applications are not included.
 
 \begin{table*}[!t]
-\caption{Processing platforms for defect detection. Prices are indicative component prices, not complete-system costs.}
+\caption{Processing platforms for defect detection.}
 \label{tab:hardware-platforms}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.0}
-\begin{tabular}{@{}L{0.23\textwidth}L{0.25\textwidth}L{0.12\textwidth}L{0.25\textwidth}L{\dimexpr0.15\textwidth-24pt\relax}@{}}
+\begin{tabular}{@{}L{0.28\textwidth}L{0.30\textwidth}L{0.14\textwidth}L{\dimexpr0.28\textwidth-18pt\relax}@{}}
 \toprule
-Detection task & Platform & Memory (GB) & Compute capability & Price (USD) \\
+Detection task & Platform & Memory (GB) & Compute capability \\
 \midrule
-Fabric defects & Jetson TX2\cite{song2021edgefabric} & 8 & 1.33 TFLOPS (FP16) & 599 \\
-Insulator defects & Jetson TX2 NX\cite{li2024liteyolo} & 4 & 1.33 TFLOPS (FP16) & 249 \\
-Rail surface defects & Jetson Xavier NX\cite{wang2024rail} & 8 & 21 TOPS (INT8) & 399 \\
-Textile defects & Jetson Orin Nano\cite{machado2025edgefabric} & 8 & 40 TOPS (INT8) & 499 \\
-Warp-knitted lace defects & Huawei Ascend 310 / Atlas\cite{yan2026warplace} & NR & 16 TOPS (INT8) & NR \\
-Glass defects & Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{\textdagger} & 3.45 TOPS (INT8)\textsuperscript{\textdaggerdbl} & 3234 \\
-Circular-knitted fabric defects & RK3588 edge device(Ours) & 4 & 6 TOPS (INT8 NPU) & 149 \\
+Fabric defects & Jetson TX2\cite{song2021edgefabric} & 8 & 1.33 TFLOPS (FP16) \\
+Insulator defects & Jetson TX2 NX\cite{li2024liteyolo} & 4 & 1.33 TFLOPS (FP16) \\
+Rail surface defects & Jetson Xavier NX\cite{wang2024rail} & 8 & 21 TOPS (INT8) \\
+Textile defects & Jetson Orin Nano\cite{machado2025edgefabric} & 8 & 40 TOPS (INT8) \\
+Warp-knitted lace defects & Huawei Ascend 310\cite{yan2026warplace} & 8 & 16 TOPS (INT8) \\
+Glass defects & Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{\textdagger} & 3.45 TOPS (INT8)\textsuperscript{\textdaggerdbl} \\
+Circular-knitted fabric defects & RK3588 edge device(Ours) & 4 & 6 TOPS (INT8 NPU) \\
 \bottomrule
 \end{tabular}
 \par\smallskip
 \begin{minipage}{\textwidth}
 \footnotesize
-\textsuperscript{\textdagger}ZCU102 memory is the sum of 4 GB PS DDR4 and 0.5 GB PL DDR4; these are separate memory banks, not a unified pool \cite{amdzcu102guide}. \textsuperscript{\textdaggerdbl}The 3.45 TOPS value is AMD's reference INT8 peak for three B4096 DPU cores, not a measured or precision-converted result for KAM-Net's custom 16-bit fixed-point accelerator \cite{amdzcu102dpu,zhao2025kamnet}. Compute ratings describe reference configurations rather than measured application throughput. FP16 TFLOPS and INT8 TOPS are different quantities; the Orin Nano rating uses sparse INT8 operations \cite{nvidiatx2spec,nvidiaxaviernx,nvidiaorinnanolaunch}. The RK3588 NPU rating follows the manufacturer specification \cite{rockchiprk3588}. Prices are indicative component reference values, not complete-system costs.
-\par NR: not reported. Ascend 310 compute capability is the per-chip rating; the cited study does not specify the Atlas model, deployment-device memory, or price.
+\textsuperscript{\textdagger}ZCU102 memory is the sum of 4 GB PS DDR4 and 0.5 GB PL DDR4. \textsuperscript{\textdaggerdbl}The 3.45 TOPS value is AMD's reference INT8 peak for three B4096 DPU cores.
+\par Ascend 310 compute capability is the per-chip rating; the cited study does not specify the Atlas model.
 \end{minipage}
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
 
-Table~\ref{tab:hardware-cameras} compares camera models explicitly identified in fabric defect detection studies with the camera used in our system. The circular-knitting system of \c{C}elik et al. uses a Basler line-scan camera connected to a desktop computer \cite{celik2022circular}; it is included as an imaging-system comparison, not as an embedded inference platform. Camera specifications describe the selected products, whereas field of view, illumination, installation, and processing hardware remain application-specific. The reference prices therefore characterize individual components rather than a matched end-to-end system cost.
-
-\begin{table*}[!t]
-\caption{Camera configurations in selected fabric defect detection systems. Prices are indicative reference prices for individual camera units.}
-\label{tab:hardware-cameras}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.12}
-\begin{tabular}{@{}L{0.13\textwidth}L{0.17\textwidth}L{0.24\textwidth}L{0.27\textwidth}L{0.09\textwidth}L{\dimexpr0.10\textwidth-30pt\relax}@{}}
-\toprule
-Study & Detection task & Camera model & Type and key specifications & Interface & Price (USD) \\
-\midrule
-\c{C}elik et al.\ \cite{celik2022circular} & Circular-knitted fabric defects & Basler raL2048-48gm & Monochrome line scan; $2048\times1$; global-shutter CMOS; 8/12-bit & GigE & 1647 \\
-Song et al.\ \cite{song2021edgefabric} & Fabric defects & Basler acA2500-14gm & Monochrome area scan; $2592\times1944$; rolling-shutter CMOS; 12-bit & GigE & 629 \\
-Machado et al.\ \cite{machado2025edgefabric} & Textile defects & Intel RealSense D435i & Active-stereo RGB-D; depth $1280\times720$; RGB $1920\times1080$; IMU & USB 3.0 & 349 \\
-Our system & Circular-knitted fabric defects & VEYE MV-MIPI-SC130M (SC130GS-M) & Monochrome area scan; $1280\times1024$; global shutter; $4\,\mu$m pixels; 1/2.7-inch format & MIPI CSI-2 & 51 \\
-\bottomrule
-\end{tabular}
-\par\smallskip
-\begin{minipage}{\textwidth}
-\footnotesize
-Product specifications follow manufacturer documentation \cite{baslerlinecamera,baslerareacamera,realsensed435i,veyesc130m}. Camera prices are per unit, not per imaging system, and do not include lenses, lighting, transmission boards, mounting hardware, or integration. The D435i configuration in Machado et al. uses two cameras.
-\end{minipage}
-\renewcommand{\arraystretch}{1.0}
-\end{table*}
-
-Our implementation combines a global-shutter camera, a coaxial camera link, local NPU inference, and machine-control interfaces on a self-developed edge board. This integration is tailored to installation on circular knitting machines. The hardware comparison describes deployment choices across tasks; it is not a cross-dataset accuracy benchmark or a measurement of complete-system cost.
+Our implementation combines a global-shutter camera, a coaxial camera link, local NPU inference, and machine-control interfaces on a self-developed edge board. This integration is tailored to installation on circular knitting machines. The hardware comparison concerns deployment choices across tasks, not cross-dataset detection accuracy.
 
 % Complete the system figures and comparison tables before the detector architecture.
 \FloatBarrier
