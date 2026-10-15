@@ -131,22 +131,22 @@ Published defect detection studies use different computing and imaging arrangeme
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.12}
-\begin{tabular}{@{}L{0.14\textwidth}L{0.18\textwidth}L{0.24\textwidth}L{0.10\textwidth}L{0.23\textwidth}L{\dimexpr0.11\textwidth-30pt\relax}@{}}
+\begin{tabular}{@{}L{0.23\textwidth}L{0.25\textwidth}L{0.12\textwidth}L{0.25\textwidth}L{\dimexpr0.15\textwidth-24pt\relax}@{}}
 \toprule
-Study & Detection task & Processing platform & Memory & Compute capability & Price (USD) \\
+Detection task & Platform & Memory (GB) & Compute capability & Price (USD) \\
 \midrule
-Song et al.\ \cite{song2021edgefabric} & Fabric defects & Jetson TX2 & 8 GB & 1.33 TFLOPS (FP16) & 599 \\
-Li et al.\ \cite{li2024liteyolo} & Insulator defects & Jetson TX2 NX & 4 GB & 1.33 TFLOPS (FP16) & 249 \\
-Wang et al.\ \cite{wang2024rail} & Rail surface defects & Jetson Xavier NX & 8 GB & 21 TOPS (INT8) & 399 \\
-Machado et al.\ \cite{machado2025edgefabric} & Textile defects & Jetson Orin Nano & 8 GB & 40 TOPS (sparse INT8) & 499 \\
-Zhao et al.\ \cite{zhao2025kamnet} & Glass defects (segmentation) & Xilinx ZCU102 (ZU9EG) & 4 GB PS; 0.5 GB PL & Implementation-dependent & 3234 \\
-Our system & Circular-knitted fabric defects & Self-developed RK3588 edge board & NR & 6 TOPS (INT8 NPU) & NR \\
+Fabric defects & Jetson TX2\cite{song2021edgefabric} & 8 & 1.33 TFLOPS (FP16) & 599 \\
+Insulator defects & Jetson TX2 NX\cite{li2024liteyolo} & 4 & 1.33 TFLOPS (FP16) & 249 \\
+Rail surface defects & Jetson Xavier NX\cite{wang2024rail} & 8 & 21 TOPS (INT8) & 399 \\
+Textile defects & Jetson Orin Nano\cite{machado2025edgefabric} & 8 & 40 TOPS (INT8) & 499 \\
+Glass defects & Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{a} & 3.45 TOPS (INT8)\textsuperscript{b} & 3234 \\
+Circular-knitted fabric defects & RK3588 edge device(Ours) & 4 & 6 TOPS (INT8 NPU) & 149 \\
 \bottomrule
 \end{tabular}
 \par\smallskip
 \begin{minipage}{\textwidth}
 \footnotesize
-NR: not reported. Memory and nominal compute ratings describe the listed reference configurations; they do not establish measured model throughput or the operating mode used by each study. FP16 TFLOPS and INT8 TOPS are different quantities \cite{nvidiatx2spec,nvidiaxaviernx,nvidiaorinnanolaunch}. ZCU102 has separate PS/PL memory, and KAM-Net uses a custom 16-bit fixed-point accelerator rather than a standard INT8 DPU \cite{amdzcu102guide,zhao2025kamnet}. The RK3588 NPU rating follows the manufacturer specification \cite{rockchiprk3588}. Prices refer to modules or development kits: TX2 and Orin Nano use kit reference prices, TX2 NX and Xavier NX use module reference prices, and ZCU102 uses an evaluation-kit price. No commercial-board price is assigned to our self-developed board.
+\textsuperscript{a}ZCU102 memory is the sum of 4 GB PS DDR4 and 0.5 GB PL DDR4; these are separate memory banks, not a unified pool \cite{amdzcu102guide}. \textsuperscript{b}The 3.45 TOPS value is AMD's reference INT8 peak for three B4096 DPU cores, not a measured or precision-converted result for KAM-Net's custom 16-bit fixed-point accelerator \cite{amdzcu102dpu,zhao2025kamnet}. Compute ratings describe reference configurations rather than measured application throughput. FP16 TFLOPS and INT8 TOPS are different quantities; the Orin Nano rating uses sparse INT8 operations \cite{nvidiatx2spec,nvidiaxaviernx,nvidiaorinnanolaunch}. The RK3588 NPU rating follows the manufacturer specification \cite{rockchiprk3588}. Prices are indicative component reference values, not complete-system costs.
 \end{minipage}
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
