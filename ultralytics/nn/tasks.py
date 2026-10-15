@@ -37,6 +37,8 @@ from ultralytics.nn.modules import (
     C2fCIB,
     C2fDirectional,
     C2fDirectionalPre,
+    C2fPartialAxis,
+    C2fDetailFusion,
     C2fWWTE,
     C2fWWTEGated,
     ContentAwareUpsample,
@@ -2037,6 +2039,7 @@ def parse_model(d, ch, verbose=True):
             C2f,
             C2fDirectional,
             C2fDirectionalPre,
+            C2fPartialAxis,
             C2fWWTE,
             C2fWWTEGated,
             C3k2,
@@ -2068,6 +2071,7 @@ def parse_model(d, ch, verbose=True):
             C2f,
             C2fDirectional,
             C2fDirectionalPre,
+            C2fPartialAxis,
             C2fWWTE,
             C2fWWTEGated,
             C3k2,
@@ -2129,6 +2133,12 @@ def parse_model(d, ch, verbose=True):
                 legacy = False
         elif m is AIFI:
             args = [ch[f], *args]
+        elif m is C2fDetailFusion:
+            if not isinstance(f, list) or len(f) != 2:
+                raise ValueError("C2fDetailFusion requires [main_feature, stride_4_detail_feature].")
+            c2 = make_divisible(min(args[0], max_channels) * width, 8)
+            args = [ch[f[0]], c2, n, ch[f[1]], *args[1:]]
+            n = 1
         elif m is ContentAwareUpsample:
             c2 = ch[f]
             args = [c2, *args]

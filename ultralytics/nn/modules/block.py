@@ -38,6 +38,8 @@ __all__ = (
     "C2fCIB",
     "C2fDirectional",
     "C2fDirectionalPre",
+    "C2fPartialAxis",
+    "C2fDetailFusion",
     "C2fWWTE",
     "C2fWWTEGated",
     "ContentAwareUpsample",
@@ -378,6 +380,83 @@ class C2f(nn.Module):
         y = [y[0], y[1]]
         y.extend(m(y[-1]) for m in self.m)
         return self.cv2(torch.cat(y, 1))
+
+
+class PartialAxisBottleneck(nn.Module):
+    """Mix local and compressed row/column context on a fraction of the input channels."""
+
+    def __init__(self, channels: int, shortcut: bool = True, partial: float = 0.25, context: bool = True):
+        """Use dense spatial convolution on partial channels and pointwise mixing on all channels."""
+        super().__init__()
+        if not 0 < partial <= 1:
+            raise ValueError("partial must be in (0, 1].")
+        self.active = max(1, int(channels * partial))
+        self.bypass = channels - self.active
+        self.spatial = Conv(self.active, self.active, 3)
+        self.mix = Conv(channels, channels, 1)
+        self.shortcut = shortcut
+        self.context = context
+        if context:
+            # Pooling spans each complete axis. Short 1-D filters operate on the compressed descriptors.
+            self.row = nn.Conv2d(self.active, self.active, (3, 1), padding=(1, 0), groups=self.active)
+            self.column = nn.Conv2d(self.active, self.active, (1, 3), padding=(0, 1), groups=self.active)
+            self.gate = nn.Hardsigmoid()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Retain local spatial variation while modulating it with global axial descriptors."""
+        if self.bypass:
+            active, bypass = x.split((self.active, self.bypass), dim=1)
+        else:
+            active = x
+        local = self.spatial(active)
+        if self.context:
+            row = self.row(active.mean(dim=3, keepdim=True))
+            column = self.column(active.mean(dim=2, keepdim=True))
+            local = local * (1.0 + self.gate(row + column))
+        mixed = self.mix(torch.cat((local, bypass), dim=1) if self.bypass else local)
+        return x + mixed if self.shortcut else mixed
+
+
+class C2fPartialAxis(C2f):
+    """C2f with partial-channel local processing and optional full-axis context inside its bottlenecks."""
+
+    def __init__(
+        self,
+        c1: int,
+        c2: int,
+        n: int = 1,
+        shortcut: bool = False,
+        partial: float = 0.25,
+        context: bool = True,
+        e: float = 0.5,
+    ):
+        """Keep C2f projections and aggregation; replace the costly internal bottlenecks."""
+        super().__init__(c1, c2, n, shortcut, e=e)
+        self.m = nn.ModuleList(PartialAxisBottleneck(self.c, shortcut, partial, context) for _ in range(n))
+
+
+class C2fDetailFusion(C2f):
+    """Fuse a compressed stride-4 detail path into the stride-8 C2f neck output."""
+
+    def __init__(self, c1: int, c2: int, n: int = 1, detail_c: int = 32, detail_channels: int = 8):
+        """Preserve the main C2f path and downsample the shallow feature after channel compression."""
+        super().__init__(c1, c2, n)
+        if detail_channels < 1:
+            raise ValueError("detail_channels must be positive.")
+        self.detail = nn.Sequential(
+            Conv(detail_c, detail_channels, 1),
+            Conv(detail_channels, detail_channels, 3, 2, g=detail_channels),
+            Conv(detail_channels, c2, 1, act=False),
+        )
+        self.detail_scale = nn.Parameter(torch.tensor(0.1))
+
+    def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
+        """Add shallow local detail without creating another full-resolution detection head."""
+        return super().forward(x[0]) + self.detail_scale * self.detail(x[1])
+
+    def forward_split(self, x: list[torch.Tensor]) -> torch.Tensor:
+        """Preserve the detail path when exporters switch C2f to explicit split sizes."""
+        return super().forward_split(x[0]) + self.detail_scale * self.detail(x[1])
 
 
 class C2fDirectional(C2f):
