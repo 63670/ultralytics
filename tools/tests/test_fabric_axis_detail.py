@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "ultralytics/cfg/models/v8/yolov8n-fabric-axis-detail.yaml"
 BASELINE = ROOT / "ultralytics/cfg/models/v8/yolov8n-fabric-baseline.yaml"
 AXIS_ONLY = CONFIG.with_name("yolov8n-fabric-axis-residual.yaml")
+DETAIL_ONLY = CONFIG.with_name("yolov8n-fabric-detail-residual.yaml")
 VERSION2 = CONFIG.with_name("yolov8n-fabric-axis-detail-v2.yaml")
 
 
@@ -99,7 +100,7 @@ class FabricAxisDetailTests(unittest.TestCase):
         image = torch.rand(1, 3, 128, 160)
         with torch.no_grad():
             expected = baseline(image)[0]
-            for config in (AXIS_ONLY, VERSION2):
+            for config in (AXIS_ONLY, DETAIL_ONLY, VERSION2):
                 with self.subTest(config=config.name):
                     model = DetectionModel(str(config), verbose=False).eval()
                     model.load(baseline, verbose=False)
