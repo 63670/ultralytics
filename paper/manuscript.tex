@@ -84,7 +84,7 @@ The main contributions of our work are as follows.
   \item We incorporate CAFR into the feature pyramid to replace fixed upsampling with locally predicted reassembly weights, enabling content-adaptive reconstruction during multi-scale fusion.
 \end{enumerate}
 
-The remainder of the paper first presents the system overview and its four subsystems, then develops \model and its two components. Model conversion and system operation follow the algorithm description. The experimental sections then define the data and evaluation protocol before presenting detector comparisons and component ablations.
+The remainder of the paper first presents the system overview and its four subsystems, then describes \model, its two components, and the model deployment procedure. The experimental sections then define the data and evaluation protocol before presenting detector comparisons and component ablations.
 
 \section{Defect Detection and Closed-Loop Control System}
 \label{sec:system-design}
@@ -268,16 +268,11 @@ Here, $K_u\in\mathbb{R}^{sH\times sW}$ and $P_u\in\mathbb{R}^{C\times sH\times s
 
 By predicting location-specific reassembly weights, CAFR adaptively aggregates local features during upsampling, helping preserve defect-related information in multi-scale feature fusion.
 
-\FloatBarrier
-\section{Edge Deployment and System Operation}
+\subsection{Model Deployment}
 \label{sec:deployment}
-The detector defined in Section~\ref{sec:method} supplies defect predictions to the hardware platform described in Section~\ref{sec:system-design}. This section describes the model conversion and its integration into the machine workflow.
-
-\subsection{Model Conversion and On-Device Inference}
 \model is deployed locally on the RK3566 edge device. After training, its PyTorch model is exported to ONNX with a fixed $640\times640$ input, then converted to an RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2}, with post-training INT8 quantization for efficient NPU execution \cite{jacob2018quantization}. An Android 13 application executes the RKNN model on the RK3566 edge device.
 
-\subsection{Closed-Loop Detection Workflow}
-Fig.~\ref{fig:system} shows the installation of our defect detection system on a circular knitting machine production line. After the operator starts the circular knitting machine, the Hall sensor detects rotation and signals the RK3566 edge device to switch on the camera and LED illumination and enter the detection state. When a defect is detected, the device sends a stop signal to the machine controller through a wired connection to interrupt further defect propagation. The defect image and detection result are displayed locally for operator review and troubleshooting. The operator resolves the problem and restarts the machine, completing the operational cycle.
+Fig.~\ref{fig:system} shows the deployed system on the circular knitting machine production line. The on-device predictions feed the local display and wired stop-control workflow described in Section~\ref{sec:system-overview}.
 
 \begin{figure*}[!t]
 \centering
@@ -285,9 +280,6 @@ Fig.~\ref{fig:system} shows the installation of our defect detection system on a
 \caption{Actual deployment on the circular knitting machine. The insets highlight the start button, Hall sensor, industrial camera, and RK3566 edge device, respectively.}
 \label{fig:system}
 \end{figure*}
-
-\subsection{Defect Reporting and Operator Notification}
-Following local defect detection and the wired stop command, the network subsystem described in Section~\ref{sec:system-design} uploads the defect image and record for cloud-based review and operator notification. The local display enables the operator to inspect the result at the machine, while the cloud retains defect and device-state records for subsequent quality analysis. The operator resolves the fault and restarts production through the local machine controls.
 
 \section{Experimental Setup}
 \subsection{Dataset}
