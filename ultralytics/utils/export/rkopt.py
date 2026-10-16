@@ -11,7 +11,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from ultralytics.nn.modules import ContentAwareUpsample, Detect
+from ultralytics.nn.modules import ContentAwareUpsample, ContentAwareUpsampleLite, Detect
+from ultralytics.nn.modules.block import _reassemble_4d
 
 
 class ContentAwareUpsample4D(nn.Module):
@@ -33,19 +34,7 @@ class ContentAwareUpsample4D(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Sum the same k*k weighted neighbors using only BCHW feature tensors."""
         weights = F.pixel_shuffle(self.kernel_encoder(self.compress(x)), self.scale_factor).softmax(dim=1)
-        upsampled = F.interpolate(x, scale_factor=self.scale_factor, mode="nearest")
-        height, width = upsampled.shape[-2:]
-        padding = self.scale_factor * (self.kernel_size // 2)
-        padded = F.pad(upsampled, (padding, padding, padding, padding))
-        result = None
-        for row in range(self.kernel_size):
-            for column in range(self.kernel_size):
-                top, left = row * self.scale_factor, column * self.scale_factor
-                index = row * self.kernel_size + column
-                neighbor = padded[:, :, top : top + height, left : left + width]
-                weighted = neighbor * weights[:, index : index + 1]
-                result = weighted if result is None else result + weighted
-        return result
+        return _reassemble_4d(x, weights, self.kernel_size, self.scale_factor)
 
 
 class RockchipDetectOutputs(nn.Module):
@@ -128,9 +117,14 @@ def export_rkopt_onnx(
         "rewritten_cafr_modules": [
             name for name, m in prepared.named_modules() if isinstance(m, ContentAwareUpsample4D)
         ],
+        "native_cafr_lite_modules": [
+            name for name, m in prepared.named_modules() if isinstance(m, ContentAwareUpsampleLite)
+        ],
         "postprocess": "External DFL, box decode, threshold filtering and NMS (RKNN Model Zoo YOLOv8 layout).",
     }
-    for key in ("format", "names", "reg_max", "postprocess", "cafr_mode", "rewritten_cafr_modules"):
+    for key in (
+        "format", "names", "reg_max", "postprocess", "cafr_mode", "rewritten_cafr_modules", "native_cafr_lite_modules"
+    ):
         entry = graph.metadata_props.add()
         entry.key, entry.value = key, json.dumps(info[key], ensure_ascii=False)
     onnx.save(graph, str(output))

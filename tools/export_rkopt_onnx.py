@@ -50,6 +50,8 @@ def main() -> None:
     report.write_text(json.dumps(info, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Saved ONNX: {output}")
     print(f"CAFR mode: {info['cafr_mode']}; rewritten modules: {info['rewritten_cafr_modules']}")
+    if info["native_cafr_lite_modules"]:
+        print(f"Native CAFR-Lite modules: {info['native_cafr_lite_modules']}")
     for item in info["outputs"]:
         print(f"  {item['name']}: {item['shape']}")
     print(f"Saved output contract: {report}")

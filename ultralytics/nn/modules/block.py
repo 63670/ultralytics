@@ -44,6 +44,7 @@ __all__ = (
     "C2fWWTE",
     "C2fWWTEGated",
     "ContentAwareUpsample",
+    "ContentAwareUpsampleLite",
     "C2fPSA",
     "C3Ghost",
     "C3k2",
@@ -545,6 +546,23 @@ class C2fWWTEGated(C2f):
         return self.cv2(aggregated + self.gamma * directional_residual)
 
 
+def _reassemble_4d(x: torch.Tensor, weights: torch.Tensor, kernel_size: int, scale_factor: int = 2) -> torch.Tensor:
+    """Accumulate weighted neighbor shifts without constructing a channel-by-neighborhood tensor."""
+    upsampled = F.interpolate(x, scale_factor=scale_factor, mode="nearest")
+    height, width = upsampled.shape[-2:]
+    padding = scale_factor * (kernel_size // 2)
+    padded = F.pad(upsampled, (padding, padding, padding, padding))
+    result = None
+    for row in range(kernel_size):
+        for column in range(kernel_size):
+            top, left = row * scale_factor, column * scale_factor
+            index = row * kernel_size + column
+            neighbor = padded[:, :, top : top + height, left : left + width]
+            weighted = neighbor * weights[:, index : index + 1]
+            result = weighted if result is None else result + weighted
+    return result
+
+
 class ContentAwareUpsample(nn.Module):
     """CARAFE-style content-aware feature reassembly for 2x FPN upsampling.
 
@@ -573,6 +591,31 @@ class ContentAwareUpsample(nn.Module):
         patches = F.interpolate(patches, scale_factor=self.scale_factor, mode="nearest")
         patches = patches.view(batch, channels, self.kernel_size**2, height * self.scale_factor, width * self.scale_factor)
         return (patches * kernel.unsqueeze(1)).sum(dim=2)
+
+
+class ContentAwareUpsampleLite(nn.Module):
+    """Add low-channel content-aware residual refinement to a full-channel nearest-neighbor path."""
+
+    def __init__(self, c1: int, kernel_size: int = 3, reduction: int = 16, scale_factor: int = 2):
+        """Restrict dynamic reassembly to a compact latent representation; start from nearest upsampling."""
+        super().__init__()
+        if kernel_size < 1 or kernel_size % 2 == 0 or reduction < 1 or scale_factor != 2:
+            raise ValueError("CAFR-Lite requires a positive odd kernel, positive reduction and scale_factor=2.")
+        self.kernel_size = kernel_size
+        self.scale_factor = scale_factor
+        self.hidden = max(8, c1 // reduction)
+        self.compress = Conv(c1, self.hidden, 1)
+        self.kernel_encoder = nn.Conv2d(self.hidden, scale_factor**2 * kernel_size**2, 3, padding=1)
+        self.project = Conv(self.hidden, c1, 1, act=False)
+        self.gain = nn.Parameter(torch.tensor(0.0))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Preserve the main spatial path and learn a gated, compact reassembly residual."""
+        latent = self.compress(x)
+        weights = F.pixel_shuffle(self.kernel_encoder(latent), self.scale_factor).softmax(dim=1)
+        refined = _reassemble_4d(latent, weights, self.kernel_size, self.scale_factor)
+        base = F.interpolate(x, scale_factor=self.scale_factor, mode="nearest")
+        return base + self.gain * self.project(refined)
 
 
 class C3(nn.Module):

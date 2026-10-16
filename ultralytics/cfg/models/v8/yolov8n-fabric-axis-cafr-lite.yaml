@@ -1,0 +1,34 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# Candidate after the 4D CAFR profile: keep axis-residual backbone, replace full-channel 5x5 reassembly.
+# CAFR-Lite uses a full-channel nearest path plus zero-gated 3x3 reassembly of 1/16-channel latent features.
+nc: 3
+scales:
+  n: [0.33, 0.25, 1024]
+
+backbone:
+  - [-1, 1, Conv, [64, 3, 2]]
+  - [-1, 1, Conv, [128, 3, 2]]
+  - [-1, 3, C2f, [128, True]]
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [-1, 6, C2fAxisResidual, [256, True, 0.25]]
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [-1, 6, C2fAxisResidual, [512, True, 0.25]]
+  - [-1, 1, Conv, [1024, 3, 2]]
+  - [-1, 3, C2f, [1024, True]]
+  - [-1, 1, SPPF, [1024, 5]]
+
+head:
+  - [-1, 1, ContentAwareUpsampleLite, [3, 16]] # 10: C=256 -> 16 latent channels
+  - [[-1, 6], 1, Concat, [1]]
+  - [-1, 3, C2f, [512]]
+  - [-1, 1, ContentAwareUpsampleLite, [3, 16]] # 13: C=128 -> 8 latent channels
+  - [[-1, 4], 1, Concat, [1]]
+  - [-1, 3, C2f, [256]]
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 12], 1, Concat, [1]]
+  - [-1, 3, C2f, [512]]
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [[-1, 9], 1, Concat, [1]]
+  - [-1, 3, C2f, [1024]]
+  - [[15, 18, 21], 1, Detect, [nc]]
