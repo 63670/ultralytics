@@ -903,8 +903,13 @@ class Exporter:
                 m.shape = None  # reset cached shape for new export input size
                 if hasattr(model, "pe") and hasattr(m, "fuse") and not hasattr(m, "lrpc"):  # for YOLOE models
                     m.fuse(model.pe.to(self.device))
-            elif isinstance(m, C2f) and not is_tf_format:
+            elif (
+                isinstance(m, C2f)
+                and not is_tf_format
+                and (type(m).forward is C2f.forward or type(m).forward_split is not C2f.forward_split)
+            ):
                 # EdgeTPU does not support FlexSplitV while split provides cleaner ONNX graph
+                # A custom forward with an inherited base forward_split would silently lose its added operations.
                 m.forward = m.forward_split
 
         if model.task == "semantic" and fmt in {"qnn", "coreml", "ascend"}:
