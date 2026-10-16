@@ -92,6 +92,8 @@ The remainder of the paper first presents the system overview and its four subsy
 \label{sec:system-overview}
 We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. Our system integrates a power adapter, a global-shutter camera with LED illumination, a SerDes image-transmission link, a Hall sensor, a self-developed RK3566 edge board, and a cloud platform. These components are organized into four functional subsystems: power supply, image acquisition and transmission, network communication, and processor-based local computation and control. The power subsystem supplies the mainboard, which in turn powers and controls the LED illumination, and the image subsystem delivers fabric images to the processor over the SerDes link. The processor performs local defect detection and machine-stop control. The network subsystem uploads defect images and records to the cloud and delivers alert notifications to workers, while also supporting equipment monitoring and quality analysis.
 
+Fig.~\ref{fig:hardware} shows the physical implementation of our system. The camera assembly (A) combines the image sensor and LED illumination. We design a camera-side interface board (B) that integrates the serializer and coaxial connector, and a mainboard (C) built around the RK3566. The mainboard integrates memory and flash storage, the camera deserializer and coaxial interface, a 4G module with SIM-card and antenna interfaces, wired input/output interfaces, and power-management circuitry. The wired input/output interfaces connect the Hall sensor and machine controller, while the power circuitry receives the adapter output and provides the LED supply under mainboard current control. This board-level integration brings image reception, local processing, network communication, machine control, and illumination control into a dedicated edge device.
+
 The complete closed-loop workflow begins when a worker starts the circular knitting machine. The Hall sensor detects machine rotation and sends a signal to the processor, which switches on the camera and LED illumination and enters the detection state. When a fabric defect is detected, the processor first sends a wired stop command to the machine controller to interrupt further defect propagation. The system then uploads the defect image and associated record to the cloud, which pushes an alert notification to inform the worker that intervention is required. The worker inspects the reported defect, resolves the production fault, and restarts the machine; the rotation signal then reactivates inspection. This sequence connects production, rotation sensing, image acquisition, defect detection, machine stopping, defect reporting, worker notification, and corrective intervention into a complete production--inspection--control loop. The following subsections describe the four subsystems that implement this workflow.
 
 \begin{figure*}[!t]
@@ -101,14 +103,6 @@ The complete closed-loop workflow begins when a worker starts the circular knitt
 \label{fig:interactions}
 \end{figure*}
 
-\subsection{Power Supply Subsystem}
-To accommodate different industrial supply voltages across countries and regions, we design a power adapter with a 100--500 V AC input range and a 24 V DC output rated at 3 A. The adapter first supplies this output to the mainboard. The on-board power-management circuitry (Fig.~\ref{fig:hardware}(C)) distributes power to the processing and peripheral components, and the mainboard in turn supplies the LED illumination integrated into the camera assembly (A). By adjusting the current delivered to the LEDs, the mainboard controls the illumination brightness to suit the image-acquisition conditions. This arrangement integrates LED power delivery and brightness control into the mainboard.
-
-\subsection{Image Acquisition and Transmission Subsystem}
-Rapid fabric motion requires imaging that preserves defect geometry and fine spatial detail. We therefore select a high-resolution global-shutter camera, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure \cite{baslerglobalshutter}. The front assembly in Fig.~\ref{fig:hardware}(A) combines LED illumination with a VEYE MV-MIPI-SC130M monochrome camera using a SmartSens SC130GS-M global-shutter sensor at $1280\times1024$ resolution. The illumination supports short-exposure imaging of the moving fabric. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm dimension aligned with the horizontal direction of fabric motion.
-
-Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment \cite{verma2017serdes}. The camera-side interface board in Fig.~\ref{fig:hardware}(B) serializes the image data for transmission, and the deserializer on the edge board (C) recovers the stream and passes it to the processor subsystem. Camera selection, illumination, and the SerDes link thus form a single image-acquisition and transmission path.
-
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.92\textwidth]{hardware.png}
@@ -116,8 +110,17 @@ Factory machinery creates an electromagnetically noisy environment, and installa
 \label{fig:hardware}
 \end{figure*}
 
+\subsection{Power Supply Subsystem}
+To accommodate different industrial supply voltages across countries and regions, we design a power adapter with a 100--500 V AC input range and a 24 V DC output rated at 3 A. The adapter first supplies this output to the mainboard. The mainboard then supplies the LED illumination. By adjusting the current delivered to the LEDs, the mainboard controls the illumination brightness to suit the image-acquisition conditions. This arrangement integrates LED power delivery and brightness control into the mainboard.
+
+\subsection{Image Acquisition and Transmission Subsystem}
+Rapid fabric motion requires imaging that preserves defect geometry and fine spatial detail. We therefore select a high-resolution global-shutter camera, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure \cite{baslerglobalshutter}. The selected VEYE MV-MIPI-SC130M monochrome camera uses a SmartSens SC130GS-M global-shutter sensor at $1280\times1024$ resolution. The illumination supports short-exposure imaging of the moving fabric. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm dimension aligned with the horizontal direction of fabric motion.
+
+Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment \cite{verma2017serdes}. The image stream is serialized at the camera end and recovered at the edge device before being passed to the processor subsystem. Camera selection, illumination, and the SerDes link thus form a single image-acquisition and transmission path.
+
+
 \subsection{Network Communication Subsystem}
-The network subsystem uses the integrated 4G module to connect the edge device to the cloud platform. As illustrated in Fig.~\ref{fig:interactions}, MQTT carries device-state and defect-event messages between the device and cloud, while an HTTP interface gives operators access to monitoring information and defect records. The cloud supports device-state visualization, remote configuration, defect statistics, and production-quality analysis.
+The network subsystem connects the edge device to the cloud platform over 4G. As illustrated in Fig.~\ref{fig:interactions}, MQTT carries device-state and defect-event messages between the device and cloud, while an HTTP interface gives operators access to monitoring information and defect records. The cloud supports device-state visualization, remote configuration, defect statistics, and production-quality analysis.
 
 When the edge device detects a defect, it uploads the defect record and image to the cloud, which pushes a defect alert to the operator interface. The alert provides the defect category, occurrence time, and image for review and troubleshooting. These network functions complement the local display and wired stop command: defect inference and machine-stop decisions are executed by the processor subsystem without waiting for cloud communication.
 
@@ -162,7 +165,7 @@ Self-developed RK3566 edge device (Ours) & 4 & 1 TOPS (INT8) & 60 \\
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
 
-The self-developed edge board integrates the RK3566, memory, flash storage, camera deserializer, power management, input/output interfaces, and 4G connectivity (Fig.~\ref{fig:hardware}(C)). The processor coordinates image reception, local defect detection, display, and communication. A Hall sensor connected to the input/output interface supplies the machine-rotation signal to activate acquisition and inspection. When a defect is detected, the processor sends a stop command through a wired connection to the machine controller. The detection algorithm and its deployment are introduced in the subsequent sections.
+The detection algorithm and its deployment are introduced in the subsequent sections.
 
 % Keep system illustrations within the system-design section.
 \FloatBarrier
