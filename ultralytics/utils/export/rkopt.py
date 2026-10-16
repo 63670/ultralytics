@@ -8,9 +8,44 @@ from copy import deepcopy
 from pathlib import Path
 
 import torch
+import torch.nn.functional as F
 from torch import nn
 
-from ultralytics.nn.modules import Detect
+from ultralytics.nn.modules import ContentAwareUpsample, Detect
+
+
+class ContentAwareUpsample4D(nn.Module):
+    """Reassemble CAFR with 4-D shifted features, without materializing an unfolded neighborhood tensor."""
+
+    def __init__(self, source: ContentAwareUpsample):
+        """Reuse the learned kernel predictor from a private model copy."""
+        super().__init__()
+        self.kernel_size = source.kernel_size
+        self.scale_factor = source.scale_factor
+        if self.scale_factor != 2 or self.kernel_size < 1 or self.kernel_size % 2 == 0:
+            raise ValueError("CAFR 4D reassembly requires an odd positive kernel and scale_factor=2.")
+        self.compress = source.compress
+        self.kernel_encoder = source.kernel_encoder
+        for attr in ("i", "f", "type", "np"):
+            if hasattr(source, attr):
+                setattr(self, attr, getattr(source, attr))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Sum the same k*k weighted neighbors using only BCHW feature tensors."""
+        weights = F.pixel_shuffle(self.kernel_encoder(self.compress(x)), self.scale_factor).softmax(dim=1)
+        upsampled = F.interpolate(x, scale_factor=self.scale_factor, mode="nearest")
+        height, width = upsampled.shape[-2:]
+        padding = self.scale_factor * (self.kernel_size // 2)
+        padded = F.pad(upsampled, (padding, padding, padding, padding))
+        result = None
+        for row in range(self.kernel_size):
+            for column in range(self.kernel_size):
+                top, left = row * self.scale_factor, column * self.scale_factor
+                index = row * self.kernel_size + column
+                neighbor = padded[:, :, top : top + height, left : left + width]
+                weighted = neighbor * weights[:, index : index + 1]
+                result = weighted if result is None else result + weighted
+        return result
 
 
 class RockchipDetectOutputs(nn.Module):
@@ -34,20 +69,29 @@ class RockchipDetectOutputs(nn.Module):
         return tuple(outputs)
 
 
-def prepare_rkopt_model(model: nn.Module) -> nn.Module:
+def prepare_rkopt_model(model: nn.Module, cafr_mode: str = "original") -> nn.Module:
     """Prepare a private FP32 CPU copy; preserve custom backbone forwards and the original model."""
     head = model.model[-1]
     if type(head) is not Detect or head.end2end or head.nl != 3:
         raise ValueError("RKOPT requires a three-scale, non-end-to-end Detect head (no segment/pose/OBB subclasses).")
+    if cafr_mode not in {"original", "streaming"}:
+        raise ValueError("cafr_mode must be 'original' or 'streaming'.")
     model = deepcopy(model).cpu().float().eval()
     model.requires_grad_(False)
     model.fuse(verbose=False)
+    if cafr_mode == "streaming":
+        for parent in tuple(model.modules()):
+            for name, child in tuple(parent.named_children()):
+                if type(child) is ContentAwareUpsample:
+                    setattr(parent, name, ContentAwareUpsample4D(child))
     # Keep custom C2f.forward methods: an inherited forward_split can bypass DME/WWTE computations.
     model.model[-1] = RockchipDetectOutputs(model.model[-1])
     return model
 
 
-def export_rkopt_onnx(model: nn.Module, output: str | Path, imgsz=(640, 640), opset: int = 12) -> dict:
+def export_rkopt_onnx(
+    model: nn.Module, output: str | Path, imgsz=(640, 640), opset: int = 12, cafr_mode: str = "original"
+) -> dict:
     """Write static batch-1 ONNX with a checked nine-output contract; conversion/CPU postprocessing stay external."""
     import onnx
 
@@ -58,7 +102,7 @@ def export_rkopt_onnx(model: nn.Module, output: str | Path, imgsz=(640, 640), op
     output = Path(output)
     if output.suffix.lower() != ".onnx":
         raise ValueError("output must end with .onnx.")
-    prepared = prepare_rkopt_model(model)
+    prepared = prepare_rkopt_model(model, cafr_mode=cafr_mode)
     image = torch.zeros(1, 3, *imgsz)
     with torch.no_grad():
         predictions = prepared(image)
@@ -80,9 +124,13 @@ def export_rkopt_onnx(model: nn.Module, output: str | Path, imgsz=(640, 640), op
         "names": getattr(model, "names", {}),
         "reg_max": model.model[-1].reg_max,
         "opset": opset,
+        "cafr_mode": cafr_mode,
+        "rewritten_cafr_modules": [
+            name for name, m in prepared.named_modules() if isinstance(m, ContentAwareUpsample4D)
+        ],
         "postprocess": "External DFL, box decode, threshold filtering and NMS (RKNN Model Zoo YOLOv8 layout).",
     }
-    for key in ("format", "names", "reg_max", "postprocess"):
+    for key in ("format", "names", "reg_max", "postprocess", "cafr_mode", "rewritten_cafr_modules"):
         entry = graph.metadata_props.add()
         entry.key, entry.value = key, json.dumps(info[key], ensure_ascii=False)
     onnx.save(graph, str(output))

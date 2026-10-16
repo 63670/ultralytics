@@ -15,11 +15,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--weights", type=Path, required=True, help="Trained baseline or custom .pt checkpoint.")
-    parser.add_argument("--output", type=Path, help="Default: <checkpoint-stem>-rkopt.onnx beside the checkpoint.")
+    parser.add_argument("--output", type=Path, help="ONNX path; default filename includes -rkopt and the CAFR mode.")
     parser.add_argument(
         "--imgsz", type=int, nargs="+", default=[640], help="One size or height width (multiples of 32)."
     )
     parser.add_argument("--opset", type=int, default=12)
+    parser.add_argument(
+        "--cafr-mode", choices=["original", "streaming"], default="original",
+        help="streaming reuses CAFR weights with 4-D shifted-neighbor accumulation; benchmark after RKNN conversion.",
+    )
     args = parser.parse_args()
     if not args.weights.is_file() or args.weights.suffix.lower() != ".pt":
         parser.error("--weights must be an existing .pt file.")
@@ -27,7 +31,8 @@ def main() -> None:
         parser.error("--imgsz requires one or two positive multiples of 32.")
     if not 12 <= args.opset <= 19:
         parser.error("--opset must be from 12 to 19.")
-    output = args.output or args.weights.with_name(f"{args.weights.stem}-rkopt.onnx")
+    suffix = "-rkopt-cafr4d" if args.cafr_mode == "streaming" else "-rkopt"
+    output = args.output or args.weights.with_name(f"{args.weights.stem}{suffix}.onnx")
     if output.suffix.lower() != ".onnx":
         parser.error("--output must end with .onnx.")
     from ultralytics import YOLO
@@ -35,7 +40,7 @@ def main() -> None:
 
     model = YOLO(str(args.weights)).model
     size = args.imgsz * 2 if len(args.imgsz) == 1 else args.imgsz
-    info = export_rkopt_onnx(model, output, tuple(size), args.opset)
+    info = export_rkopt_onnx(model, output, tuple(size), args.opset, cafr_mode=args.cafr_mode)
     digest = hashlib.sha256()
     with args.weights.open("rb") as source:
         for chunk in iter(lambda: source.read(1024 * 1024), b""):
@@ -44,6 +49,7 @@ def main() -> None:
     report = output.with_suffix(".rkopt.json")
     report.write_text(json.dumps(info, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Saved ONNX: {output}")
+    print(f"CAFR mode: {info['cafr_mode']}; rewritten modules: {info['rewritten_cafr_modules']}")
     for item in info["outputs"]:
         print(f"  {item['name']}: {item['shape']}")
     print(f"Saved output contract: {report}")
