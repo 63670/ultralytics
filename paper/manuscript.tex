@@ -116,7 +116,18 @@ To accommodate different industrial supply voltages across countries and regions
 \subsection{Image Acquisition and Transmission Subsystem}
 Rapid fabric motion requires imaging that preserves defect geometry and fine spatial detail. We therefore select a high-resolution global-shutter camera, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure \cite{baslerglobalshutter}. The selected VEYE MV-MIPI-SC130M monochrome camera uses a SmartSens SC130GS-M global-shutter sensor at $1280\times1024$ resolution. The illumination supports short-exposure imaging of the moving fabric. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm dimension aligned with the horizontal direction of fabric motion.
 
-Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment \cite{verma2017serdes}. The image stream is serialized at the camera end and recovered at the edge device before being passed to the processor subsystem. Camera selection, illumination, and the SerDes link thus form a single image-acquisition and transmission path.
+Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment \cite{verma2017serdes}. Specifically, the THCV241A serializer and THCV242A deserializer bridge the camera-side and processor-side MIPI CSI-2 interfaces over a V-by-One HS link. The devices support a maximum serial line rate of 4.0 Gb/s per lane, corresponding to a rated effective rate of 3.2 Gb/s \cite{thineTHCV241A,thineTHCV242A}.
+
+The camera is configured to transmit $1280\times1024$ RAW10 images at 30 frames/s. With $b=10$ bits per pixel, the active-image payload rate is
+\begin{equation}
+\begin{aligned}
+R_{\mathrm{img}} &= W H b f_{\mathrm{cam}} \\
+&=1280\times1024\times10\times30 \\
+&=393.216\ \mathrm{Mb/s},
+\end{aligned}
+\label{eq:serdes-bandwidth}
+\end{equation}
+where $W$ and $H$ denote the image width and height, and $f_{\mathrm{cam}}$ is the camera acquisition rate. This corresponds to 49.152 MB/s, approximately 12.3\% of the rated single-lane effective capacity, leaving nominal bandwidth headroom for transport overhead. The calculation excludes packet and framing overhead and compares the active-image load with the device rating. The 30 frames/s acquisition rate is distinct from the 10 frames/s minimum detection-throughput requirement derived below. The image stream is recovered at the edge device before being passed to the processor subsystem.
 
 
 \subsection{Network Communication Subsystem}
