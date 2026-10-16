@@ -84,13 +84,52 @@ The main contributions of our work are as follows.
   \item We incorporate CAFR into the feature pyramid to replace fixed upsampling with locally predicted reassembly weights, enabling content-adaptive reconstruction during multi-scale fusion.
 \end{enumerate}
 
-The remainder of the paper first describes the hardware platform, then develops \model and its two components. Model conversion and system operation follow the algorithm description. The experimental sections then define the data and evaluation protocol before presenting detector comparisons and component ablations.
+The remainder of the paper first presents the system overview and its four subsystems, then develops \model and its two components. Model conversion and system operation follow the algorithm description. The experimental sections then define the data and evaluation protocol before presenting detector comparisons and component ablations.
 
-\section{Hardware Platform}
+\section{System Overview and Subsystem Design}
 \label{sec:system-design}
-The hardware design follows the acquisition and processing requirements of circular-knitting production: clear images of moving fabric, camera transmission over factory cabling, and local computation matched to the required inspection rate. The selected camera, SerDes link, and RK3566 edge board also support machine-state input and wired stop control.
+Fig.~\ref{fig:interactions} presents the overall system for in-process fabric defect detection on circular knitting machines. The system comprises four functional subsystems: power supply, image acquisition and transmission, network communication, and processor-based local computation and control. The power subsystem supplies the camera and edge hardware. The image subsystem captures the moving fabric and delivers the image stream to the edge device over a SerDes link. The network subsystem connects the device to the cloud for equipment monitoring, defect records, and operator alerts. The processor subsystem receives images and machine-state signals, performs local defect detection, and issues a wired stop command when a defect is detected. The following subsections describe these subsystems and their design rationale.
 
-% Queue the hardware illustrations together near their first discussion.
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.92\textwidth]{system.png}
+\caption{System overview and subsystem interconnections. The power adapter supplies the camera and edge device. Images are transmitted through the serializer, coaxial link, and deserializer to the RK3566 processor subsystem. The 4G network connects the device to the cloud for monitoring and defect alerts. Wired input/output interfaces receive the Hall-sensor rotation signal and send stop commands to the machine controller.}
+\label{fig:interactions}
+\end{figure*}
+
+\subsection{Power Supply Subsystem}
+The power supply subsystem converts the machine-side AC supply into a 24 V DC output rated at 3 A, as shown in Fig.~\ref{fig:interactions}. This output supplies the camera assembly and edge device. The power-management circuitry on the edge board distributes power to its processing and peripheral components (Fig.~\ref{fig:hardware}(C)), while the camera assembly integrates the image sensor and LED illumination (A). This arrangement provides power for image acquisition, local processing, and communication from a common external adapter.
+
+\subsection{Image Acquisition and Transmission Subsystem}
+Rapid fabric motion requires imaging that preserves defect geometry and fine spatial detail. We therefore select a high-resolution global-shutter camera, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure \cite{baslerglobalshutter}. The front assembly in Fig.~\ref{fig:hardware}(A) combines LED illumination with a VEYE MV-MIPI-SC130M monochrome camera using a SmartSens SC130GS-M global-shutter sensor at $1280\times1024$ resolution. The illumination supports short-exposure imaging of the moving fabric. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm dimension aligned with the horizontal direction of fabric motion.
+
+Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment \cite{verma2017serdes}. The camera-side interface board in Fig.~\ref{fig:hardware}(B) serializes the image data for transmission, and the deserializer on the edge board (C) recovers the stream and passes it to the processor subsystem. Camera selection, illumination, and the SerDes link thus form a single image-acquisition and transmission path.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.92\textwidth]{hardware.png}
+\caption{Hardware of the production-line defect detection system: (A) industrial camera with LED illumination; (B) camera-side interface board with a serializer and coaxial connector; and (C) RK3566 edge board with the labeled communication, memory, camera-interface, input/output, and power-management components.}
+\label{fig:hardware}
+\end{figure*}
+
+\subsection{Network Communication Subsystem}
+The network subsystem uses the integrated 4G module to connect the edge device to the cloud platform. As illustrated in Fig.~\ref{fig:interactions}, MQTT carries device-state and defect-event messages between the device and cloud, while an HTTP interface gives operators access to monitoring information and defect records. The cloud supports device-state visualization, remote configuration, defect statistics, and production-quality analysis.
+
+When the edge device detects a defect, it uploads the defect record and image to the cloud, which pushes a defect alert to the operator interface. The alert provides the defect category, occurrence time, and image for review and troubleshooting. These network functions complement the local display and wired stop command: defect inference and machine-stop decisions are executed by the processor subsystem without waiting for cloud communication.
+
+\subsection{Processor Subsystem}
+\label{sec:coverage}
+The processor is selected according to the inspection rate required by fabric motion and the camera field of view. For a design diameter of 40 in ($D=1.016$ m) and a rotation period of $T=2$ s, the fabric travels approximately $\pi D=3.192$ m per revolution. With an effective field-of-view width of $w=0.16$ m along the direction of motion, the required frame rate is
+\begin{equation}
+f_{\min}=\frac{\pi D}{Tw}
+=\frac{\pi\times1.016}{2\times0.16}
+\approx9.97\ \mathrm{frames/s}.
+\label{eq:coverage-rate}
+\end{equation}
+We set the effective detection-throughput requirement to 10 frames/s, corresponding to 20 processed frames per revolution. Persistent needle or yarn abnormalities cause defects to propagate during knitting, providing further opportunities for detection in subsequent inspection cycles.
+
+For this throughput target, we select the Rockchip RK3566 to balance processing capability, camera connectivity, and hardware cost. It integrates a quad-core Cortex-A55 CPU, an NPU rated at 1 TOPS for INT8 operations, and camera input interfaces \cite{rockchiprk3566}. Table~\ref{tab:hardware-platforms} compares hardware specifications of the referenced platforms and our edge device. The 10 frames/s value is the system design requirement.
+
 \begin{table*}[!t]
 \caption{Hardware platforms used in related defect detection studies.}
 \label{tab:hardware-platforms}
@@ -119,43 +158,9 @@ Self-developed RK3566 edge device (Ours) & 4 & 1 TOPS (INT8) & 60 \\
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.92\textwidth]{hardware.png}
-\caption{Hardware of the production-line defect detection system: (A) industrial camera with LED illumination; (B) camera-side interface board with a serializer and coaxial connector; and (C) RK3566 edge board with the labeled communication, memory, camera-interface, input/output, and power-management components.}
-\label{fig:hardware}
-\end{figure*}
+The self-developed edge board integrates the RK3566, memory, flash storage, camera deserializer, power management, input/output interfaces, and 4G connectivity (Fig.~\ref{fig:hardware}(C)). The processor coordinates image reception, local defect detection, display, and communication. A Hall sensor connected to the input/output interface supplies the machine-rotation signal to activate acquisition and inspection. When a defect is detected, the processor sends a stop command through a wired connection to the machine controller. The detection algorithm and its deployment are introduced in the subsequent sections.
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.92\textwidth]{system.png}
-\caption{System component interconnections. The camera stream reaches the RK3566 edge device through the serializer, coaxial link, and deserializer. Wired input/output connections carry the Hall-sensor signal and stop command, while the power adapter supplies the camera and edge hardware.}
-\label{fig:interactions}
-\end{figure*}
-
-\subsection{High-Resolution Global-Shutter Imaging}
-Rapid fabric motion requires imaging that preserves defect geometry and fine spatial detail. We therefore select a high-resolution global-shutter camera, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure \cite{baslerglobalshutter}. The front assembly in Fig.~\ref{fig:hardware}(A) combines LED illumination with a VEYE MV-MIPI-SC130M monochrome camera using a SmartSens SC130GS-M global-shutter sensor at $1280\times1024$ resolution. The illumination supports short-exposure imaging of the moving fabric.
-
-\subsection{SerDes Camera Transmission}
-Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore select serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment \cite{verma2017serdes}. The camera-side interface board in Fig.~\ref{fig:hardware}(B) serializes the image data for transmission; the deserializer on the edge board (C) recovers the stream for processing. This arrangement connects the camera near the fabric to the edge device and machine-control interfaces.
-
-\subsection{Frame-Rate Requirement and SoC Selection}
-\label{sec:coverage}
-The camera field of view determines the detection-throughput requirement. For a design diameter of 40 in ($D=1.016$ m) and a rotation period of $T=2$ s, the fabric travels approximately $\pi D=3.192$ m per revolution. At a camera-to-fabric distance of 10 cm, the $16\times12$ cm field of view provides a width of $w=0.16$ m along the horizontal direction of motion. The required frame rate is therefore
-\begin{equation}
-f_{\min}=\frac{\pi D}{Tw}
-=\frac{\pi\times1.016}{2\times0.16}
-\approx9.97\ \mathrm{frames/s}.
-\label{eq:coverage-rate}
-\end{equation}
-We set the effective detection-throughput requirement to 10 frames/s, corresponding to 20 processed frames per revolution. Persistent needle or yarn abnormalities cause defects to propagate during knitting, providing further opportunities for detection in subsequent inspection cycles.
-
-For this throughput target, we select the Rockchip RK3566 to balance processing capability, camera connectivity, and hardware cost. It integrates a quad-core Cortex-A55 CPU, an NPU rated at 1 TOPS for INT8 operations, and camera input interfaces \cite{rockchiprk3566}. Table~\ref{tab:hardware-platforms} compares hardware specifications of the referenced platforms and our edge device. The 10 frames/s value is the system design requirement.
-
-\subsection{System Integration and Machine-Control Interfaces}
-Fig.~\ref{fig:interactions} shows the complete connections. The RK3566 board integrates the deserializer, flash memory, power management, input/output interfaces, and 4G connectivity. The Hall sensor provides the rotation signal, while a wired interface sends stop commands to the machine controller. The power adapter supplies the camera and edge device. Detection and stop decisions remain local; 4G supports monitoring and defect records.
-
-% Keep hardware illustrations within the hardware section.
+% Keep system illustrations within the system-design section.
 \FloatBarrier
 \section{Proposed Method}
 \label{sec:method}
@@ -263,8 +268,8 @@ Fig.~\ref{fig:system} shows the installation of our defect detection system on a
 \label{fig:system}
 \end{figure*}
 
-\subsection{Cloud Monitoring and Record Management}
-The cloud platform receives defect records and device states for centralized monitoring, defect statistics, and production-quality analysis. Its interface supports device-state visualization, remote configuration, and review of uploaded defect images. Defect inference and the wired stop decision execute locally, so cloud communication is outside the stop-control path.
+\subsection{Defect Reporting and Operator Notification}
+Following local defect detection and the wired stop command, the network subsystem described in Section~\ref{sec:system-design} uploads the defect image and record for cloud-based review and operator notification. The local display enables the operator to inspect the result at the machine, while the cloud retains defect and device-state records for subsequent quality analysis. The operator resolves the fault and restarts production through the local machine controls.
 
 \section{Experimental Setup}
 \subsection{Dataset}
