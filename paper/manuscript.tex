@@ -36,6 +36,16 @@
 \setlength{\dbltextfloatsep}{12pt plus 2pt minus 2pt}
 \setlength{\floatsep}{10pt plus 2pt minus 2pt}
 \setlength{\dblfloatsep}{10pt plus 2pt minus 2pt}
+% Permit mixed text/float pages while keeping a meaningful amount of running text.
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}
+\renewcommand{\dbltopfraction}{0.9}
+\renewcommand{\dblfloatpagefraction}{0.8}
 
 \begin{document}
 \raggedbottom
@@ -276,7 +286,7 @@ Fig.~\ref{fig:system} shows the deployed system on the circular knitting machine
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth]{site.png}
+\includegraphics[width=0.92\textwidth]{site.png}
 \caption{Actual deployment on the circular knitting machine. The insets highlight the start button, Hall sensor, industrial camera, and RK3566 edge device, respectively.}
 \label{fig:system}
 \end{figure*}
@@ -352,13 +362,8 @@ We report COCO average precision (AP) across ten IoU thresholds and AP at IoU $0
 where $T=\{0.50,0.55,\ldots,0.95\}$ and $N_c=3$ in this study. All AP values are reported as percentages.
 AP therefore evaluates localization over increasingly strict overlap requirements, whereas AP50 uses a single, less restrictive threshold. Differences between reported AP values are expressed in percentage points.
 
-Model parameters and FLOPs are measured using the respective frameworks with an input resolution of $640\times640$. These quantities describe model size and arithmetic complexity; on-device latency and machine stopping time require separate measurements.
-
-\section{Results and Discussion}
-\label{sec:results}
-\subsection{Comparison With Other Detectors}
-% Detection results follow the evaluation protocol.
-\begin{table}[!htbp]
+% Queue the comparison table before the results discussion to keep it nearby.
+\begin{table}[!b]
 \caption{Detection results on the test set. Bold and underlined values indicate the highest and second-highest reported scores, respectively.}
 \label{tab:comparison}
 \centering
@@ -385,11 +390,19 @@ YOLOv8n (Baseline) & 3.01 & 8.10 & 94.1 & 59.3 \\
 \renewcommand{\arraystretch}{1.0}
 \end{table}
 
+Model parameters and FLOPs are measured using the respective frameworks with an input resolution of $640\times640$. These quantities describe model size and arithmetic complexity; on-device latency and machine stopping time require separate measurements.
+
+\section{Results and Discussion}
+\label{sec:results}
+\subsection{Comparison With Other Detectors}
+% Detection results follow the evaluation protocol.
+
+
 % Use a wide detector comparison and a compact single-column activation map
 % so result figures can share pages with the corresponding discussion.
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth]{qualitative_existing.png}
+\includegraphics[width=0.96\textwidth]{qualitative_existing.png}
 \caption{Qualitative comparison of detection results on selected test images. From left to right, the columns show ground-truth annotations, YOLOv8n, YOLO11n, YOLO26n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours).}
 \label{fig:qualitative}
 \end{figure*}
@@ -398,20 +411,11 @@ Table~\ref{tab:comparison} presents the detection results on the test set. \mode
 
 Among the evaluated lightweight YOLO detectors, \model achieves the highest AP. Although RT-DETR-R18 attains a slightly higher AP of 67.7\%, it requires 20.09 M parameters and 60.72 G FLOPs, compared with 3.39 M parameters and 8.90 G FLOPs for \model.
 
-\begin{samepage}
 Fig.~\ref{fig:qualitative} compares the detection results of different models on seven selected test images, highlighting differences in detection accuracy and bounding-box localization.
-\par
-\end{samepage}
-
-
 
 
 \subsection{Component Ablation}
-Table~\ref{tab:ablation} evaluates the individual and combined effects of DME and CAFR on detection performance. Introducing DME increases AP from 59.3\% to 64.1\%, while CAFR alone improves AP to 60.7\%. When both modules are incorporated, \model achieves 66.3\% AP and 96.9\% AP50, outperforming either individual modification. Within these evaluated configurations, the combined modification performs better than either module alone. This is consistent with the two modules acting at different stages: DME encodes spatial morphology in the backbone, while CAFR reconstructs features during multi-scale fusion. The aggregate ablation scores do not isolate the contribution of each directional branch or establish statistical significance across repeated training runs.
-
-Fig.~\ref{fig:heatmaps} compares the feature visualizations of YOLOv8n and \model. Compared with YOLOv8n, DMFR-YOLO exhibits more concentrated feature responses around elongated defects and holes, with activation regions more closely aligned with the defect shapes. These observations suggest that DMFR-YOLO provides a more focused representation of defect regions.
-
-\begin{table}[!htbp]
+\begin{table}[!tbp]
 \caption{Component ablation. Parameters are in millions, FLOPs in billions, and AP50/AP in percent.}
 \label{tab:ablation}
 \centering
@@ -429,16 +433,13 @@ YOLOv8n & -- & -- & 3.01 & 8.1 & 94.1 & 59.3 \\
 \end{tabular*}
 \end{table}
 
-% Finish the full-width comparison figure before the feature visualization.
-\clearpage
-% Restore full column height after flushing a large two-column float.
-\makeatletter
-\global\@colht\textheight
-\global\@colroom\textheight
-\global\vsize\textheight
-\makeatother
-% Keep the visualization with the ablation discussion.
-\begin{figure}[!htbp]
+Table~\ref{tab:ablation} evaluates the individual and combined effects of DME and CAFR on detection performance. Introducing DME increases AP from 59.3\% to 64.1\%, while CAFR alone improves AP to 60.7\%. When both modules are incorporated, \model achieves 66.3\% AP and 96.9\% AP50, outperforming either individual modification. Within these evaluated configurations, the combined modification performs better than either module alone. This is consistent with the two modules acting at different stages: DME encodes spatial morphology in the backbone, while CAFR reconstructs features during multi-scale fusion. The aggregate ablation scores do not isolate the contribution of each directional branch or establish statistical significance across repeated training runs.
+
+Fig.~\ref{fig:heatmaps} compares the feature visualizations of YOLOv8n and \model. Compared with YOLOv8n, DMFR-YOLO exhibits more concentrated feature responses around elongated defects and holes, with activation regions more closely aligned with the defect shapes. These observations suggest that DMFR-YOLO provides a more focused representation of defect regions.
+
+
+% Allow the ablation table, visualization, and discussion to flow on the same pages.
+\begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{heatmap_comparison.png}
 \caption{Feature visualization of YOLOv8n and DMFR-YOLO. From left to right: original image (Origin), YOLOv8n, and \model.}
@@ -450,13 +451,11 @@ This paper presents \model and a defect detection system for circular knitting m
 
 The proposed detector is deployed on an RK3566 edge device and integrated with machine monitoring and wired stop control. Defect inference and the stop decision execute locally without relying on cloud communication. Detection results are displayed locally for operators, while the cloud platform supports equipment monitoring and production quality analysis. The reported results establish test-set detection performance and describe the deployment workflow. Quantized-model accuracy, end-to-end response time, physical stopping delay, and false-stop frequency remain to be quantified before drawing conclusions about production performance. Future work will also evaluate generalization across knitted fabrics, texture patterns, and production conditions.
 
-% Keep the reference list complete before the author biographies.
-\raggedend
+% Balance the final page while keeping references before biographies in reading order.
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
-% Start biographies in a fresh column after the complete reference list.
-\newpage
+% Let biographies follow the completed references without forcing a new page.
 % Author biographies follow the reference list in author order.
 \begin{IEEEbiographynophoto}{Kangzhao Tan}
 received the B.S. degree from Guangzhou University, Guangzhou, China, in 2022. From 2022 to 2024, he worked as a cloud computing R\&D engineer with Sangfor Technologies Inc., Shenzhen, China. He is currently pursuing the M.S. degree in computer technology with the School of Computer Science, Guangdong University of Technology, Guangzhou, China. His research interests include deep learning, computer vision, and industrial defect detection.
