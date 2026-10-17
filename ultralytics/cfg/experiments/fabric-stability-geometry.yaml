@@ -1,0 +1,18 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# Geometry-preserving candidate: same schedule as the schedule-only diagnostic,
+# with less frequent mosaic and a narrower scale range. This is an unverified recipe.
+# Apply identically to baseline and candidate; choose checkpoints on validation only.
+task: detect
+mode: train
+epochs: 300
+patience: 0
+batch: 16
+imgsz: 640
+workers: 8
+deterministic: true
+optimizer: auto
+close_mosaic: 100
+mosaic: 0.25
+scale: 0.2
+max_det: 16

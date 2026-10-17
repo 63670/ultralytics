@@ -1,0 +1,18 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# Schedule-only diagnostic for the existing 282-image training split.
+# Override model, data, pretrained, device, project, name and seed on the command line.
+# Keep the old augmentation strengths; allow every seed to reach 100 mosaic-free epochs.
+task: detect
+mode: train
+epochs: 300
+patience: 0
+batch: 16
+imgsz: 640
+workers: 8
+deterministic: true
+optimizer: auto
+close_mosaic: 100
+mosaic: 1.0
+scale: 0.5
+max_det: 16

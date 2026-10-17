@@ -19,6 +19,7 @@ from ultralytics.utils.export.rkopt import export_rkopt_onnx, prepare_rkopt_mode
 
 CONFIGS = Path(__file__).resolve().parents[2] / "ultralytics/cfg/models/v8"
 CONFIG = CONFIGS / "yolov8n-fabric-axis-cafr-lite.yaml"
+P4_CONFIG = CONFIGS / "yolov8n-fabric-axis-cafr-lite-p4.yaml"
 
 
 class CAFRLiteTests(unittest.TestCase):
@@ -88,6 +89,43 @@ class CAFRLiteTests(unittest.TestCase):
                 else:
                     self.assertGreater(gradient.abs().sum().item(), 0)
             optimizer.step()
+
+    def test_p4_only_candidate_preserves_the_axis_backbone_and_prediction_head(self):
+        source = DetectionModel(str(CONFIGS / "yolov8n-fabric-axis-residual.yaml"), verbose=False).eval()
+        model = DetectionModel(str(P4_CONFIG), verbose=False).eval()
+        with torch.no_grad():
+            source.model[4].gamma.fill_(0.2)
+            source.model[6].gamma.fill_(0.2)
+        model.load(source, verbose=False)
+        for name, tensor in source.state_dict().items():
+            torch.testing.assert_close(model.state_dict()[name], tensor, atol=0, rtol=0)
+        self.assertIsInstance(model.model[10], ContentAwareUpsampleLite)
+        self.assertIsInstance(model.model[13], torch.nn.Upsample)
+        self.assertEqual(model.stride.tolist(), [8, 16, 32])
+        image = torch.rand(1, 3, 128, 160)
+        with torch.no_grad():
+            torch.testing.assert_close(model(image)[0], source(image)[0], atol=0, rtol=0)
+
+    def test_p4_only_nonzero_residual_exports_one_reassembly_and_matches_onnx(self):
+        model = DetectionModel(str(P4_CONFIG), verbose=False).eval()
+        with torch.no_grad():
+            model.model[10].gain.fill_(0.2)
+            model.model[4].gamma.fill_(0.1)
+            model.model[6].gamma.fill_(0.1)
+        image = torch.rand(1, 3, 64, 96)
+        with torch.no_grad():
+            expected = [tensor.numpy() for tensor in prepare_rkopt_model(model)(image)]
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "lite-p4.onnx"
+            info = export_rkopt_onnx(model, output, imgsz=(64, 96))
+            self.assertEqual(info["native_cafr_lite_modules"], ["model.10"])
+            graph = onnx.load(str(output)).graph
+            self.assertEqual(sum(node.op_type == "Softmax" for node in graph.node), 1)
+            actual = ort.InferenceSession(str(output), providers=["CPUExecutionProvider"]).run(
+                None, {"images": image.numpy()}
+            )
+            for reference, tensor in zip(expected, actual):
+                np.testing.assert_allclose(tensor, reference, atol=2e-5, rtol=1e-4)
 
     def test_nonzero_residuals_are_exported_and_execute_in_onnx(self):
         model = DetectionModel(str(CONFIG), verbose=False).eval()
