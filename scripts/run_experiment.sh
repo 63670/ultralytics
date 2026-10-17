@@ -9,6 +9,7 @@ usage() {
   echo "Without --seed/--seeds: runs/detect/RUN_NAME (legacy layout)."
   echo "With --seed/--seeds:    runs/detect/RUN_NAME/SEED (sequential independent runs)."
   echo "RUNS_DIR and DATA_YAML override the output root and dataset, respectively."
+  echo "YAML models require pretrained=WEIGHTS.pt or pretrained=False; pretrained=True does not select weights."
   echo "Existing run directories are never overwritten; the first failure stops the sequence."
   echo "After successful testing, only weights/best.pt is retained; last.pt is deleted."
 }
@@ -76,6 +77,7 @@ fi
 
 train_args=("$@")
 eval_args=()
+pretrained_arg=""
 for argument in "${train_args[@]}"; do
   [[ "${argument}" == *=* && "${argument}" != --* ]] \
     || fail "Additional YOLO arguments must use key=value syntax: ${argument}"
@@ -86,12 +88,25 @@ for argument in "${train_args[@]}"; do
     seed=*)
       [[ -z "${seeds_arg}" ]] || fail "Do not combine seed= with --seed/--seeds"
       ;;
+    pretrained=*)
+      pretrained_arg="${argument#pretrained=}"
+      ;;
     data=*|imgsz=*|batch=*|device=*|workers=*|max_det=*)
       # Keep test settings consistent with any explicit shared training settings.
       eval_args+=("${argument}")
       ;;
   esac
 done
+
+case "${model,,}" in
+  *.yaml|*.yml)
+    case "${pretrained_arg,,}" in
+      ""|true)
+        fail "YAML models require an explicit pretrained=WEIGHTS.pt or pretrained=False. pretrained=True does not automatically load YOLO weights."
+        ;;
+    esac
+    ;;
+esac
 
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 runs_dir="${RUNS_DIR:-${repo_dir}/runs/detect}"

@@ -2,6 +2,27 @@
 
 本轮固定 `C2fAxisResidual`（P3/P4 两处、partial=0.25）和 `GatedInterpolationUpsample`（两处、initial_mix=0.05）。不混入 `C2fAxisBounded`、CAFR/CAFR-Lite 或 P2 细节融合，以形成清楚的 2×2 组件对照。
 
+## 2026-10-17：已发现实际运行的初始化条件不一致
+
+只读核对训练服务器的 `args.yaml`、测试日志和 `BaseTrainer.setup_model()` 后发现以下差异。三份单轴向、单门控与组合模型 YAML 的 SHA-256 均与本地已验证版本一致，已定位的差异在训练初始化参数，而非这三份模型配置文件被意外改动。
+
+| 已核查的运行 | 实际保存的 pretrained | 测试 AP50–95 |
+| --- | --- | --- |
+| `ablation-axis-gate/axis-only/0` | `true` | 49.4% |
+| `ablation-axis-gate/axis-only/1` | `true` | 45.2% |
+| `ablation-axis-gate/axis-only/2` | `true` | 核查时未读取到完成结果 |
+| `ablation-axis-gate/gate-only/0` | `true` | 核查时未读取到完成结果 |
+| `axis-interp/0` | `yolov8n.pt` | 63.5% |
+| `axis-interp/1` | `yolov8n.pt` | 65.5% |
+
+这些单模块运行的模型入口为 YAML，`resume=false`。当前代码只有在 `pretrained` 是权重路径字符串时才显式加载该 checkpoint；布尔 `true` 不会为 YAML 自动选择 `yolov8n.pt`，上述单模块训练因此没有以指定预训练 checkpoint 初始化。这与组合组的初始化条件不同，不能将当前差值直接解释为模块协同，也不能据此认定单模块性能差的全部原因已被确定。
+
+下方命令已显式设置 `pretrained=yolov8n.pt`；实际核查到的运行并没有保存这个值。漏传参数的具体启动过程未核查，不推断是某一个 shell 操作导致。脚本现增加检查：YAML 入口省略 `pretrained`、设置为空或仅设为 `True` 时，在训练前报错；有意从头训练须显式传 `pretrained=False`。
+
+重做时保留旧结果，使用新实验目录，并在开始阶段确认有 `Transferred ... items from pretrained weights` 日志、保存的 `args.yaml` 为同一个明确的权重路径。仅编辑旧 `args.yaml` 或测试旧 `best.pt` 不能改变训练时的初始化条件。本次仅修改本地脚本与说明，没有停止或重启服务器上的任务。
+
+## 四组对照与运行命令
+
 | 组别 | 模型参数 | 轴向模块 | 新门控 |
 | --- | --- | --- | --- |
 | baseline | `yolov8n.yaml` | 无 | 无 |
