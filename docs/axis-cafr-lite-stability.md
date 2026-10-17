@@ -2,6 +2,8 @@
 
 分析日期：2026-10-17。来源为用户服务器 `runs/detect` 中的 `args.yaml`、`results.csv` 和 `test_metrics.log`。仅只读采集了日志、模型实现与数据统计，没有启动训练或修改服务器任务。原始分析副本保存在本地忽略目录 `paper/work/axis-cafr-stability`。
 
+后续更新：P4-only 已有四次训练结果，见第 5 节。该候选目前不再优先推荐；两个训练配置仍待以原双处模型作控制实验。
+
 ## 1. 目前的收益不稳定
 
 取得 41 个已有完整测试日志的 axis-cafr-lite 运行，seed 为 0–40；读取时 seed 41 仅有部分训练曲线，没有纳入。YOLOv8n 有 8 个不同 seed 的完整结果，重复的 seed 11 只计一次。
@@ -136,3 +138,34 @@ yolo detect train \
 部署仍通过 `tools/export_rkopt_onnx.py` 使用九输出导出；单处候选应报告 `Native CAFR-Lite modules: ['model.10']`。使用同一校准与板端配置重新评估，不能沿用旧双处模型约 20 FPS 的口头结果。
 
 在上述对照前，不建议继续增加新模块或替换骨干。若日程和增强调整后 axis-only 与两处/单处 CAFR 的配对均值仍无优势，再考虑改写方向信息与定位重建的机制，避免在尚未分清的训练波动上叠加新的自由度。
+
+## 5. P4-only 四次结果：暂时搁置结构简化
+
+用户反馈后，再次只读核查服务器 `axis-cafr-lite-p4_0` 至 `_3` 的配置和日志。它们的 seed 确认为 0–3，实际采用旧训练配置：`cfg=null, patience=80, mosaic=1.0, scale=0.5, close_mosaic=10`，不是上面新增的日程/温和增强配置。
+
+| seed | P4-only 验证 best AP | P4-only 测试 AP | 实际训练轮数 | 验证 best 轮数 | 历史双处模型测试 AP | 测试差值，百分点 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 64.206% | 58.4% | 300 | 220 | 63.0% | −4.6 |
+| 1 | 62.413% | 59.7% | 258 | 178 | 64.8% | −5.1 |
+| 2 | 60.030% | 61.1% | 278 | 198 | 65.6% | −4.5 |
+| 3 | 57.068% | 54.7% | 163 | 83 | 63.3% | −8.6 |
+
+P4-only 四次测试 AP **58.48% ± 2.75 个百分点**；相同四个 seed 的历史双处模型为 **64.18% ± 1.23 个百分点**，四次全部下降，平均差 **−5.70 个百分点**。这是小样本的描述性结果，不是显著性结论。历史双处结果取前次保留的日志快照及 `axis-cafr-lite-seed-results.csv`；新结果在 `axis-cafr-lite-p4-seed-results.csv`。
+
+三次 P4-only 运行在关闭 Mosaic 前早停，但 seed 0 已完成 300 轮，仍下降 4.6 个百分点。因此**不能把下降全部归因于早停**。同时，seed 0 验证 best AP 达到 64.206%，测试只有 58.4%，也说明验证最高分不能代表测试优势。
+
+现有结果不支持优先采用 P4-only，不继续为它追加种子寻找高分。保留其配置作为已验证过的不理想对照，不据四个 seed 推导普遍的特征层级结论。
+
+下一轮保持双处 CAFR-Lite 原结构，只比较训练日程和温和增强，并让 YOLOv8n 使用同样配方与预先固定的种子。先按验证集汇总训练方案，确定方案后再统一测试。不能把旧基线与新配方模型直接视为结构改进的受控比较。
+
+原双处模型使用温和配置的起始命令（同步新配置后执行）：
+
+```bash
+yolo detect train \
+  cfg=ultralytics/cfg/experiments/fabric-stability-geometry.yaml \
+  model=ultralytics/cfg/models/v8/yolov8n-fabric-axis-cafr-lite.yaml \
+  pretrained=yolov8n.pt data=/home/tkz/datasets/pingwen_yolo/data.yaml \
+  seed=0 device=1 project="$PWD/runs/fabric-stability" name=lite-geometry-s0
+```
+
+启动后检查打印/保存的参数确实为 `patience=0, close_mosaic=100, mosaic=0.25, scale=0.2`。这只是待验证方案，没有新的精度保证。本轮没有修改服务器配置或启动训练。
