@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from ultralytics.nn.modules import ContentAwareUpsample, ContentAwareUpsampleLite, Detect
+from ultralytics.nn.modules import ContentAwareUpsample, ContentAwareUpsampleLite, Detect, GatedInterpolationUpsample
 from ultralytics.nn.modules.block import _reassemble_4d
 
 
@@ -120,10 +120,14 @@ def export_rkopt_onnx(
         "native_cafr_lite_modules": [
             name for name, m in prepared.named_modules() if isinstance(m, ContentAwareUpsampleLite)
         ],
+        "gated_interpolation_modules": [
+            name for name, m in prepared.named_modules() if isinstance(m, GatedInterpolationUpsample)
+        ],
         "postprocess": "External DFL, box decode, threshold filtering and NMS (RKNN Model Zoo YOLOv8 layout).",
     }
     for key in (
-        "format", "names", "reg_max", "postprocess", "cafr_mode", "rewritten_cafr_modules", "native_cafr_lite_modules"
+        "format", "names", "reg_max", "postprocess", "cafr_mode", "rewritten_cafr_modules", "native_cafr_lite_modules",
+        "gated_interpolation_modules",
     ):
         entry = graph.metadata_props.add()
         entry.key, entry.value = key, json.dumps(info[key], ensure_ascii=False)

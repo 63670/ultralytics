@@ -52,6 +52,8 @@ def main() -> None:
     print(f"CAFR mode: {info['cafr_mode']}; rewritten modules: {info['rewritten_cafr_modules']}")
     if info["native_cafr_lite_modules"]:
         print(f"Native CAFR-Lite modules: {info['native_cafr_lite_modules']}")
+    if info["gated_interpolation_modules"]:
+        print(f"Gated interpolation modules: {info['gated_interpolation_modules']}")
     for item in info["outputs"]:
         print(f"  {item['name']}: {item['shape']}")
     print(f"Saved output contract: {report}")

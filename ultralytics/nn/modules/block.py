@@ -40,11 +40,13 @@ __all__ = (
     "C2fDirectionalPre",
     "C2fPartialAxis",
     "C2fAxisResidual",
+    "C2fAxisBounded",
     "C2fDetailFusion",
     "C2fWWTE",
     "C2fWWTEGated",
     "ContentAwareUpsample",
     "ContentAwareUpsampleLite",
+    "GatedInterpolationUpsample",
     "C2fPSA",
     "C3Ghost",
     "C3k2",
@@ -474,6 +476,52 @@ class C2fAxisResidual(C2f):
         return self._aggregate(list(self.cv1(x).split((self.c, self.c), dim=1)))
 
 
+class C2fAxisBounded(C2f):
+    """Use centered axial descriptors and bounded modulation while retaining the original C2f path."""
+
+    def __init__(
+        self, c1: int, c2: int, n: int = 1, shortcut: bool = False, partial: float = 0.25, strength: float = 0.25
+    ):
+        """Start exactly at C2f with zero filters, without a zero gate blocking their first gradient."""
+        super().__init__(c1, c2, n, shortcut)
+        if not 0 < partial <= 1 or not 0 < strength < 1:
+            raise ValueError("partial must be in (0, 1] and strength in (0, 1).")
+        self.active = max(1, int(self.c * partial))
+        self.bypass = self.c - self.active
+        self.strength = float(strength)
+        self.row = nn.Conv2d(self.active, self.active, (3, 1), padding=(1, 0), groups=self.active, bias=False)
+        self.column = nn.Conv2d(self.active, self.active, (1, 3), padding=(0, 1), groups=self.active, bias=False)
+        self.gate = nn.Hardsigmoid()
+        nn.init.zeros_(self.row.weight)
+        nn.init.zeros_(self.column.weight)
+
+    def _modulate(self, x: torch.Tensor) -> torch.Tensor:
+        """Keep the multiplier in [1-strength, 1+strength] and ignore spatially constant descriptors."""
+        row = x.mean(dim=3, keepdim=True)
+        column = x.mean(dim=2, keepdim=True)
+        center = row.mean(dim=2, keepdim=True)
+        response = self.row(row - center) + self.column(column - center)
+        return x * (1.0 + self.strength * (2.0 * self.gate(response) - 1.0))
+
+    def _aggregate(self, branches: list[torch.Tensor]) -> torch.Tensor:
+        """Apply the bounded correction once on the final hidden branch before the original fusion."""
+        branches.extend(m(branches[-1]) for m in self.m)
+        if self.bypass:
+            active, bypass = branches[-1].split((self.active, self.bypass), dim=1)
+            branches[-1] = torch.cat((self._modulate(active), bypass), dim=1)
+        else:
+            branches[-1] = self._modulate(branches[-1])
+        return self.cv2(torch.cat(branches, dim=1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Retain ordinary C2f aggregation with a bounded axial correction."""
+        return self._aggregate(list(self.cv1(x).chunk(2, dim=1)))
+
+    def forward_split(self, x: torch.Tensor) -> torch.Tensor:
+        """Preserve the correction when export uses explicit split sizes."""
+        return self._aggregate(list(self.cv1(x).split((self.c, self.c), dim=1)))
+
+
 class C2fDetailFusion(C2f):
     """Fuse a compressed stride-4 detail path into the stride-8 C2f neck output."""
 
@@ -616,6 +664,28 @@ class ContentAwareUpsampleLite(nn.Module):
         refined = _reassemble_4d(latent, weights, self.kernel_size, self.scale_factor)
         base = F.interpolate(x, scale_factor=self.scale_factor, mode="nearest")
         return base + self.gain * self.project(refined)
+
+
+class GatedInterpolationUpsample(nn.Module):
+    """Blend two fixed interpolation geometries with one bounded, content-dependent spatial gate."""
+
+    def __init__(self, c1: int, initial_mix: float = 0.05, scale_factor: int = 2):
+        """Initialize every seed at the same near-nearest mapping without a random residual projection."""
+        super().__init__()
+        if not 0 < initial_mix < 1 or scale_factor != 2:
+            raise ValueError("initial_mix must be in (0, 1) and scale_factor must be 2.")
+        self.scale_factor = scale_factor
+        self.gate_conv = nn.Conv2d(c1, 1, 3, padding=1)
+        self.gate = nn.Hardsigmoid()
+        nn.init.zeros_(self.gate_conv.weight)
+        nn.init.constant_(self.gate_conv.bias, 6.0 * initial_mix - 3.0)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Preserve channels and constant features; never extrapolate beyond the two interpolation values."""
+        nearest = F.interpolate(x, scale_factor=self.scale_factor, mode="nearest")
+        linear = F.interpolate(x, scale_factor=self.scale_factor, mode="bilinear", align_corners=False)
+        gate = F.interpolate(self.gate(self.gate_conv(x)), scale_factor=self.scale_factor, mode="nearest")
+        return nearest + gate * (linear - nearest)
 
 
 class C3(nn.Module):
