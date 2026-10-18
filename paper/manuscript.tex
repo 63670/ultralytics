@@ -400,7 +400,7 @@ AP therefore evaluates localization over increasingly strict overlap requirement
 
 % Queue the comparison table before the results discussion to keep it nearby.
 \begin{table}[!b]
-\caption{Detector comparison on the test set. FPS denotes FP32 model-forward throughput on an RTX 3090 with batch size 1 and a $640\times640$ input; dashes reserve unmeasured values.}
+\caption{Detector comparison on the test set. FPS denotes FP32 model-forward throughput on an RTX 3090 with batch size 1 and a $640\times640$ input. Bold and underlined values indicate the best and second-best results, respectively; lower parameters/FLOPs and higher AP50/AP/FPS are preferred.}
 \label{tab:comparison}
 \centering
 \footnotesize
@@ -410,16 +410,17 @@ AP therefore evaluates localization over increasingly strict overlap requirement
 \toprule
 Model & Params (M) & FLOPs (G) & AP50 (\%) & AP (\%) & FPS \\
 \midrule
-YOLOv5n & 2.50 & 7.10 & 93.1 & 58.4 & -- \\
-YOLO11n & 2.58 & 6.40 & 95.0 & 59.6 & -- \\
-YOLO12n & 2.56 & 7.30 & 94.3 & 60.9 & -- \\
-YOLO26n & 2.38 & 5.30 & 96.5 & 61.4 & -- \\
-RT-DETR-R18 & 20.09 & 60.72 & 95.2 & 67.7 & -- \\
-DETR-R50 & 41.28 & 77.25 & 96.4 & 53.6 & -- \\
-Deformable DETR-R50 & 39.82 & 158.66 & 96.8 & 64.3 & -- \\
-Faster R-CNN-R50 & 41.13 & 181.45 & 96.1 & 64.7 & -- \\
-YOLOv8n (Baseline) & 3.01 & 8.10 & 94.1 & 59.3 & -- \\
-\model & -- & -- & -- & -- & -- \\
+YOLOv9t & \textbf{2.12} & 8.50 & 90.1 & 53.3 & 291 \\
+YOLOv10n & 2.78 & 8.80 & 88.2 & 58.5 & \underline{524} \\
+YOLO11n & 2.62 & \underline{6.70} & 93.3 & 60.8 & 463 \\
+YOLO12n & 2.60 & 7.60 & 89.0 & 56.8 & 326 \\
+YOLO26n & \underline{2.57} & \textbf{6.20} & 90.5 & 58.2 & 425 \\
+RT-DETR-R18 & 20.09 & 60.72 & 95.2 & \textbf{67.7} & 146 \\
+DETR-R50 & 41.28 & 77.25 & 96.4 & 53.6 & 101 \\
+Deformable DETR-R50 & 39.82 & 158.66 & \underline{96.8} & 64.3 & 49 \\
+Faster R-CNN-R50 & 41.13 & 181.45 & 96.1 & 64.7 & 66 \\
+YOLOv8n (Baseline) & 3.01 & 8.10 & 90.5 & 58.4 & \textbf{554} \\
+\model & 3.02 & 8.2 & \textbf{97.2} & \underline{65.5} & 486 \\
 \bottomrule
 \end{tabular*}
 \par\smallskip
