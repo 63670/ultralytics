@@ -400,33 +400,33 @@ AP therefore evaluates localization over increasingly strict overlap requirement
 
 % Queue the comparison table before the results discussion to keep it nearby.
 \begin{table}[!b]
-\caption{Detector comparison on the test set. Dashes reserve entries for the finalized PAC + GIU model.}
+\caption{Detector comparison on the test set. FPS denotes FP32 model-forward throughput on an RTX 3090 with batch size 1 and a $640\times640$ input; dashes reserve unmeasured values.}
 \label{tab:comparison}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{1.06}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrr}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrr}
 \toprule
-Model & Params (M) & FLOPs (G) & AP50 (\%) & AP (\%) \\
+Model & Params (M) & FLOPs (G) & AP50 (\%) & AP (\%) & FPS \\
 \midrule
-YOLOv5n & 2.50 & 7.10 & 93.1 & 58.4 \\
-YOLO11n & 2.58 & 6.40 & 95.0 & 59.6 \\
-YOLO12n & 2.56 & 7.30 & 94.3 & 60.9 \\
-YOLO26n & 2.38 & 5.30 & 96.5 & 61.4 \\
-RT-DETR-R18 & 20.09 & 60.72 & 95.2 & 67.7 \\
-DETR-R50 & 41.28 & 77.25 & 96.4 & 53.6 \\
-Deformable DETR-R50 & 39.82 & 158.66 & 96.8 & 64.3 \\
-Faster R-CNN-R50 & 41.13 & 181.45 & 96.1 & 64.7 \\
-YOLOv8n (Baseline) & 3.01 & 8.10 & 94.1 & 59.3 \\
-\model & -- & -- & -- & -- \\
+YOLOv5n & 2.50 & 7.10 & 93.1 & 58.4 & -- \\
+YOLO11n & 2.58 & 6.40 & 95.0 & 59.6 & -- \\
+YOLO12n & 2.56 & 7.30 & 94.3 & 60.9 & -- \\
+YOLO26n & 2.38 & 5.30 & 96.5 & 61.4 & -- \\
+RT-DETR-R18 & 20.09 & 60.72 & 95.2 & 67.7 & -- \\
+DETR-R50 & 41.28 & 77.25 & 96.4 & 53.6 & -- \\
+Deformable DETR-R50 & 39.82 & 158.66 & 96.8 & 64.3 & -- \\
+Faster R-CNN-R50 & 41.13 & 181.45 & 96.1 & 64.7 & -- \\
+YOLOv8n (Baseline) & 3.01 & 8.10 & 94.1 & 59.3 & -- \\
+\model & -- & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular*}
 \par\smallskip
 \renewcommand{\arraystretch}{1.0}
 \end{table}
 
-Model parameters and FLOPs are measured using the respective frameworks with an input resolution of $640\times640$. These quantities describe model size and arithmetic complexity; on-device latency and machine stopping time require separate measurements.
+Model parameters and FLOPs are measured using the respective frameworks with an input resolution of $640\times640$. For the FPS comparison, all models use the same RTX 3090, FP32 with TF32 disabled, batch size 1, and GPU-resident test inputs resized to $640\times640$. Model evaluation mode and available inference fusion are enabled. After 50 warmup forwards, five rounds of 200 forwards are timed using CUDA events and synchronization; FPS is calculated as $1000/\bar{t}$, where $\bar{t}$ is the average per-image time in milliseconds. Image loading, preprocessing, host-to-device transfers, and external postprocessing are excluded. Operations intrinsic to each forward path remain included, such as detection-head decoding or Faster R-CNN proposal selection required for RoI computation. This GPU model-forward measurement is separate from the 22 frames/s RK3566 deployment result and from complete application response time.
 
 \section{Results and Discussion}
 \label{sec:results}
