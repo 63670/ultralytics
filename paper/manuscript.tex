@@ -101,7 +101,7 @@ The main contributions of our work are as follows.
   \item We design GIU for the two top-down fusion stages. A low-resolution spatial gate shared across channels blends nearest-neighbor and bilinear interpolation, restricting the learned reconstruction to a convex combination of the two feature paths.
 \end{enumerate}
 
-The remainder of the paper first presents the system overview and its four subsystems, then describes \model, its two components, and the model deployment procedure. The experimental sections then define the data and evaluation protocol before presenting detector comparisons and component ablations.
+The remainder of the paper first presents the system overview, its four subsystems, and their hardware implementation, then describes \model, its two components, and the model deployment procedure. The experimental sections then define the data and evaluation protocol before presenting detector comparisons and component ablations.
 
 \section{Defect Detection and Closed-Loop Control System}
 \label{sec:system-design}
@@ -109,22 +109,13 @@ The remainder of the paper first presents the system overview and its four subsy
 \label{sec:system-overview}
 We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. Our system integrates a power adapter, a global-shutter camera with LED illumination, a SerDes image-transmission link, a Hall sensor, a self-developed RK3566 edge board, and a cloud platform. These components are organized into four functional subsystems: power supply, image acquisition and transmission, network communication, and processor-based local computation and control. The power subsystem supplies the mainboard, which in turn powers and controls the LED illumination, and the image subsystem delivers fabric images to the processor over the SerDes link. The processor performs local defect detection and machine-stop control. The network subsystem uploads defect images and records to the cloud and delivers alert notifications to workers, while also supporting equipment monitoring and quality analysis.
 
-Fig.~\ref{fig:hardware} shows the physical implementation of our system. The camera assembly (A) combines the image sensor and LED illumination. We design a camera-side interface board (B) that integrates the serializer and coaxial connector, and a mainboard (C) built around the RK3566. The mainboard integrates memory and flash storage, the camera deserializer and coaxial interface, a 4G module with SIM-card and antenna interfaces, wired input/output interfaces, and power-management circuitry. The wired input/output interfaces connect the Hall sensor and machine controller, while the power circuitry receives the adapter output and provides the LED supply under mainboard current control. This board-level integration brings image reception, local processing, network communication, machine control, and illumination control into a dedicated edge device.
-
-The complete closed-loop workflow begins when a worker starts the circular knitting machine. The Hall sensor detects machine rotation and sends a signal to the processor, which switches on the camera and LED illumination and enters the detection state. When a fabric defect is detected, the processor first sends a wired stop command to the machine controller to interrupt further defect propagation. The system then uploads the defect image and associated record to the cloud, which pushes an alert notification to inform the worker that intervention is required. The worker inspects the reported defect, resolves the production fault, and restarts the machine; the rotation signal then reactivates inspection. This sequence connects production, rotation sensing, image acquisition, defect detection, machine stopping, defect reporting, worker notification, and corrective intervention into a complete production--inspection--control loop. The following subsections describe the four subsystems that implement this workflow.
+The complete closed-loop workflow begins when a worker starts the circular knitting machine. The Hall sensor detects machine rotation and sends a signal to the processor, which switches on the camera and LED illumination and enters the detection state. When a fabric defect is detected, the processor first sends a wired stop command to the machine controller to interrupt further defect propagation. The system then uploads the defect image and associated record to the cloud, which pushes an alert notification to inform the worker that intervention is required. The worker inspects the reported defect, resolves the production fault, and restarts the machine; the rotation signal then reactivates inspection. This sequence connects production, rotation sensing, image acquisition, defect detection, machine stopping, defect reporting, worker notification, and corrective intervention into a complete production--inspection--control loop. The following subsections describe the four subsystem designs, followed by their hardware implementation.
 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.92\textwidth]{system.png}
 \caption{System overview and subsystem interconnections. The power adapter supplies the mainboard, which powers the LED illumination and controls its brightness by adjusting the output current. Images are transmitted through the serializer, coaxial link, and deserializer to the RK3566 processor subsystem. The 4G network connects the device to the cloud for monitoring and defect alerts. Wired input/output interfaces receive the Hall-sensor rotation signal and send stop commands to the machine controller.}
 \label{fig:interactions}
-\end{figure*}
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.92\textwidth]{hardware.png}
-\caption{Hardware of the production-line defect detection system: (A) industrial camera with LED illumination; (B) camera-side interface board with a serializer and coaxial connector; and (C) RK3566 edge board with the labeled communication, memory, camera-interface, input/output, and power-management components.}
-\label{fig:hardware}
 \end{figure*}
 
 \subsection{Power Supply Subsystem}
@@ -192,6 +183,19 @@ Self-developed RK3566 edge device (Ours) & 4 & 1 TOPS (INT8) & 60 \\
 \end{minipage}
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
+
+\subsection{Hardware Implementation}
+\label{sec:hardware-implementation}
+Based on the design requirements of the power supply, image acquisition and transmission, network communication, and processor subsystems, we develop the corresponding hardware shown in Fig.~\ref{fig:hardware}. The implementation integrates power delivery, remote camera connectivity, LED current control, local inference, 4G communication, and wired machine interfaces in a dedicated inspection device.
+
+The camera assembly (A) combines the image sensor and LED illumination. We design a camera-side interface board (B) that integrates the serializer and coaxial connector, and a mainboard (C) built around the RK3566. The mainboard integrates memory and flash storage, the camera deserializer and coaxial interface, a 4G module with SIM-card and antenna interfaces, wired input/output interfaces, and power-management circuitry. The wired input/output interfaces connect the Hall sensor and machine controller, while the power circuitry receives the adapter output and provides the LED supply under mainboard current control. This board-level integration brings image reception, local processing, network communication, machine control, and illumination control into a dedicated edge device.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.92\textwidth]{hardware.png}
+\caption{Hardware of the production-line defect detection system: (A) industrial camera with LED illumination; (B) camera-side interface board with a serializer and coaxial connector; and (C) RK3566 edge board with the labeled communication, memory, camera-interface, input/output, and power-management components.}
+\label{fig:hardware}
+\end{figure*}
 
 The detection algorithm and its deployment are introduced in the subsequent sections.
 
