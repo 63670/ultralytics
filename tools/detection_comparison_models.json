@@ -1,0 +1,16 @@
+{
+  "classes": ["row", "col", "hole"],
+  "models": [
+    {"name": "YOLOv8n", "backend": "ultralytics", "weights": "/home/tkz/code/github/ultralytics/runs/detect/yolov8n/yolov8n14/weights/best.pt"},
+    {"name": "YOLOv9t", "backend": "ultralytics", "weights": "/home/tkz/code/github/ultralytics/runs/detect/yolov9t/yolov9t6/weights/best.pt"},
+    {"name": "YOLOv10n", "backend": "ultralytics", "weights": "/home/tkz/code/github/ultralytics/runs/detect/yolov10n/weights/best.pt"},
+    {"name": "YOLO11n", "backend": "ultralytics", "weights": "/home/tkz/code/github/ultralytics/runs/detect/yolo11n/yolo11n20/weights/best.pt"},
+    {"name": "YOLO12n", "backend": "ultralytics", "weights": "/home/tkz/code/github/ultralytics/runs/detect/yolo12n/yolo12n4/weights/best.pt"},
+    {"name": "YOLO26n", "backend": "ultralytics", "weights": "/home/tkz/code/github/ultralytics/runs/detect/yolo26n/2/weights/best.pt"},
+    {"name": "RT-DETR-R18", "backend": "rtdetrv2", "repo": "/home/tkz/code/github/RT-DETR/rtdetrv2_pytorch", "config": "/home/tkz/code/github/RT-DETR/rtdetrv2_pytorch/configs/rtdetrv2/rtdetrv2_r18vd_pingwen.yml", "weights": "/home/tkz/code/github/RT-DETR/rtdetrv2_pytorch/output/rtdetrv2_r18vd_pingwen/best.pth", "class_names": ["row", "col", "hole"]},
+    {"name": "DETR-R50", "backend": "mmdet", "config": "/home/tkz/code/github/mmdetection/work_dirs/detr_r50/detr_r50_300e.py", "weights": "/home/tkz/code/github/mmdetection/work_dirs/detr_r50/best_coco_bbox_mAP_epoch_280.pth"},
+    {"name": "Deformable-DETR-R50", "backend": "mmdet", "config": "/home/tkz/code/github/mmdetection/work_dirs/deformable_detr_r50/deformable_detr_r50_300e.py", "weights": "/home/tkz/code/github/mmdetection/work_dirs/deformable_detr_r50/best_coco_bbox_mAP_epoch_96.pth"},
+    {"name": "Faster-R-CNN-R50", "backend": "mmdet", "config": "/home/tkz/code/github/mmdetection/work_dirs/faster_rcnn_r50/faster_rcnn_r50_300e.py", "weights": "/home/tkz/code/github/mmdetection/work_dirs/faster_rcnn_r50/best_coco_bbox_mAP_epoch_49.pth"},
+    {"name": "PAGI-YOLO", "backend": "ultralytics", "weights": "/home/tkz/code/github/ultralytics/runs/detect/axis-interp/1/weights/best.pt"}
+  ]
+}
