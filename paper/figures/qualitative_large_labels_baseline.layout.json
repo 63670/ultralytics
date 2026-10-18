@@ -1,0 +1,100 @@
+{
+  "columns": [
+    "GT",
+    "yolov8n",
+    "ours"
+  ],
+  "rows": [
+    "VFDS66RK26040002_20260727_193808156.jpg.png",
+    "VFDS66RK26040002_20260727_200936881.jpg.png",
+    "VFDS66RK26040002_20260801_195949765.jpg.png",
+    "VFDS66RK26040002_20260805_002859637.jpg.png",
+    "VFDS66RK26040002_20260809_022619641.jpg.png"
+  ],
+  "source_size": [
+    640,
+    640
+  ],
+  "panel_size": [
+    640,
+    640
+  ],
+  "dpi": 300,
+  "sources": [
+    {
+      "column": "GT",
+      "file": "VFDS66RK26040002_20260727_193808156.jpg.png",
+      "sha256": "70fc975f2e8112fd36d20731f7b74dfed8ef658e0e0439078231d4eda0bcaa28"
+    },
+    {
+      "column": "yolov8n",
+      "file": "VFDS66RK26040002_20260727_193808156.jpg.png",
+      "sha256": "d7be19eee4b259a6b027c0df52fe9c3fd91d4855e0d9f8834be35894f1dd5094"
+    },
+    {
+      "column": "ours",
+      "file": "VFDS66RK26040002_20260727_193808156.jpg.png",
+      "sha256": "4387862c6762f65eee10645d703cd421c2c6230bbeb1ba23f3ff48ce8cca03d9"
+    },
+    {
+      "column": "GT",
+      "file": "VFDS66RK26040002_20260727_200936881.jpg.png",
+      "sha256": "f9b61f8225008df22765f3f0b7d04abcb70380af0b0503293af3aceb209d828a"
+    },
+    {
+      "column": "yolov8n",
+      "file": "VFDS66RK26040002_20260727_200936881.jpg.png",
+      "sha256": "1ae3f3368b12de3af8e9cba891d6a667c62012cc6f98b89a85216edfffd8ab6b"
+    },
+    {
+      "column": "ours",
+      "file": "VFDS66RK26040002_20260727_200936881.jpg.png",
+      "sha256": "bc546d376e48f78326d85c32b7ab6207d5a0dd36d648b072db608f84de11e2fc"
+    },
+    {
+      "column": "GT",
+      "file": "VFDS66RK26040002_20260801_195949765.jpg.png",
+      "sha256": "1e23942e70f58ff1ac458dc26be1893253a40ae34695058aa999e057296d3262"
+    },
+    {
+      "column": "yolov8n",
+      "file": "VFDS66RK26040002_20260801_195949765.jpg.png",
+      "sha256": "c8ea26fcc115fbf5d0ef84b3896d72fc751d4f4f6e8d01fdd7dddf901613fc09"
+    },
+    {
+      "column": "ours",
+      "file": "VFDS66RK26040002_20260801_195949765.jpg.png",
+      "sha256": "014db97c9c88a77443bbc1956a30c4f514ae0c53fd2b12a27f45a6e5a77ae186"
+    },
+    {
+      "column": "GT",
+      "file": "VFDS66RK26040002_20260805_002859637.jpg.png",
+      "sha256": "ce7a18bf94c96d9a9edbb5de22d31d6662b9084365d2b161e12c9a7fb3ce2e96"
+    },
+    {
+      "column": "yolov8n",
+      "file": "VFDS66RK26040002_20260805_002859637.jpg.png",
+      "sha256": "5857fbf250b3f9a9d10c2a3f5d09eb217a692bc8205d028373c1776a31273aff"
+    },
+    {
+      "column": "ours",
+      "file": "VFDS66RK26040002_20260805_002859637.jpg.png",
+      "sha256": "4ea69ada1dbc953d934eafb35c15117533733194bdf8f7e2e05fe2b23b3a3b56"
+    },
+    {
+      "column": "GT",
+      "file": "VFDS66RK26040002_20260809_022619641.jpg.png",
+      "sha256": "3041110e07c1c34fb3e3abc82a74be40c1463cfe0c1f238a85dc3a39c8b54a7d"
+    },
+    {
+      "column": "yolov8n",
+      "file": "VFDS66RK26040002_20260809_022619641.jpg.png",
+      "sha256": "2b0e7c83bd89d49a53fd7cd7caaa4f9641b8135b7aa9ddb96877b1a3559b04bd"
+    },
+    {
+      "column": "ours",
+      "file": "VFDS66RK26040002_20260809_022619641.jpg.png",
+      "sha256": "bb2fc32f501df225cb3d8d03105c4a318c37bf94473c9e886727c6834b6d6437"
+    }
+  ]
+}
