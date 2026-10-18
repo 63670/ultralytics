@@ -16,7 +16,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-TITLES = {"GT": "GT", "yolov8n": "YOLOv8n", "RT-DETR-R18": "RT-DETR-R18",
+TITLES = {"GT": "Label", "yolov8n": "YOLOv8n", "RT-DETR-R18": "RT-DETR-R18",
           "Faster-R-CNN-R50": "Faster R-CNN-R50", "ours": "PAGI-YOLO (Ours)"}
 EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
 
