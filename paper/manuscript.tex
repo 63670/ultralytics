@@ -398,16 +398,16 @@ where $T=\{0.50,0.55,\ldots,0.95\}$ and $N_c=3$ in this study. Both mAP metrics 
 mAP50--95 therefore evaluates localization over increasingly strict overlap requirements, whereas mAP50 uses a single, less restrictive threshold. Differences between reported mAP values are expressed in percentage points.
 
 % Queue the comparison table before the results discussion to keep it nearby.
-\begin{table}[!b]
+\begin{table*}[!t]
 \caption{Detector comparison on the test set. FPS denotes FP32 model-forward throughput on an RTX 3090 with batch size 1 and a $640\times640$ input. Bold and underlined values indicate the best and second-best results, respectively; lower parameters/FLOPs and higher mAP50/mAP50--95/FPS are preferred.}
 \label{tab:comparison}
 \centering
-\footnotesize
-\setlength{\tabcolsep}{2pt}
+\small
+\setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.06}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrr}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrr}
 \toprule
-Model & Params (M) & FLOPs (G) & \shortstack{mAP50\\(\%)} & \shortstack{mAP50--95\\(\%)} & FPS \\
+Model & Params (M) & FLOPs (G) & mAP50 (\%) & mAP50--95 (\%) & FPS \\
 \midrule
 YOLOv9t & \textbf{2.12} & 8.50 & 90.1 & 53.3 & 291 \\
 YOLOv10n & 2.78 & 8.80 & 88.2 & 58.5 & \underline{524} \\
@@ -424,7 +424,7 @@ YOLOv8n (Baseline) & 3.01 & 8.10 & 90.5 & 58.4 & \textbf{554} \\
 \end{tabular*}
 \par\smallskip
 \renewcommand{\arraystretch}{1.0}
-\end{table}
+\end{table*}
 
 Model parameters and FLOPs are measured using the respective frameworks with an input resolution of $640\times640$. For the FPS comparison, all models use the same RTX 3090, FP32 with TF32 disabled, batch size 1, and GPU-resident test inputs resized to $640\times640$. Model evaluation mode and available inference fusion are enabled. After 50 warmup forwards, five rounds of 200 forwards are timed using CUDA events and synchronization; FPS is calculated as $1000/\bar{t}$, where $\bar{t}$ is the average per-image time in milliseconds. Image loading, preprocessing, host-to-device transfers, and external postprocessing are excluded. Operations intrinsic to each forward path remain included, such as detection-head decoding or Faster R-CNN proposal selection required for RoI computation. This GPU model-forward measurement is separate from the 22 frames/s RK3566 deployment result and from complete application response time.
 
