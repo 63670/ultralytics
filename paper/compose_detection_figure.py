@@ -71,6 +71,7 @@ def compose(args):
     text_font = load_font(args.font_size, args.font)
     # Keep all annotation pixels intact unless the caller explicitly requests scaling.
     metadata = {"columns": args.columns, "rows": rows, "source_size": original_size,
+                "model_font_size": args.font_size, "panel_letters": not args.no_panel_letters,
                 "panel_size": [width, height], "dpi": args.dpi, "sources": []}
     for row, filename in enumerate(rows):
         for col, name in enumerate(args.columns):

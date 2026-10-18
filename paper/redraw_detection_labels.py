@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Fetch selected original images and saved predictions, then redraw large detection labels.
 
-Run locally (requires Pillow and an authenticated ssh command, no model/GPU):
-    python paper/redraw_detection_labels.py --ssh tkz@8.138.122.96 --port 13022 --font-size 44
-Or run on the server with --ssh omitted and --source pointing to its export directory.
-Only reads the server; all generated images are written to --work and --output-dir locally.
+Run on the server (requires Pillow, no model/GPU):
+    python paper/redraw_detection_labels.py --font-size 44 --model-font-size 48
+The five default rows follow the author's selected order. Footer model names have no letter prefixes.
+Use --ssh only when reading the server from another computer.
 """
 from __future__ import annotations
 
@@ -31,6 +31,13 @@ PAPER = Path(__file__).resolve().parent
 MODELS = {"GT": "GT", "yolov8n": "YOLOv8n", "RT-DETR-R18": "RT-DETR-R18",
           "Faster-R-CNN-R50": "Faster-R-CNN-R50", "ours": "PAGI-YOLO"}
 COLORS = ("#ff4444", "#0099ff", "#00bb66")
+DEFAULT_IMAGES = [
+    "VFDS66RK26040002_20260801_195949765.jpg.png",
+    "VFDS66RK26040002_20260809_022619641.jpg.png",
+    "VFDS66RK26040002_20260727_193808156.jpg.png",
+    "VFDS66RK26040002_20260805_002859637.jpg.png",
+    "VFDS66RK26040002_20260727_200936881.jpg.png",
+]
 
 
 def read_bundle(request):
@@ -155,7 +162,8 @@ def redraw(image, detections, names, text_font, line_width=4, show_conf=True):
 def render_bundle(bundle, filenames, args):
     text_font = load_font(args.font_size, args.font)
     panel_root = args.work/"panels"
-    metadata = {"font_size": args.font_size, "show_conf": not args.no_conf, "models": {},
+    metadata = {"font_size": args.font_size, "model_font_size": args.model_font_size,
+                "panel_letters": False, "rows": filenames, "show_conf": not args.no_conf, "models": {},
                 "images": {name: {key: source[key] for key in ("source", "sha256", "split")}
                            for name, source in bundle["images"].items()}}
     for alias, model in bundle["models"].items():
@@ -183,8 +191,8 @@ def render_bundle(bundle, filenames, args):
     (args.output_dir/"qualitative_large_labels.sources.json").write_bytes((json.dumps(metadata, indent=2)+"\n").encode())
     for suffix, columns in (("", list(MODELS)), ("_baseline", ["GT", "yolov8n", "ours"])):
         compose(Namespace(input=panel_root, output=args.output_dir/f"qualitative_large_labels{suffix}.png",
-                          columns=columns, images=filenames, panel_width=0, gap=12, font_size=44,
-                          font=None, dpi=300, no_panel_letters=False))
+                          columns=columns, images=filenames, panel_width=0, gap=args.gap,
+                          font_size=args.model_font_size, font=args.model_font, dpi=300, no_panel_letters=True))
 
 
 def main(argv=None):
@@ -192,18 +200,28 @@ def main(argv=None):
     parser.add_argument("--source", default="/home/tkz/code/github/ultralytics/runs/detection_comparison")
     parser.add_argument("--ssh", help="Read-only SSH host, e.g. tkz@8.138.122.96; omit for local/server input")
     parser.add_argument("--port", type=int, default=13022)
-    parser.add_argument("--selection", type=Path, default=PAPER/"figures/qualitative_comparison.layout.json")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--selection", type=Path, help="Optional layout JSON overriding the five default rows")
+    selection.add_argument("--images", nargs="+", help="Optional exact filenames, in desired row order")
     parser.add_argument("--split", default="auto", choices=("auto", "train", "val", "test"))
-    parser.add_argument("--font-size", type=int, default=44)
-    parser.add_argument("--font", type=Path)
+    parser.add_argument("--font-size", type=int, default=44, help="Detection class/confidence font size")
+    parser.add_argument("--font", type=Path, help="Detection class/confidence TrueType font")
+    parser.add_argument("--model-font-size", type=int, default=48, help="Footer model-name font size")
+    parser.add_argument("--model-font", type=Path, help="Footer model-name TrueType font")
+    parser.add_argument("--gap", type=int, default=12, help="White spacing between panels")
     parser.add_argument("--line-width", type=int, default=4)
     parser.add_argument("--no-conf", action="store_true", help="Hide scores; keep class names")
-    parser.add_argument("--work", type=Path, default=PAPER/"work/detection-label-redraw")
-    parser.add_argument("--output-dir", type=Path, default=PAPER/"figures")
+    parser.add_argument("--work", type=Path, help="Cache/panel directory; defaults to OUTPUT/work")
+    parser.add_argument("--output-dir", type=Path, help="Defaults to SOURCE/paper_figures in server mode")
     args = parser.parse_args(argv)
-    if min(args.font_size, args.line_width, args.port) <= 0:
+    if min(args.font_size, args.model_font_size, args.line_width, args.port) <= 0 or args.gap < 0:
         parser.error("Font size, line width, and SSH port must be positive")
-    filenames = json.loads(args.selection.read_text(encoding="utf-8"))["rows"]
+    if args.output_dir is None:
+        args.output_dir = PAPER/"figures" if args.ssh else Path(args.source)/"paper_figures"
+    if args.work is None:
+        args.work = args.output_dir/"work"
+    filenames = (json.loads(args.selection.read_text(encoding="utf-8"))["rows"] if args.selection
+                 else args.images if args.images else list(DEFAULT_IMAGES))
     if not filenames or len(filenames) != len(set(filenames)):
         parser.error("Selection must contain unique image filenames")
     request = {"source": args.source, "models": MODELS, "images": filenames, "split": args.split}
