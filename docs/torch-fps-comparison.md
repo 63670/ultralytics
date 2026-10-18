@@ -39,33 +39,56 @@ python tools/benchmark_torch_fps.py \
 
 ## MMDetection：DETR、Deformable DETR、Faster R-CNN
 
-激活这些模型训练时使用的环境，然后运行同一脚本。以下 `YOUR_CONFIG.py` 和 `YOUR_CHECKPOINT.pth` 是占位路径，必须替换成该行结果的实际文件。
+激活这些模型训练时使用的环境，然后运行同一脚本。以下配置与最佳权重路径已于2026-10-18在训练服务器上只读核对，使用实验目录保存的配置。后续重新训练或更换对比权重时，应相应更新路径。
 
 ```bash
+cd /home/tkz/code/github/mmdetection
+
+# DETR-R50
 python /home/tkz/code/github/ultralytics/tools/benchmark_torch_fps.py \
   --backend mmdet \
-  --config /path/to/YOUR_CONFIG.py \
-  --weights /path/to/YOUR_CHECKPOINT.pth \
+  --config work_dirs/detr_r50/detr_r50_300e.py \
+  --weights work_dirs/detr_r50/best_coco_bbox_mAP_epoch_280.pth \
   --images /home/tkz/datasets/pingwen_yolo/images/test \
   --name DETR-R50 --device 0 --imgsz 640 \
-  --output results/fps/detr-r50.json
+  --output /home/tkz/code/github/ultralytics/results/fps/detr-r50.json
+
+# Deformable DETR-R50
+python /home/tkz/code/github/ultralytics/tools/benchmark_torch_fps.py \
+  --backend mmdet \
+  --config work_dirs/deformable_detr_r50/deformable_detr_r50_300e.py \
+  --weights work_dirs/deformable_detr_r50/best_coco_bbox_mAP_epoch_96.pth \
+  --images /home/tkz/datasets/pingwen_yolo/images/test \
+  --name Deformable-DETR-R50 --device 0 --imgsz 640 \
+  --output /home/tkz/code/github/ultralytics/results/fps/deformable-detr-r50.json
+
+# Faster R-CNN-R50
+python /home/tkz/code/github/ultralytics/tools/benchmark_torch_fps.py \
+  --backend mmdet \
+  --config work_dirs/faster_rcnn_r50/faster_rcnn_r50_300e.py \
+  --weights work_dirs/faster_rcnn_r50/best_coco_bbox_mAP_epoch_49.pth \
+  --images /home/tkz/datasets/pingwen_yolo/images/test \
+  --name Faster-R-CNN-R50 --device 0 --imgsz 640 \
+  --output /home/tkz/code/github/ultralytics/results/fps/faster-rcnn-r50.json
 ```
 
 脚本直接调用 MMDetection 的 `mode="tensor"` 路径，不调用 `inference_detector()` 的完整图像预测流程。对另外两个模型更换配置、权重和名称即可。输入分辨率由此协议统一为640×640，不能直接混用原生测试命令默认的800或1333尺寸。
 
 ## RT-DETR-R18（RT-DETRv2 实现）
 
-激活 RT-DETRv2 的训练环境，使用训练时的配置及对应 checkpoint。`--repo` 指向包含 `src/core` 的子目录。以下权重路径为占位，按实际文件替换。
+激活 RT-DETRv2 的训练环境，使用训练时的配置及对应 checkpoint。RT-DETR-R18 来自 RT-DETR 仓库的 `rtdetrv2_pytorch` 子目录，因此这里选择 `--backend rtdetrv2`，论文模型名称仍为 RT-DETR-R18。以下 `best.pth` 已在服务器上核对存在。
 
 ```bash
+cd /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch
+
 python /home/tkz/code/github/ultralytics/tools/benchmark_torch_fps.py \
   --backend rtdetrv2 \
-  --repo /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch \
-  --config /home/tkz/code/github/RT-DETR/rtdetrv2_pytorch/configs/rtdetrv2/rtdetrv2_r18vd_pingwen.yml \
-  --weights /path/to/YOUR_CHECKPOINT.pth \
+  --repo . \
+  --config configs/rtdetrv2/rtdetrv2_r18vd_pingwen.yml \
+  --weights output/rtdetrv2_r18vd_pingwen/best.pth \
   --images /home/tkz/datasets/pingwen_yolo/images/test \
   --name RT-DETR-R18 --device 0 --imgsz 640 \
-  --output results/fps/rtdetr-r18.json
+  --output /home/tkz/code/github/ultralytics/results/fps/rtdetr-r18.json
 ```
 
 按官方部署参考优先加载 checkpoint 中的 EMA 权重，否则加载 `model` 权重；模型严格加载参数，再进行部署转换，不调用 postprocessor。自定义验证配置如果另有归一化操作，应先核对与此处引用的标准部署输入协议是否一致。
