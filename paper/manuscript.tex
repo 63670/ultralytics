@@ -138,7 +138,9 @@ where $W$ and $H$ denote the image width and height, and $f_{\mathrm{cam}}$ is t
 
 
 \subsection{Network Communication Subsystem}
-The network subsystem connects the edge device to the cloud platform over 4G. As illustrated in Fig.~\ref{fig:interactions}, MQTT carries device-state and defect-event messages between the device and cloud, while an HTTP interface gives operators access to monitoring information and defect records. The cloud supports device-state visualization, remote configuration, defect statistics, and production-quality analysis.
+The network communication hardware is integrated on the mainboard and comprises a 4G module, a SIM-card slot, and an antenna connector for an external antenna. The SIM card provides subscriber identification and authentication for cellular network access. The antenna connector supports an external antenna, allowing flexible antenna placement according to the installation conditions.
+
+The 4G module provides the data link between the edge device and the cloud platform. As illustrated in Fig.~\ref{fig:interactions}, MQTT carries device-state and defect-event messages between the device and cloud, while an HTTP interface gives operators access to monitoring information and defect records. The cloud supports device-state visualization, remote configuration, defect statistics, and production-quality analysis.
 
 When the edge device detects a defect, it uploads the defect record and image to the cloud, which pushes a defect alert to the operator interface. The alert provides the defect category, occurrence time, and image for review and troubleshooting. These network functions complement the local display and wired stop command: defect inference and machine-stop decisions are executed by the processor subsystem without waiting for cloud communication.
 
