@@ -1,4 +1,4 @@
-"""Compose labeled sources, YOLOv8n, and PAGI-YOLO heatmaps into a paper figure."""
+"""Compose labeled sources, YOLOv8n, and MCGI-YOLO heatmaps into a paper figure."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 COLUMNS = (
     ("src", "", "Label"),
     ("yolov8n", "_cam", "YOLOv8n"),
-    ("ours", "_cam", "PAGI-YOLO"),
+    ("ours", "_cam", "MCGI-YOLO"),
 )
 
 

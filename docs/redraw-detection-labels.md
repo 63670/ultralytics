@@ -14,7 +14,7 @@ python3 /home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figure
   --font-size 44 --model-font-size 48
 ```
 
-脚本默认读取 `/home/tkz/code/github/ultralytics/runs/detection_comparison` 下 GT、YOLOv8n、RT-DETR-R18、Faster-R-CNN-R50、PAGI-YOLO 的坐标 JSON 和其引用的干净原图。它不在已经画过小字的图片上叠加大字。预测框标注类别及两位小数置信度，GT只显示类别。文字位置尽量避开检测框和相邻标签，框的坐标、数量、类别和预测分数保持原值，不进行新推理或结果筛选。
+脚本默认读取 `/home/tkz/code/github/ultralytics/runs/detection_comparison` 下 GT、YOLOv8n、RT-DETR-R18、Faster-R-CNN-R50、PAGI-YOLO 的坐标 JSON 和其引用的干净原图。`PAGI-YOLO` 是已有导出目录名，当前论文及出图显示名为 `MCGI-YOLO`；保留原目录即可复用已有结果。它不在已经画过小字的图片上叠加大字。预测框标注类别及两位小数置信度，GT只显示类别。文字位置尽量避开检测框和相邻标签，框的坐标、数量、类别和预测分数保持原值，不进行新推理或结果筛选。
 
 默认行顺序已按作者要求内置，无需桌面文件或额外选图清单：
 
@@ -38,7 +38,7 @@ python3 /home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figure
 生成的文件：
 
 - `qualitative_large_labels.png`：五列完整图。
-- `qualitative_large_labels_baseline.png`：GT、YOLOv8n、PAGI-YOLO三列图。
+- `qualitative_large_labels_baseline.png`：Label、YOLOv8n、MCGI-YOLO三列图。
 - 对应 `.layout.json`：样例排列和面板哈希。
 - `qualitative_large_labels.sources.json`：实际数据划分、原图哈希、原始检测结果和重绘文字记录。
 

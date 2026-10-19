@@ -22,7 +22,7 @@
 \usepackage{etoolbox}
 \graphicspath{{figures/}}
 
-\newcommand{\model}{PAGI-YOLO\xspace}
+\newcommand{\model}{MCGI-YOLO\xspace}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
 % Keep biography spacing compact rather than stretching it to fill a column.
@@ -53,7 +53,7 @@
 \clubpenalty=10000
 \widowpenalty=10000
 
-\title{A Dedicated Edge System and PAGI-YOLO for Fabric Defect Detection and Closed-Loop Control in Circular Knitting Machines}
+\title{A Dedicated Edge System and MCGI-YOLO for Fabric Defect Detection and Closed-Loop Control in Circular Knitting Machines}
 
 \author{Kangzhao Tan\textsuperscript{\#}, Jiarui Zhang\textsuperscript{\#}, Junjie Yu, Heng Wu, Jing Lin\textsuperscript{*}, and Chunhua He\textsuperscript{*}%
 % Replace the date placeholder with the actual journal receipt date.
@@ -66,7 +66,7 @@
 \maketitle
 
 \begin{abstract}
-Circular knitting machines are widely used in continuous fabric production. Persistent needle or yarn abnormalities can generate repeated fabric defects, causing material waste and economic losses. To enable in-process inspection and intervention, we design and implement a dedicated defect detection and closed-loop control system and develop a lightweight detector termed \model. The system combines global-shutter imaging and LED illumination, a coaxial SerDes camera link, a self-developed RK3566 mainboard, and a power adapter supporting 100--500 V AC input. The mainboard integrates image reception, LED brightness control, machine input/output interfaces, and 4G communication. A Hall-sensor rotation signal activates acquisition and inspection. When a defect is detected, the system issues a local wired stop command, uploads the defect record, and pushes an alert to the worker for corrective intervention. To explicitly incorporate the contrasting morphologies of elongated defects and localized holes, partial axial context (PAC) encoding couples extended structural context with local defect evidence. To accommodate variations in defect morphology and scale, gated interpolation upsampling (GIU) adapts the reconstruction of higher-level context before fusion with local features, using a compact content-dependent gate. On the test set of a self-collected dataset from a real circular-knitting production line, \model achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.7 and 7.1 percentage points, respectively. Deployed on the RK3566, it achieves an inference throughput of 22 frames/s and is integrated into the local wired stop-control workflow. The cloud platform supports defect reporting and worker notification.
+Circular knitting machines are widely used in continuous fabric production. Persistent needle or yarn abnormalities can generate repeated fabric defects, causing material waste and economic losses. To enable in-process inspection and intervention, we design and implement a dedicated defect detection and closed-loop control system and develop a lightweight detector termed \model. The system combines global-shutter imaging and LED illumination, a coaxial SerDes camera link, a self-developed RK3566 mainboard, and a power adapter supporting 100--500 V AC input. The mainboard integrates image reception, LED brightness control, machine input/output interfaces, and 4G communication. A Hall-sensor rotation signal activates acquisition and inspection. When a defect is detected, the system issues a local wired stop command, uploads the defect record, and pushes an alert to the worker for corrective intervention. To explicitly incorporate the contrasting morphologies of elongated defects and localized holes, morphology-aware context encoding (MCE) couples extended structural context with local defect evidence. To accommodate variations in defect morphology and scale, gated interpolation upsampling (GIU) adapts the reconstruction of higher-level context before fusion with local features, using a compact content-dependent gate. On the test set of a self-collected dataset from a real circular-knitting production line, \model achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.7 and 7.1 percentage points, respectively. Deployed on the RK3566, it achieves an inference throughput of 22 frames/s and is integrated into the local wired stop-control workflow. The cloud platform supports defect reporting and worker notification.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -90,13 +90,13 @@ These requirements motivate explicit use of defect morphology as an architectura
 
 To this end, we first design and implement a dedicated defect detection and closed-loop control system for circular knitting machines. The system integrates a power adapter, a global-shutter camera with LED illumination, a coaxial SerDes image-transmission link, a Hall sensor, and a self-developed RK3566 edge board. The rotation signal activates image acquisition and detection. When a defect is detected, the edge device issues a local wired stop command, uploads the defect image and record, and uses the cloud platform to push an alert to the worker for corrective intervention. Local inference and machine-stop control connect defect recognition to production control, while cloud communication supports reporting and worker notification \cite{shi2016edge}.
 
-For defect recognition within this system, we develop \model, a lightweight detector based on YOLOv8n that explicitly incorporates priors about defect continuity and localized texture disruption. PAC supplies spatially extended context while retaining the original local C2f feature paths for holes and fine structures. GIU addresses the different reconstruction requirements associated with defect morphology and scale by adapting the interpolation of higher-level context before fusion with local lateral features. Together, the two components connect morphology-informed context encoding with spatial reconstruction within a compact parameter budget. The detector follows an ONNX-to-RKNN deployment workflow for the RK3566 edge board.
+For defect recognition within this system, we develop \model (morphology-aware context and gated interpolation), a lightweight detector based on YOLOv8n that explicitly incorporates priors about defect continuity and localized texture disruption. MCE supplies spatially extended context while retaining the original local C2f feature paths for holes and fine structures. GIU addresses the different reconstruction requirements associated with defect morphology and scale by adapting the interpolation of higher-level context before fusion with local lateral features. Together, the two components connect morphology-informed context encoding with spatial reconstruction within a compact parameter budget. The detector follows an ONNX-to-RKNN deployment workflow for the RK3566 edge board.
 
 The main contributions of our work are as follows.
 \begin{enumerate}
   \renewcommand{\labelenumi}{(\arabic{enumi})}
   \item We design and implement a dedicated detection system for circular knitting machines, integrating image acquisition, camera transmission, RK3566 edge inference, and local machine-stop control on application-specific hardware, and demonstrate its deployment on a real production line.
-  \item We develop morphology-informed feature modeling for circular-knitting defects, explicitly coupling the continuity of elongated flaws with the localized appearance of holes. PAC embeds extended-context modulation in a partial C2f branch while preserving its local feature paths to address these complementary representation requirements with small additional overhead.
+  \item We develop morphology-informed feature modeling for circular-knitting defects, explicitly coupling the continuity of elongated flaws with the localized appearance of holes. MCE embeds extended-context modulation in a partial C2f branch while preserving its local feature paths to address these complementary representation requirements with small additional overhead.
   \item We design GIU to accommodate the different reconstruction requirements of elongated defects and holes of varying sizes. A compact spatial gate adapts a convex combination of two fixed interpolation paths, balancing response replication and neighborhood smoothing in the top-down context path before fusion with local lateral features.
 \end{enumerate}
 
@@ -202,29 +202,29 @@ The detection algorithm and its deployment are introduced in the subsequent sect
 \FloatBarrier
 \section{Detection Algorithm}
 \label{sec:method}
-\subsection{PAGI-YOLO Architecture}
-\model is developed from YOLOv8n to incorporate the morphology priors of circular-knitting defects under the computational constraints of the RK3566 platform \cite{ultralytics2023,rockchipmodelzoo}. Elongated defects motivate spatially extended contextual encoding, while localized holes motivate retention of local feature evidence. The detector uses PAC in the backbone to combine these two forms of evidence. GIU adapts the reconstruction of higher-level context in the top-down feature pyramid according to local feature content before fusion with lateral branches. The original local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained.
+\subsection{MCGI-YOLO Architecture}
+\model is developed from YOLOv8n to incorporate the morphology priors of circular-knitting defects under the computational constraints of the RK3566 platform \cite{ultralytics2023,rockchipmodelzoo}. Elongated defects motivate spatially extended contextual encoding, while localized holes motivate retention of local feature evidence. The detector uses MCE in the backbone to combine these two forms of evidence. GIU adapts the reconstruction of higher-level context in the top-down feature pyramid according to local feature content before fusion with lateral branches. The original local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained.
 
-Fig.~\ref{fig:network} shows the architecture. PAC is embedded in the C2f stages that produce the stride-8 and stride-16 backbone features, denoted $F_3$ and $F_4$. Each PAC block modulates only a subset of the final hidden C2f branch, while retaining the preceding branches and the local convolutional operations. The stride-32 feature $F_5$ is produced by the unchanged final backbone stage and spatial pyramid pooling. At an input size of $640\times640$, $F_3$, $F_4$, and $F_5$ have spatial sizes of $80\times80$, $40\times40$, and $20\times20$, respectively.
+Fig.~\ref{fig:network} shows the architecture. MCE is embedded in the C2f stages that produce the stride-8 and stride-16 backbone features, denoted $F_3$ and $F_4$. Each MCE block modulates only a subset of the final hidden C2f branch, while retaining the preceding branches and the local convolutional operations. The stride-32 feature $F_5$ is produced by the unchanged final backbone stage and spatial pyramid pooling. At an input size of $640\times640$, $F_3$, $F_4$, and $F_5$ have spatial sizes of $80\times80$, $40\times40$, and $20\times20$, respectively.
 
 In the top-down path, GIU replaces both nearest-neighbor upsampling operations. The feature fusion is expressed as
 \begin{align}
 M_4 &= \mathcal{C}_4\bigl([\mathcal{U}_g(F_5),F_4]\bigr), \label{eq:neck-p4}\\
 M_3 &= \mathcal{C}_3\bigl([\mathcal{U}_g(M_4),F_3]\bigr), \label{eq:neck-p3}
 \end{align}
-where $[\cdot,\cdot]$ denotes channel concatenation, $\mathcal{C}_3$ and $\mathcal{C}_4$ are the original neck C2f blocks, and $\mathcal{U}_g$ denotes GIU. The resulting features pass through the retained bottom-up path and detection head \cite{lin2017fpn,liu2018panet}. PAC therefore changes the context available to feature extraction and fusion, whereas GIU changes how the coarse feature values are interpolated before fusion.
+where $[\cdot,\cdot]$ denotes channel concatenation, $\mathcal{C}_3$ and $\mathcal{C}_4$ are the original neck C2f blocks, and $\mathcal{U}_g$ denotes GIU. The resulting features pass through the retained bottom-up path and detection head \cite{lin2017fpn,liu2018panet}. MCE therefore changes the context available to feature extraction and fusion, whereas GIU changes how the coarse feature values are interpolated before fusion.
 
-% TODO (author): replace overall.png with the PAC + GIU architecture and PAC detail.
+% TODO (author): replace overall.png with the MCE + GIU architecture and MCE detail.
 % The existing image file is intentionally unchanged at the author's request.
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.8\textwidth]{overall.png}
-\caption{Architecture of \model and detail of PAC. PAC operates within the stride-8 and stride-16 backbone C2f stages. GIU replaces the two top-down upsampling operations. The local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained from YOLOv8n.}
+\caption{Architecture of \model and detail of MCE. MCE operates within the stride-8 and stride-16 backbone C2f stages. GIU replaces the two top-down upsampling operations. The local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained from YOLOv8n.}
 \label{fig:network}
 \end{figure*}
 
-\subsection{Defect Morphology Encoding}
-Elongated defects and localized holes impose different requirements on feature representation. The former require contextual evidence over an extended spatial support to describe continuity, while the latter require local evidence of texture disruption and defect boundaries. PAC implements this morphology-informed encoding by supplementing retained local C2f processing with extended contextual descriptors. The defect categories describe dominant fabric directions and allow small deviations from the image axes. In the implementation, row and column pooling provides compact spatial descriptors; this operation is related to the directional encoding principle of coordinate attention \cite{hou2021coordinate}. The descriptors are combined with depthwise filtering and residual modulation of a partial hidden branch to complement the local feature paths.
+\subsection{Morphology-Aware Context Encoding}
+Elongated defects and localized holes impose different requirements on feature representation. The former require contextual evidence over an extended spatial support to describe continuity, while the latter require local evidence of texture disruption and defect boundaries. MCE implements this morphology-informed encoding by supplementing retained local C2f processing with extended contextual descriptors. The defect categories describe dominant fabric directions and allow small deviations from the image axes. In the implementation, row and column pooling provides compact spatial descriptors; this operation is related to the directional encoding principle of coordinate attention \cite{hou2021coordinate}. The descriptors are combined with depthwise filtering and residual modulation of a partial hidden branch to complement the local feature paths.
 
 \emph{1) Partial-Channel Placement:}
 For an input $X\in\mathbb{R}^{C_{\mathrm{in}}\times H\times W}$, the first C2f convolution produces two hidden branches with $c=\lfloor C_{\mathrm{out}}/2\rfloor$ channels each. Omitting the batch dimension, the original feature extraction is
@@ -232,14 +232,14 @@ For an input $X\in\mathbb{R}^{C_{\mathrm{in}}\times H\times W}$, the first C2f c
 (Z_0,Z_1) &= \operatorname{Split}\bigl(\phi_1(X)\bigr), \label{eq:pac-split}\\
 Z_{i+1} &= \mathcal{B}_i(Z_i),\quad i=1,\ldots,n, \label{eq:pac-bottlenecks}
 \end{align}
-where $\phi_1$ is the original $1\times1$ convolution with batch normalization and SiLU, and $\mathcal{B}_i$ is an unchanged bottleneck. PAC acts only on the final hidden feature $F=Z_{n+1}$. It is split into an active part $F_a\in\mathbb{R}^{q\times H\times W}$ and a bypass part $F_b\in\mathbb{R}^{(c-q)\times H\times W}$, with
+where $\phi_1$ is the original $1\times1$ convolution with batch normalization and SiLU, and $\mathcal{B}_i$ is an unchanged bottleneck. MCE acts only on the final hidden feature $F=Z_{n+1}$. It is split into an active part $F_a\in\mathbb{R}^{q\times H\times W}$ and a bypass part $F_b\in\mathbb{R}^{(c-q)\times H\times W}$, with
 \begin{equation}
 q=\max\bigl(1,\lfloor\rho c\rfloor\bigr),\qquad \rho=0.25.
 \label{eq:pac-active-channels}
 \end{equation}
 Thus, the one-quarter ratio refers to the final hidden branch, rather than the complete C2f input or output.
 
-\emph{2) Axial Context Aggregation:}
+\emph{2) Spatial Context Aggregation:}
 For active channel $a$, the row and column descriptors are
 \begin{align}
 R_h(a,h,1) &= \frac{1}{W}\sum_{w=1}^{W}F_a(a,h,w), \label{eq:pac-row}\\
@@ -266,7 +266,7 @@ Y=\phi_2\bigl([Z_0,\ldots,Z_n,[F'_a,F_b]]\bigr),
 \end{equation}
 where $\phi_2$ is the original final $1\times1$ convolution with batch normalization and SiLU. The earlier branches and all original bottlenecks are reused, so directional aggregation complements an existing local feature path rather than replacing it.
 
-The scale $\gamma$ is initialized to zero. Consequently, a PAC block starts with the same forward mapping as its corresponding C2f block when their shared parameters are identical. During learning, $\gamma$ controls the introduction of the directional correction. The two depthwise filters and channel scale add $9q$ parameters in total: $6q$ filter weights, $2q$ biases, and $q$ scale parameters. Descriptor filtering costs $3q(H+W)$ multiply--accumulate operations; pooling, broadcasting, and modulation additionally process the $H\times W$ feature grid. Partial-channel placement reduces this overhead while keeping the local branches available for holes and fine structures.
+The scale $\gamma$ is initialized to zero. Consequently, a MCE block starts with the same forward mapping as its corresponding C2f block when their shared parameters are identical. During learning, $\gamma$ controls the introduction of the directional correction. The two depthwise filters and channel scale add $9q$ parameters in total: $6q$ filter weights, $2q$ biases, and $q$ scale parameters. Descriptor filtering costs $3q(H+W)$ multiply--accumulate operations; pooling, broadcasting, and modulation additionally process the $H\times W$ feature grid. Partial-channel placement reduces this overhead while keeping the local branches available for holes and fine structures.
 
 % TODO (author): replace ltfr.png with the GIU diagram; keep the image file unchanged for now.
 \begin{figure*}[!t]
@@ -313,11 +313,11 @@ Y_{\mathrm{init}}=0.95N+0.05B.
 \end{equation}
 The initial interpolation rule is therefore the same for a fixed input across random seeds, while the remainder of the detector still depends on initialization and training. Each GIU module adds $9C+1$ learned parameters, and its gate convolution costs $9CHW$ multiply--accumulate operations. The two interpolation paths, gate upsampling, and output mixing incur additional operations and memory traffic that must be included in device-level measurements.
 
-PAC and GIU address the encoding and reconstruction stages of morphology-informed feature learning. PAC combines spatially extended context for elongated defects with retained local evidence for holes; GIU adapts the interpolation of higher-level context to local feature content, complementing the texture and localization cues retained in the lateral backbone features. Their design links the representation of defect continuity and locality with content-dependent spatial reconstruction within a small parameter budget. The individual and joint effects are evaluated through the four configurations defined in Section~\ref{sec:component-ablation}.
+MCE and GIU address the encoding and reconstruction stages of morphology-informed feature learning. MCE combines spatially extended context for elongated defects with retained local evidence for holes; GIU adapts the interpolation of higher-level context to local feature content, complementing the texture and localization cues retained in the lateral backbone features. Their design links the representation of defect continuity and locality with content-dependent spatial reconstruction within a small parameter budget. The individual and joint effects are evaluated through the four configurations defined in Section~\ref{sec:component-ablation}.
 
 \subsection{Model Deployment}
 \label{sec:deployment}
-The deployment workflow exports the trained PyTorch detector to ONNX with a fixed $640\times640$ input and converts it to an INT8 RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2,jacob2018quantization}. An Android 13 application provides local inference and the machine-control interfaces on the RK3566. PAC uses axis-wise reductions, depthwise descriptor convolutions, broadcasting, and element-wise modulation; GIU uses two fixed interpolation paths and a single-channel gate predictor. These operators preserve four-dimensional feature tensors without explicit neighborhood unfolding. Their arithmetic structure motivates the compact design, while actual latency depends on operator mapping and memory traffic on the device. The deployed detector achieves a measured inference throughput of 22 frames/s on the RK3566, exceeding the 10 frames/s design target at the network-inference stage. This measurement characterizes detector inference; complete application throughput and control-response timing are evaluated separately.
+The deployment workflow exports the trained PyTorch detector to ONNX with a fixed $640\times640$ input and converts it to an INT8 RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2,jacob2018quantization}. An Android 13 application provides local inference and the machine-control interfaces on the RK3566. MCE uses axis-wise reductions, depthwise descriptor convolutions, broadcasting, and element-wise modulation; GIU uses two fixed interpolation paths and a single-channel gate predictor. These operators preserve four-dimensional feature tensors without explicit neighborhood unfolding. Their arithmetic structure motivates the compact design, while actual latency depends on operator mapping and memory traffic on the device. The deployed detector achieves a measured inference throughput of 22 frames/s on the RK3566, exceeding the 10 frames/s design target at the network-inference stage. This measurement characterizes detector inference; complete application throughput and control-response timing are evaluated separately.
 
 Fig.~\ref{fig:system} shows the deployed system on the circular knitting machine production line. The on-device predictions feed the local display and wired stop-control workflow described in Section~\ref{sec:system-overview}.
 
@@ -351,7 +351,7 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 
 \subsection{Implementation Details}
 \label{sec:implementation}
-Table~\ref{tab:implementation} summarizes the training and deployment settings. \model and its component-ablation variants use the same explicitly specified \texttt{yolov8n.pt} checkpoint as the YOLOv8n baseline. Compatible shared weights are transferred to each model. PAC initializes its per-channel residual scales to zero, while GIU initializes its gate-convolution weights to zero and its bias to $-2.7$. Other newly introduced parameters use their module initialization. The component comparisons use a common training protocol and matching random seeds, with checkpoints selected using validation performance. Other comparison models use the available pretrained checkpoints in their respective implementations. The remaining Ultralytics training settings follow the framework defaults.
+Table~\ref{tab:implementation} summarizes the training and deployment settings. \model and its component-ablation variants use the same explicitly specified \texttt{yolov8n.pt} checkpoint as the YOLOv8n baseline. Compatible shared weights are transferred to each model. MCE initializes its per-channel residual scales to zero, while GIU initializes its gate-convolution weights to zero and its bias to $-2.7$. Other newly introduced parameters use their module initialization. The component comparisons use a common training protocol and matching random seeds, with checkpoints selected using validation performance. Other comparison models use the available pretrained checkpoints in their respective implementations. The remaining Ultralytics training settings follow the framework defaults.
 
 The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yolov12}, DETR \cite{carion2020detr}, Deformable DETR \cite{zhu2021deformable}, Faster R-CNN \cite{ren2015faster}, and an R18 model from the RT-DETRv2 implementation, denoted RT-DETR-R18. All models are evaluated on the same test set using their respective frameworks and evaluation settings. The comparison therefore describes the evaluated model configurations rather than a controlled comparison under identical training and implementation conditions. The mAP50--95 values in Section~\ref{sec:results} characterize the test-set detector evaluation; they are not a separate accuracy measurement of the quantized RKNN model.
 
@@ -445,35 +445,35 @@ Model parameters and FLOPs are measured using the respective frameworks with an 
 \label{fig:qualitative}
 \end{figure*}
 
-Table~\ref{tab:comparison} compares the evaluated detector configurations in terms of mAP50, mAP50--95, parameters, and FLOPs. The PAC + GIU entries and their quantitative discussion will be completed using the finalized model results. Model complexity and device latency are reported separately because the interpolation paths and element-wise operations need not have the same hardware cost as convolutional operations with similar arithmetic counts.
+Table~\ref{tab:comparison} compares the evaluated detector configurations in terms of mAP50, mAP50--95, parameters, and FLOPs. The MCE + GIU entries and their quantitative discussion will be completed using the finalized model results. Model complexity and device latency are reported separately because the interpolation paths and element-wise operations need not have the same hardware cost as convolutional operations with similar arithmetic counts.
 
-% TODO (author): update qualitative_existing.png using the finalized PAC + GIU checkpoint.
+% TODO (author): update qualitative_existing.png using the finalized MCE + GIU checkpoint.
 The qualitative comparison in Fig.~\ref{fig:qualitative} is intended to examine missed defects, false detections, and box localization on the same selected test images across methods. Its images must correspond to the checkpoints used for the quantitative comparison.
 
 \subsection{Component Ablation}
 \label{sec:component-ablation}
 \begin{table}[!tbp]
-\caption{Component ablation of PAC and GIU. Parameters are in millions, FLOPs in billions, and mAP50/mAP50--95 in percent. Numerical entries are reserved for the finalized results.}
+\caption{Component ablation of MCE and GIU. Parameters are in millions, FLOPs in billions, and mAP50/mAP50--95 in percent. Numerical entries are reserved for the finalized results.}
 \label{tab:ablation}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lccrrrr@{}}
 \toprule
-Variant & PAC & GIU & Params & FLOPs & mAP50 & mAP50--95 \\
+Variant & MCE & GIU & Params & FLOPs & mAP50 & mAP50--95 \\
 \midrule
 YOLOv8n & -- & -- & -- & -- & -- & -- \\
-+ PAC & \checkmark & -- & -- & -- & -- & -- \\
++ MCE & \checkmark & -- & -- & -- & -- & -- \\
 + GIU & -- & \checkmark & -- & -- & -- & -- \\
 \model & \checkmark & \checkmark & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular*}
 \end{table}
 
-Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n baseline, PAC alone, GIU alone, and their combination. The PAC-only model retains nearest-neighbor upsampling, while the GIU-only model retains the original backbone C2f blocks. The comparison isolates the two architectural changes under the common training protocol. The finalized results will report both individual effects and the joint configuration, together with variation across matched seeds and class-specific results for elongated defects and holes.
+Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n baseline, MCE alone, GIU alone, and their combination. The MCE-only model retains nearest-neighbor upsampling, while the GIU-only model retains the original backbone C2f blocks. The comparison isolates the two architectural changes under the common training protocol. The finalized results will report both individual effects and the joint configuration, together with variation across matched seeds and class-specific results for elongated defects and holes.
 
-% TODO: insert the supplied matched-seed PAC/GIU ablation results and revise the discussion.
-% TODO (author): regenerate heatmap_comparison.png from the finalized PAC + GIU checkpoint.
+% TODO: insert the supplied matched-seed MCE/GIU ablation results and revise the discussion.
+% TODO (author): regenerate heatmap_comparison.png from the finalized MCE + GIU checkpoint.
 Feature visualizations in Fig.~\ref{fig:heatmaps} complement the numerical analysis by comparing responses at corresponding feature stages on the same images. They are interpreted alongside localization and classification results rather than as a separate quantitative measure of detection performance.
 
 
@@ -486,9 +486,9 @@ Feature visualizations in Fig.~\ref{fig:heatmaps} complement the numerical analy
 \end{figure}
 
 \section{Conclusion}
-This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, together with the lightweight detector \model. The detector explicitly incorporates priors about the extended continuity of elongated defects and the localized appearance of holes. PAC combines spatially extended context with retained local C2f feature paths, while GIU adapts the reconstruction of higher-level context before fusion with local features to accommodate variations in defect morphology and scale. These complementary designs connect defect morphology modeling with spatial feature reconstruction under the computational constraints of an edge device.
+This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, together with the lightweight detector \model. The detector explicitly incorporates priors about the extended continuity of elongated defects and the localized appearance of holes. MCE combines spatially extended context with retained local C2f feature paths, while GIU adapts the reconstruction of higher-level context before fusion with local features to accommodate variations in defect morphology and scale. These complementary designs connect defect morphology modeling with spatial feature reconstruction under the computational constraints of an edge device.
 
-The system integrates image acquisition, SerDes transmission, RK3566 local computation, rotation sensing, and wired machine-stop control. The deployed detector achieves an inference throughput of 22 frames/s on the RK3566. When a defect is detected, local control interrupts production and cloud communication supports defect reporting and worker notification. The component-ablation protocol evaluates PAC, GIU, and their combination against the same baseline; its final numerical findings will be incorporated with the corresponding detector comparison. Quantized-model accuracy, application response time, physical stopping delay, and false-stop frequency define the remaining system-level evaluation, together with generalization across fabric textures and production conditions.
+The system integrates image acquisition, SerDes transmission, RK3566 local computation, rotation sensing, and wired machine-stop control. The deployed detector achieves an inference throughput of 22 frames/s on the RK3566. When a defect is detected, local control interrupts production and cloud communication supports defect reporting and worker notification. The component-ablation protocol evaluates MCE, GIU, and their combination against the same baseline; its final numerical findings will be incorporated with the corresponding detector comparison. Quantized-model accuracy, application response time, physical stopping delay, and false-stop frequency define the remaining system-level evaluation, together with generalization across fabric textures and production conditions.
 
 % Balance the final page while keeping references before biographies in reading order.
 \bibliographystyle{IEEEtran}

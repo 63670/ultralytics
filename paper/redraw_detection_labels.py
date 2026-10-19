@@ -28,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from compose_detection_figure import compose
 
 PAPER = Path(__file__).resolve().parent
+# Saved exports retain their original directory names; the compositor supplies current paper display names.
 MODELS = {"GT": "GT", "yolov8n": "YOLOv8n", "RT-DETR-R18": "RT-DETR-R18",
           "Faster-R-CNN-R50": "Faster-R-CNN-R50", "ours": "PAGI-YOLO"}
 COLORS = ("#ff4444", "#0099ff", "#00bb66")
