@@ -305,6 +305,8 @@ Table~\ref{tab:implementation} summarizes the training and deployment settings. 
 
 The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yolov12}, DETR \cite{carion2020detr}, Deformable DETR \cite{zhu2021deformable}, Faster R-CNN \cite{ren2015faster}, and an R18 model from the RT-DETRv2 implementation, denoted RT-DETR-R18. All models are evaluated on the same test set using their respective frameworks and evaluation settings. The comparison therefore describes the evaluated model configurations rather than a controlled comparison under identical training and implementation conditions. The mAP50--95 values in Section~\ref{sec:results} characterize the test-set detector evaluation; they are not a separate accuracy measurement of the quantized RKNN model.
 
+The RT-DETR-R18 entry uses the RT-DETRv2 implementation from the official repository \cite{rtdetrrepository}.
+
 \begin{table}[!tbp]
 \caption{Implementation protocol. Training settings describe the Ultralytics experiments; deployment settings describe the installed edge device.}
 \label{tab:implementation}
@@ -361,16 +363,16 @@ where $N_c=3$ and $T=\{0.50,0.55,\ldots,0.95\}$. Both metrics are reported as pe
 \toprule
 Model & Params (M) & FLOPs (G) & mAP50 (\%) & mAP50--95 (\%) & FPS \\
 \midrule
-YOLOv9t & \textbf{2.12} & 8.5 & 90.1 & 53.3 & 291 \\
-YOLOv10n & 2.78 & 8.8 & 88.2 & 58.5 & \underline{524} \\
-YOLO11n & 2.62 & \underline{6.7} & 93.3 & 60.8 & 463 \\
-YOLO12n & 2.60 & 7.6 & 89.0 & 56.8 & 326 \\
-YOLO26n & \underline{2.57} & \textbf{6.2} & 90.5 & 58.2 & 425 \\
-RT-DETR-R18 & 20.09 & 60.7 & 95.2 & \textbf{67.7} & 146 \\
-DETR-R50 & 41.28 & 77.3 & 96.4 & 53.6 & 101 \\
-Deformable DETR-R50 & 39.8 & 158.7 & \underline{96.8} & 64.3 & 49 \\
-Faster R-CNN-R50 & 41.1 & 181.5 & 96.1 & 64.7 & 66 \\
-YOLOv8n (Baseline) & 3.01 & 8.1 & 90.5 & 58.4 & \textbf{554} \\
+YOLOv9t~\cite{wang2025yolov9} & \textbf{2.12} & 8.5 & 90.1 & 53.3 & 291 \\
+YOLOv10n~\cite{wang2024yolov10} & 2.78 & 8.8 & 88.2 & 58.5 & \underline{524} \\
+YOLO11n~\cite{ultralytics2023} & 2.62 & \underline{6.7} & 93.3 & 60.8 & 463 \\
+YOLO12n~\cite{tian2025yolov12} & 2.60 & 7.6 & 89.0 & 56.8 & 326 \\
+YOLO26n~\cite{ultralytics2023} & \underline{2.57} & \textbf{6.2} & 90.5 & 58.2 & 425 \\
+RT-DETR-R18~\cite{zhao2024rtdetr} & 20.09 & 60.7 & 95.2 & \textbf{67.7} & 146 \\
+DETR-R50~\cite{carion2020detr} & 41.28 & 77.3 & 96.4 & 53.6 & 101 \\
+Deformable DETR-R50~\cite{zhu2021deformable} & 39.8 & 158.7 & \underline{96.8} & 64.3 & 49 \\
+Faster R-CNN-R50~\cite{ren2015faster} & 41.1 & 181.5 & 96.1 & 64.7 & 66 \\
+YOLOv8n (Baseline)~\cite{ultralytics2023} & 3.01 & 8.1 & 90.5 & 58.4 & \textbf{554} \\
 \model & 3.02 & 8.2 & \textbf{97.2} & \underline{65.5} & 486 \\
 \bottomrule
 \end{tabular*}
