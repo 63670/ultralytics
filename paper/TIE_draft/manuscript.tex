@@ -166,16 +166,9 @@ The camera assembly (A) combines the image sensor and LED illumination. We desig
 \section{Detection Algorithm}
 \label{sec:method}
 \subsection{MCGI-YOLO Architecture}
-\model is developed from YOLOv8n to incorporate the morphology priors of circular-knitting defects under the computational constraints of the RK3566 platform \cite{ultralytics2023}. Elongated defects motivate spatially extended contextual encoding, while localized holes motivate retention of local feature evidence. The detector uses MCE in the backbone to combine these two forms of evidence. GIU adapts the reconstruction of higher-level context in the top-down feature pyramid according to local feature content before fusion with lateral branches. The original local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained.
+Fig.~\ref{fig:network} presents \model, which is built upon YOLOv8n \cite{ultralytics2023}. MCE is embedded in the backbone C2f blocks at P3 (stride 8) and P4 (stride 16). It introduces extended spatial context to represent the continuity of elongated defects while retaining local feature paths for holes and fine structures.
 
-Fig.~\ref{fig:network} shows the architecture. MCE is embedded in the C2f stages that produce the stride-8 and stride-16 backbone features, denoted $F_3$ and $F_4$. Each MCE block modulates only a subset of the final hidden C2f branch, while retaining the preceding branches and the local convolutional operations. The stride-32 feature $F_5$ is produced by the unchanged final backbone stage and spatial pyramid pooling. At an input size of $640\times640$, $F_3$, $F_4$, and $F_5$ have spatial sizes of $80\times80$, $40\times40$, and $20\times20$, respectively.
-
-In the top-down path, GIU replaces both nearest-neighbor upsampling operations. The feature fusion is expressed as
-\begin{align}
-M_4 &= \mathcal{C}_4\bigl([\mathcal{U}_g(F_5),F_4]\bigr), \label{eq:neck-p4}\\
-M_3 &= \mathcal{C}_3\bigl([\mathcal{U}_g(M_4),F_3]\bigr), \label{eq:neck-p3}
-\end{align}
-where $[\cdot,\cdot]$ denotes channel concatenation, $\mathcal{C}_3$ and $\mathcal{C}_4$ are the original neck C2f blocks, and $\mathcal{U}_g$ denotes GIU. The resulting features pass through the retained bottom-up path and detection head \cite{lin2017fpn,liu2018panet}. MCE therefore changes the context available to feature extraction and fusion, whereas GIU changes how the coarse feature values are interpolated before fusion.
+GIU replaces the two nearest-neighbor upsampling operations in the top-down neck. It adapts the balance between response replication and smoothing to accommodate variations in defect morphology and scale before fusion with lateral backbone features. The remaining backbone stages, bottom-up aggregation path, and three-scale detection head are retained \cite{lin2017fpn,liu2018panet}.
 
 \begin{figure*}[!tbp]
 \centering
@@ -239,7 +232,7 @@ The scale $\gamma$ is initialized to zero. Consequently, a MCE block starts with
 \subsection{Gated Interpolation Upsampling}
 Circular-knitting defects exhibit variations in morphology and scale, including horizontally and vertically elongated flaws and holes of different sizes. These variations place different demands on response continuity, local concentration, and boundary representation during feature reconstruction. Fixed interpolation applies the same replication or smoothing rule throughout the feature map, motivating a content-adaptive interpolation strategy for heterogeneous local structures.
 
-The lateral $F_3$ and $F_4$ branches already provide local texture and localization cues. GIU adapts the reconstruction of higher-level context before concatenation with these lateral features (Fig.~\ref{fig:modules}). Nearest-neighbor interpolation replicates source responses, whereas bilinear interpolation combines neighboring responses using fixed geometric weights. A compact spatial gate, predicted from the coarse input features, adjusts the balance between these two behaviors according to local feature content. The reconstructed context and the retained lateral features then jointly participate in fusion. Gated combinations of transformed and bypass signals have established precedents in highway networks \cite{srivastava2015highway}; the present design applies complementary gating to two fixed interpolation paths.
+The lateral stride-8 and stride-16 backbone features, denoted $F_3$ and $F_4$, provide local texture and localization cues. GIU adapts the reconstruction of higher-level context before concatenation with these lateral features (Fig.~\ref{fig:modules}). Nearest-neighbor interpolation replicates source responses, whereas bilinear interpolation combines neighboring responses using fixed geometric weights. A compact spatial gate, predicted from the coarse input features, adjusts the balance between these two behaviors according to local feature content. The reconstructed context and the retained lateral features then jointly participate in fusion. Gated combinations of transformed and bypass signals have established precedents in highway networks \cite{srivastava2015highway}; the present design applies complementary gating to two fixed interpolation paths.
 
 \emph{1) Two Fixed Interpolation Paths:}
 For $X\in\mathbb{R}^{C\times H\times W}$, the two outputs are
