@@ -8,14 +8,24 @@
 \usepackage{microtype}
 \usepackage{multirow}
 \usepackage{stfloats}
-\usepackage[nospread]{flushend}
 \usepackage{xspace}
 \usepackage{xurl}
 \usepackage[hidelinks]{hyperref}
+\usepackage{etoolbox}
 \graphicspath{{figures/}}
 
 \newcommand{\model}{MCGI-YOLO\xspace}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% Keep the journal fonts and margins; tighten only float and biography spacing.
+\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\floatsep}{10pt plus 2pt minus 2pt}
+\setlength{\dblfloatsep}{10pt plus 2pt minus 2pt}
+\patchcmd{\IEEEbiographynophoto}
+  {\vskip 4\baselineskip plus 1fil minus 0\baselineskip}
+  {\vskip 2\baselineskip}
+  {}{\PackageError{manuscript}{Unable to set biography spacing}{Check the TIE biography environment.}}
 
 \begin{document}
 \raggedbottom
@@ -416,13 +426,13 @@ Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n basel
 Feature visualizations in Fig.~\ref{fig:heatmaps} complement the numerical analysis by comparing responses at corresponding feature stages on the same images. They are interpreted alongside localization and classification results rather than as a separate quantitative measure of detection performance.
 
 
-% Allow the ablation table, visualization, and discussion to flow on the same pages.
-\begin{figure*}[!tbp]
+% Keep the activation map in one column alongside the results discussion.
+\begin{figure}[!tbp]
 \centering
-\includegraphics[width=0.48\textwidth]{heatmap_comparison.png}
+\includegraphics[width=\columnwidth]{heatmap_comparison.png}
 \caption{Feature visualization of YOLOv8n and \model. From left to right: ground-truth annotations (Label), YOLOv8n, and \model.}
 \label{fig:heatmaps}
-\end{figure*}
+\end{figure}
 
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
@@ -441,8 +451,7 @@ This paper presents a dedicated defect detection and closed-loop control system 
 
 The system integrates image acquisition, SerDes transmission, RK3566 local computation, rotation sensing, and wired machine-stop control. The deployed detector achieves an inference throughput of 22 frames/s on the RK3566. When a defect is detected, local control interrupts production and cloud communication supports defect reporting and worker notification. The component-ablation protocol evaluates MCE, GIU, and their combination against the same baseline; its final numerical findings will be incorporated with the corresponding detector comparison. Quantized-model accuracy, application response time, physical stopping delay, and false-stop frequency define the remaining system-level evaluation, together with generalization across fabric textures and production conditions.
 
-% Complete pending body figures before the reference list.
-\clearpage
+% Let remaining floats share pages with the following text.
 \bibliographystyle{Bibliography/IEEEtranTIE}
 \bibliography{references}
 

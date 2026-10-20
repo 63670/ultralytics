@@ -13,7 +13,8 @@ try {
         $pdfLaTeX = Join-Path $TeXBin "pdflatex.exe"
         $bibTeX = Join-Path $TeXBin "bibtex.exe"
     }
-    $env:TEXINPUTS = ".;" + $savedTexInputs
+    # Prefer this build's auxiliary files over root-level files from an editor.
+    $env:TEXINPUTS = "./build/;.;" + $savedTexInputs
     New-Item -ItemType Directory -Force -Path build | Out-Null
     & $pdfLaTeX -interaction=nonstopmode -halt-on-error -no-shell-escape -output-directory=build manuscript.tex
     if ($LASTEXITCODE -ne 0) { throw "First LaTeX pass failed." }
