@@ -331,15 +331,14 @@ Data protocol
 
 \subsection{Evaluation Metrics}
 \label{sec:evaluation}
-We report mean average precision at IoU $0.50$ (mAP50) and across ten IoU thresholds from $0.50$ to $0.95$ (mAP50--95), averaging over all defect categories \cite{lin2014coco}. For a predicted box $B_p$ and a ground-truth box $B_g$, intersection over union is $\operatorname{IoU}(B_p,B_g)=|B_p\cap B_g|/|B_p\cup B_g|$. Let $a_c(t)$ denote the average precision for class $c$ at IoU threshold $t$, and let $N_c$ denote the number of defect categories. The metrics are defined as follows:
+Detection accuracy is evaluated using mAP50 and mAP50--95 \cite{lin2014coco}. Let $a_c(t)$ denote the average precision for class $c$ at threshold $t$. The metrics are computed as
 \begin{align}
-\operatorname{mAP}_{50:95} &= \frac{1}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in T}a_c(t),
-\label{eq:ap}\\
 \operatorname{mAP}_{50} &= \frac{1}{N_c}\sum_{c=1}^{N_c}a_c(0.50),
-\label{eq:metrics}
+\label{eq:metrics}\\
+\operatorname{mAP}_{50:95} &= \frac{1}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in T}a_c(t),
+\label{eq:ap}
 \end{align}
-where $T=\{0.50,0.55,\ldots,0.95\}$ and $N_c=3$ in this study. Both mAP metrics are reported as percentages.
-mAP50--95 therefore evaluates localization over increasingly strict overlap requirements, whereas mAP50 uses a single, less restrictive threshold. Differences between reported mAP values are expressed in percentage points.
+where $N_c=3$ and $T=\{0.50,0.55,\ldots,0.95\}$. Both metrics are reported as percentages, with improvements expressed in percentage points.
 
 % Queue the comparison table before the results discussion to keep it nearby.
 \begin{table*}[!tbp]
