@@ -331,7 +331,7 @@ Data protocol
 
 \subsection{Evaluation Metrics}
 \label{sec:evaluation}
-Detection accuracy is evaluated using mAP50 and mAP50--95 \cite{lin2014coco}. Let $a_c(t)$ denote the average precision for class $c$ at threshold $t$. The metrics are computed as
+Intersection over union (IoU) measures the overlap between predicted and ground-truth bounding boxes as the ratio of their intersection area to their union area. Detection accuracy is evaluated using mAP50 and mAP50--95 \cite{lin2014coco}. Let $a_c(t)$ denote the average precision for class $c$ at IoU threshold $t$. The metrics are computed as
 \begin{align}
 \operatorname{mAP}_{50} &= \frac{1}{N_c}\sum_{c=1}^{N_c}a_c(0.50),
 \label{eq:metrics}\\
