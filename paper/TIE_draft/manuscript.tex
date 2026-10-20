@@ -167,17 +167,15 @@ M_3 &= \mathcal{C}_3\bigl([\mathcal{U}_g(M_4),F_3]\bigr), \label{eq:neck-p3}
 \end{align}
 where $[\cdot,\cdot]$ denotes channel concatenation, $\mathcal{C}_3$ and $\mathcal{C}_4$ are the original neck C2f blocks, and $\mathcal{U}_g$ denotes GIU. The resulting features pass through the retained bottom-up path and detection head \cite{lin2017fpn,liu2018panet}. MCE therefore changes the context available to feature extraction and fusion, whereas GIU changes how the coarse feature values are interpolated before fusion.
 
-% TODO (author): replace overall.png with the MCE + GIU architecture and MCE detail.
-% The existing image file is intentionally unchanged at the author's request.
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=0.8\textwidth]{overall.png}
-\caption{Architecture of \model and detail of MCE. MCE operates within the stride-8 and stride-16 backbone C2f stages. GIU replaces the two top-down upsampling operations. The local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained from YOLOv8n.}
+\includegraphics[width=\textwidth]{MCGI-YOLO.png}
+\caption{Architecture of \model. MCE operates within the stride-8 and stride-16 backbone C2f stages. GIU replaces the two top-down upsampling operations. The local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained from YOLOv8n.}
 \label{fig:network}
 \end{figure*}
 
 \subsection{Morphology-Aware Context Encoding}
-Elongated defects and localized holes impose different requirements on feature representation. The former require contextual evidence over an extended spatial support to describe continuity, while the latter require local evidence of texture disruption and defect boundaries. MCE implements this morphology-informed encoding by supplementing retained local C2f processing with extended contextual descriptors. The defect categories describe dominant fabric directions and allow small deviations from the image axes. In the implementation, row and column pooling provides compact spatial descriptors; this operation is related to the directional encoding principle of coordinate attention \cite{hou2021coordinate}. The descriptors are combined with depthwise filtering and residual modulation of a partial hidden branch to complement the local feature paths.
+Elongated defects and localized holes impose different requirements on feature representation. The former require contextual evidence over an extended spatial support to describe continuity, while the latter require local evidence of texture disruption and defect boundaries. MCE implements this morphology-informed encoding by supplementing retained local C2f processing with extended contextual descriptors, as shown in Fig.~\ref{fig:modules}. The defect categories describe dominant fabric directions and allow small deviations from the image axes. In the implementation, row and column pooling provides compact spatial descriptors; this operation is related to the directional encoding principle of coordinate attention \cite{hou2021coordinate}. The descriptors are combined with depthwise filtering and residual modulation of a partial hidden branch to complement the local feature paths.
 
 \emph{1) Partial-Channel Placement:}
 For an input $X\in\mathbb{R}^{C_{\mathrm{in}}\times H\times W}$, the first C2f convolution produces two hidden branches with $c=\lfloor C_{\mathrm{out}}/2\rfloor$ channels each. Omitting the batch dimension, the original feature extraction is
@@ -221,17 +219,17 @@ where $\phi_2$ is the original final $1\times1$ convolution with batch normaliza
 
 The scale $\gamma$ is initialized to zero. Consequently, a MCE block starts with the same forward mapping as its corresponding C2f block when their shared parameters are identical. During learning, $\gamma$ controls the introduction of the directional correction. The two depthwise filters and channel scale add $9q$ parameters in total: $6q$ filter weights, $2q$ biases, and $q$ scale parameters. Descriptor filtering costs $3q(H+W)$ multiply--accumulate operations; pooling, broadcasting, and modulation additionally process the $H\times W$ feature grid. Partial-channel placement reduces this overhead while keeping the local branches available for holes and fine structures.
 
-\begin{figure*}[!tbp]
+\begin{figure}[!tbp]
 \centering
-\includegraphics[width=0.8\textwidth]{ltfr.png}
-\caption{GIU structure. Nearest-neighbor and bilinear interpolation generate two full-channel feature paths. A $3\times3$ convolution, Hardsigmoid, and nearest-neighbor upsampling generate a spatial gate shared across channels. The output blends the two interpolated features with complementary weights.}
-\label{fig:giu}
-\end{figure*}
+\includegraphics[width=\columnwidth]{MCE+GIU.png}
+\caption{Structures of C2f with MCE and GIU. MCE combines retained local feature paths with partial-channel context modulation. GIU blends nearest-neighbor and bilinear interpolation using a spatial gate shared across channels.}
+\label{fig:modules}
+\end{figure}
 
 \subsection{Gated Interpolation Upsampling}
 Circular-knitting defects exhibit variations in morphology and scale, including horizontally and vertically elongated flaws and holes of different sizes. These variations place different demands on response continuity, local concentration, and boundary representation during feature reconstruction. Fixed interpolation applies the same replication or smoothing rule throughout the feature map, motivating a content-adaptive interpolation strategy for heterogeneous local structures.
 
-The lateral $F_3$ and $F_4$ branches already provide local texture and localization cues. GIU adapts the reconstruction of higher-level context before concatenation with these lateral features (Fig.~\ref{fig:giu}). Nearest-neighbor interpolation replicates source responses, whereas bilinear interpolation combines neighboring responses using fixed geometric weights. A compact spatial gate, predicted from the coarse input features, adjusts the balance between these two behaviors according to local feature content. The reconstructed context and the retained lateral features then jointly participate in fusion. Gated combinations of transformed and bypass signals have established precedents in highway networks \cite{srivastava2015highway}; the present design applies complementary gating to two fixed interpolation paths.
+The lateral $F_3$ and $F_4$ branches already provide local texture and localization cues. GIU adapts the reconstruction of higher-level context before concatenation with these lateral features (Fig.~\ref{fig:modules}). Nearest-neighbor interpolation replicates source responses, whereas bilinear interpolation combines neighboring responses using fixed geometric weights. A compact spatial gate, predicted from the coarse input features, adjusts the balance between these two behaviors according to local feature content. The reconstructed context and the retained lateral features then jointly participate in fusion. Gated combinations of transformed and bypass signals have established precedents in highway networks \cite{srivastava2015highway}; the present design applies complementary gating to two fixed interpolation paths.
 
 \emph{1) Two Fixed Interpolation Paths:}
 For $X\in\mathbb{R}^{C\times H\times W}$, the two outputs are
