@@ -225,33 +225,33 @@ where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplic
 Elongated defects and holes of different sizes place different demands on continuity, response concentration, and boundary representation. GIU adapts the reconstruction of higher-level context before fusion with lateral features $F_3$ and $F_4$, which retain local texture and localization cues (Fig.~\ref{fig:modules}). Complementary gating has precedents in highway networks \cite{srivastava2015highway}; here, a shared spatial gate blends two fixed interpolation paths.
 
 \emph{1) Two Fixed Interpolation Paths:}
-For $X\in\mathbb{R}^{C\times H\times W}$, nearest-neighbor and bilinear upsampling produce
+For $X\in\mathbb{R}^{B\times C\times H\times W}$, nearest-neighbor and bilinear upsampling produce
 \begin{equation}
-N=\operatorname{Nearest}_{2}(X),\quad B=\operatorname{Bilinear}_{2}(X),
+N=\operatorname{Nearest}_{2}(X),\quad L=\operatorname{Bilinear}_{2}(X),
 \label{eq:giu-paths}
 \end{equation}
-where $N,B\in\mathbb{R}^{C\times2H\times2W}$ and bilinear interpolation uses \texttt{align\_corners=False}.
+where $N,L\in\mathbb{R}^{B\times C\times2H\times2W}$ and bilinear interpolation uses \texttt{align\_corners=False}.
 
 \emph{2) Shared Spatial Gate:}
-A gate is predicted at the input resolution and upsampled:
+A single-channel gate of size $B\times1\times H\times W$ is predicted at the input resolution and upsampled:
 \begin{equation}
 G=\operatorname{Nearest}_{2}\bigl(\operatorname{HS}(W_g*X+b_g)\bigr),
 \label{eq:giu-gate}
 \end{equation}
-where $*$ denotes convolution, $W_g\in\mathbb{R}^{1\times C\times3\times3}$, and $b_g$ is a scalar bias. Padding of one preserves spatial dimensions. The single-channel gate $G\in[0,1]^{1\times2H\times2W}$ is broadcast across feature channels.
+where $*$ denotes convolution, $W_g\in\mathbb{R}^{1\times C\times3\times3}$, and $b_g$ is a scalar bias. Padding of one preserves spatial dimensions. The single-channel gate $G\in[0,1]^{B\times1\times2H\times2W}$ is broadcast across feature channels.
 
 \emph{3) Gated Reconstruction:}
-The output is a convex combination:
+The output $Y\in\mathbb{R}^{B\times C\times2H\times2W}$ is a convex combination:
 \begin{equation}
-Y=(1-G)\odot N+G\odot B.
+Y=(1-G)\odot N+G\odot L.
 \label{eq:giu-mixture}
 \end{equation}
 A gate near zero favors response replication, while a gate near one favors bilinear smoothing. Initializing $W_g=0$ and $b_g=-2.7$ gives
 \begin{equation}
-G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05B.
+G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05L.
 \label{eq:giu-initialization}
 \end{equation}
-Each GIU adds $9C+1$ parameters, with $9CHW$ multiply--accumulate operations for the gate convolution. Interpolation and mixing add operations and memory traffic, so deployment speed is measured on the target device. The individual and combined module effects are evaluated in Section~\ref{sec:component-ablation}.
+Each GIU adds $9C+1$ parameters, with $9CHW$ multiply--accumulate operations per image for the gate convolution. Interpolation and mixing add operations and memory traffic, so deployment speed is measured on the target device. The individual and combined module effects are evaluated in Section~\ref{sec:component-ablation}.
 
 \section{Experimental Setup}
 \label{sec:experimental-setup}
