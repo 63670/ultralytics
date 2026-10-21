@@ -222,7 +222,7 @@ where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplic
 \end{figure*}
 
 \subsection{Gated Interpolation Upsampling}
-Elongated defects and holes of different sizes place different demands on continuity, response concentration, and boundary representation. GIU adapts the reconstruction of higher-level context before fusion with lateral features $F_3$ and $F_4$, which retain local texture and localization cues (Fig.~\ref{fig:modules}). Complementary gating has precedents in highway networks \cite{srivastava2015highway}; here, a shared spatial gate blends two fixed interpolation paths.
+Circular-knitting defects vary substantially in morphology and scale, from narrow horizontal and vertical patterns to small and large holes. Their feature representations therefore place different demands on spatial continuity, response concentration, and boundary extent. In the top-down feature pyramid, higher-level context must be reconstructed at a finer resolution before fusion with lateral features. Nearest-neighbor interpolation replicates responses within local regions, whereas bilinear interpolation combines neighboring responses to produce smoother spatial transitions. A fixed interpolation rule applies the same reconstruction behavior to all locations, limiting its adaptability to these diverse defect patterns. We develop GIU to adjust the balance between response replication and neighborhood smoothing according to the input features (Fig.~\ref{fig:modules}). To achieve this adaptation with a small computational overhead, GIU combines two parameter-free interpolation paths using a single spatial weight map predicted at low resolution and shared across channels. It reconstructs the higher-level context before fusion with lateral features $F_3$ and $F_4$, which retain local texture and localization cues.
 
 \emph{1) Two Fixed Interpolation Paths:}
 For $X\in\mathbb{R}^{B\times C\times H\times W}$, nearest-neighbor and bilinear upsampling produce
@@ -230,15 +230,15 @@ For $X\in\mathbb{R}^{B\times C\times H\times W}$, nearest-neighbor and bilinear 
 N=\operatorname{Nearest}_{2}(X),\quad L=\operatorname{Bilinear}_{2}(X),
 \label{eq:giu-paths}
 \end{equation}
-where $N,L\in\mathbb{R}^{B\times C\times2H\times2W}$ and bilinear interpolation uses \texttt{align\_corners=False}.
+where $N,L\in\mathbb{R}^{B\times C\times2H\times2W}$ and bilinear interpolation uses \texttt{align\_corners=False}. The two paths provide complementary reconstruction behaviors without introducing learned interpolation parameters.
 
 \emph{2) Shared Spatial Gate:}
-A single-channel gate of size $B\times1\times H\times W$ is predicted at the input resolution and upsampled:
+A $3\times3$ convolution maps the input channels to a single spatial response, followed by Hardsigmoid. The resulting $B\times1\times H\times W$ weight map is upsampled by nearest-neighbor interpolation:
 \begin{equation}
 G=\operatorname{Nearest}_{2}\bigl(\operatorname{HS}(W_g*X+b_g)\bigr),
 \label{eq:giu-gate}
 \end{equation}
-where $*$ denotes convolution, $W_g\in\mathbb{R}^{1\times C\times3\times3}$, and $b_g$ is a scalar bias. Padding of one preserves spatial dimensions. The single-channel gate $G\in[0,1]^{B\times1\times2H\times2W}$ is broadcast across feature channels.
+where $*$ denotes convolution, $W_g\in\mathbb{R}^{1\times C\times3\times3}$, and $b_g$ is a scalar bias. Padding of one preserves spatial dimensions. The map $G\in[0,1]^{B\times1\times2H\times2W}$ assigns a content-dependent interpolation weight to each spatial location and is broadcast across feature channels. Predicting this map at $H\times W$ limits the spatial cost of the learned convolution, while channel sharing requires only one output weight per location.
 
 \emph{3) Gated Reconstruction:}
 The output $Y\in\mathbb{R}^{B\times C\times2H\times2W}$ is a convex combination:
@@ -246,12 +246,14 @@ The output $Y\in\mathbb{R}^{B\times C\times2H\times2W}$ is a convex combination:
 Y=(1-G)\odot N+G\odot L.
 \label{eq:giu-mixture}
 \end{equation}
-A gate near zero favors response replication, while a gate near one favors bilinear smoothing. Initializing $W_g=0$ and $b_g=-2.7$ gives
+Small values of $G$ favor response replication, while larger values favor neighborhood smoothing. This spatially varying mixture allows the reconstruction behavior to adapt to local feature content associated with different defect morphologies and scales. Initializing $W_g=0$ and $b_g=-2.7$ gives
 \begin{equation}
-G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05L.
+G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05L,
 \label{eq:giu-initialization}
 \end{equation}
-Each GIU adds $9C+1$ parameters, with $9CHW$ multiply--accumulate operations per image for the gate convolution. Interpolation and mixing add operations and memory traffic, so deployment speed is measured on the target device. The individual and combined module effects are evaluated in Section~\ref{sec:component-ablation}.
+so the module starts from a predominantly nearest-neighbor reconstruction, consistent with the baseline top-down pathway.
+
+Each GIU adds $9C+1$ parameters, with $9CHW$ multiply--accumulate operations per image for the gate convolution. The fixed interpolation paths, low-resolution weight prediction, and channel sharing concentrate the learned computation in a single compact convolution; the remaining reconstruction uses interpolation and element-wise mixing. This design provides content-adaptive upsampling within the computational budget of the RK3566. The individual and combined module effects are evaluated in Section~\ref{sec:component-ablation}.
 
 \section{Experimental Setup}
 \label{sec:experimental-setup}
