@@ -22,10 +22,9 @@
 \setlength{\dbltextfloatsep}{12pt plus 2pt minus 2pt}
 \setlength{\floatsep}{10pt plus 2pt minus 2pt}
 \setlength{\dblfloatsep}{10pt plus 2pt minus 2pt}
-\patchcmd{\IEEEbiographynophoto}
-  {\vskip 4\baselineskip plus 1fil minus 0\baselineskip}
-  {\vskip 2\baselineskip}
-  {}{\PackageError{manuscript}{Unable to set biography spacing}{Check the TIE biography environment.}}
+\makeatletter
+\renewcommand{\@IEEEBIOskipN}{2\baselineskip}
+\makeatother
 
 \begin{document}
 \raggedbottom
@@ -431,36 +430,36 @@ This paper presents a dedicated defect detection and closed-loop control system 
 
 % Let biographies follow the completed references without forcing a new page.
 % Author biographies follow the reference list in author order.
-\begin{IEEEbiographynophoto}{Kangzhao Tan}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a1.jpg}}]{Kangzhao Tan}
 received the B.S. degree from Guangzhou University, Guangzhou, China, in 2022. From 2022 to 2024, he worked as a cloud computing R\&D engineer with Sangfor Technologies Inc., Shenzhen, China. He is currently pursuing the M.S. degree in computer technology with the School of Computer Science, Guangdong University of Technology, Guangzhou, China. His research interests include deep learning, computer vision, and industrial defect detection.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
 % Proposed research-interest wording; obtain the author's confirmation before submission.
-\begin{IEEEbiographynophoto}{Jiarui Zhang}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a2.jpg}}]{Jiarui Zhang}
 is currently a graduate student with the School of Computer Science, Guangdong University of Technology, Guangzhou, China. His research interests include hardware circuit design and IoT system.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
 % Proposed research-interest wording; obtain the author's confirmation before submission.
-\begin{IEEEbiographynophoto}{Junjie Yu}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a3.jpg}}]{Junjie Yu}
 is currently a graduate student with the School of Computer Science, Guangdong University of Technology, Guangzhou, China. His research interests include image processing and edge artificial intelligence.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
-\begin{IEEEbiographynophoto}{Heng Wu}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a4.jpg}}]{Heng Wu}
 received the B.S. degree in electronic and information engineering from Wuhan University of Science and Technology, Wuhan, China, in 2009, and the M.S. degree in optics and the Ph.D. degree in mechanical manufacturing and automation from South China University of Technology, Guangzhou, China, in 2012 and 2017, respectively.
 
 He is currently an associate professor with the School of Automation, Guangdong University of Technology. His research interests include optical imaging, optical measurement, machine vision, and image processing.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
-\begin{IEEEbiographynophoto}{Jing Lin}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a5.jpg}}]{Jing Lin}
 received the B.S. degree in computer science and technology and the M.S. degree in software engineering from Guangdong University of Technology, Guangzhou, China, in 2003 and 2006, respectively.
 
 Since graduation, he has served as an assistant engineer, engineer, and senior engineer. He is currently a senior engineer with the Classroom Management Center, Guangdong University of Technology. His current research interests include information system project management, system informatization, and the intelligent Internet of Things.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
-\begin{IEEEbiographynophoto}{Chunhua He}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a6.jpg}}]{Chunhua He}
 received the B.S. degree in microelectronics from Sun Yat-sen University, Guangzhou, China, in 2010, and the M.S. and Ph.D. degrees in microelectronics from Peking University, Beijing, China, in 2013 and 2018, respectively.
 
 From 2013 to 2017, he was an engineer with the No. 5 Electronics Research Institute, Ministry of Industry and Information Technology, Guangzhou, China. From 2017 to 2019, he was an engineer with Midea Group, Foshan, China. From 2019 to 2021, he was a senior engineer with Guangzhou 37 Degree Smart Home Co., Ltd., Guangzhou, China. He joined the School of Computer Science, Guangdong University of Technology, Guangzhou, China, in 2021, where he is currently an professor. His current research interests include the design and application of MEMS sensors and artificial intelligence algorithms.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
 \end{document}
