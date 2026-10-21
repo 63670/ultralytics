@@ -181,7 +181,7 @@ Gated interpolation upsampling (GIU) replaces the two nearest-neighbor upsamplin
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=\textwidth]{MCGI-YOLO.png}
+\includegraphics[width=0.8\textwidth]{MCGI-YOLO.png}
 \caption{Architecture of \model. MCE operates within the stride-8 and stride-16 backbone C2f stages. GIU replaces the two top-down upsampling operations. The local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained from YOLOv8n.}
 \label{fig:network}
 \end{figure*}
@@ -216,7 +216,7 @@ where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplic
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=\textwidth]{MCE+GIU.png}
+\includegraphics[width=0.8\textwidth]{MCE+GIU.png}
 \caption{Structures of the proposed modules: (a) C2f block with MCE; (b) GIU with a spatial weight map shared across channels; (c) residual bottleneck retained in C2f; and (d) MCE with context modulation on one quarter of its input channels and an unchanged bypass for the remaining three quarters.}
 \label{fig:modules}
 \end{figure*}
