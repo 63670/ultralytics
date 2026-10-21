@@ -206,13 +206,13 @@ T=\operatorname{DW}_{3\times1}(R_h)
 \end{equation}
 The filters refine variations between neighboring rows and columns. Padding preserves descriptor dimensions, and broadcasting produces $T\in\mathbb{R}^{B\times q\times H\times W}$. Long-range context is supplied by pooling over the full width and height, while the learned filters operate on the compressed descriptors.
 
-\emph{3) Residual Context Modulation:}
-As shown in Fig.~\ref{fig:modules}, Hardsigmoid followed by a linear transformation converts the combined context into a signed map, which modulates $U$ through a learnable residual correction:
+\emph{3) Gated Residual Modulation:}
+As shown in Fig.~\ref{fig:modules}, Hardsigmoid maps the combined context $T$ to a gate $G$. The gate is then transformed by $2G-1$ and used to construct a scaled residual correction:
 \begin{align}
-A &= 2\operatorname{HS}(T)-1, \label{eq:pac-map}\\
-U' &= U+\gamma\odot U\odot A, \label{eq:pac-modulation}
+G &= \operatorname{HS}(T), \label{eq:pac-map}\\
+U' &= U+\gamma\odot U\odot(2G-1), \label{eq:pac-modulation}
 \end{align}
-where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplication with broadcasting, and $\gamma\in\mathbb{R}^{1\times q\times1\times1}$ is a learnable channel-wise scale shared across batch samples and spatial positions. The signed map $A\in[-1,1]^{B\times q\times H\times W}$ supports context-dependent enhancement and suppression. The original $U$ is retained through the residual connection, and the corrected one-quarter-channel group $U'$ is concatenated with the unchanged three-quarter-channel group $V$. The corrected group has size $U'\in\mathbb{R}^{B\times q\times H\times W}$, and channel concatenation produces a $B\times C\times H\times W$ output before the original C2f fusion. Zero-initializing $\gamma$ makes the module an identity mapping at initialization. The two biased depthwise filters and residual scales add $9q$ parameters.
+where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplication with broadcasting, and $\gamma\in\mathbb{R}^{1\times q\times1\times1}$ is a learnable channel-wise scale shared across batch samples and spatial positions. The gate $G\in[0,1]^{B\times q\times H\times W}$ is the Hardsigmoid output labeled \emph{gate} in the diagram. Centering it as $2G-1$ produces values in $[-1,1]$, and $\gamma$ learns the channel-wise strength of the context-dependent correction. The original $U$ is retained through the residual connection, and the corrected one-quarter-channel group $U'$ is concatenated with the unchanged three-quarter-channel group $V$. The corrected group has size $U'\in\mathbb{R}^{B\times q\times H\times W}$, and channel concatenation produces a $B\times C\times H\times W$ output before the original C2f fusion. Zero-initializing $\gamma$ makes the module an identity mapping at initialization. The two biased depthwise filters and residual scales add $9q$ parameters.
 
 \begin{figure*}[!tbp]
 \centering
