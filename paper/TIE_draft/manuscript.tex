@@ -154,12 +154,12 @@ Self-developed Rockchip RK3566 device(Ours) & 1 TOPS (INT8) & 60 \\
 \label{sec:hardware-implementation}
 Based on the design requirements of the power supply, image acquisition and transmission, network communication, and processor subsystems, we develop the corresponding hardware shown in Fig.~\ref{fig:hardware}. The implementation integrates power delivery, remote camera connectivity, LED current control, local inference, 4G communication, and input/output interfaces in a dedicated detection device.
 
-The camera assembly (A) combines the image sensor and LED illumination. We design a camera-side interface board (B) that integrates the serializer and coaxial connector, and a mainboard (C) built around the RK3566. The mainboard integrates memory and flash storage, the camera deserializer and coaxial connector, a 4G module with SIM-card and antenna interfaces, wired input/output interfaces, and power-management circuitry. The input/output interfaces connect the Hall sensor and machine controller, while the power circuitry receives the adapter output and provides the LED supply under mainboard current control. This board-level integration brings image reception, local inference, network communication, machine control, and illumination control into a dedicated edge device.
+The camera assembly (a) combines the image sensor and LED illumination. We design a camera-side interface board (b) that integrates the serializer and coaxial connector, and a mainboard (c) built around the RK3566. The mainboard integrates memory and flash storage, the camera deserializer and coaxial connector, a 4G module with SIM-card and antenna interfaces, wired input/output interfaces, and power-management circuitry. The input/output interfaces connect the Hall sensor and machine controller, while the power circuitry receives the adapter output and provides the LED supply under mainboard current control. This board-level integration brings image reception, local inference, network communication, machine control, and illumination control into a dedicated edge device.
 
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.92\textwidth]{hardware.png}
-\caption{Hardware of the defect detection system: (A) industrial camera with LED illumination; (B) camera-side interface board with a serializer and coaxial connector; and (C) RK3566 edge board with the 4G communication, flash storage, camera-interface, input/output, and power-management components.}
+\caption{Hardware of the defect detection system: (a) industrial camera with LED illumination; (b) camera-side interface board with a serializer and coaxial connector; and (c) RK3566 edge board with the 4G communication, flash storage, camera-interface, input/output, and power-management components.}
 \label{fig:hardware}
 \end{figure*}
 
