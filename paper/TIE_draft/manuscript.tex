@@ -175,9 +175,9 @@ Fig.~\ref{fig:system} shows the system installed on a circular knitting machine 
 \section{Detection Algorithm}
 \label{sec:method}
 \subsection{MCGI-YOLO Architecture}
-Fig.~\ref{fig:network} presents \model, which is built upon YOLOv8n \cite{ultralytics2023}. MCE is embedded in the backbone C2f blocks at P3 (stride 8) and P4 (stride 16). It introduces horizontal and vertical context to model the directional continuity of elongated defects while preserving the original local feature paths.
+Fig.~\ref{fig:network} presents \model, which is built upon YOLOv8n \cite{ultralytics2023}. Morphology-aware context encoding (MCE) is embedded in the backbone C2f blocks at P3 (stride 8) and P4 (stride 16). It explicitly models the spatial continuity of horizontal and vertical elongated defects by aggregating long-range morphology context to modulate part of the last bottleneck features. This partial-channel design introduces context with limited additional computation while retaining the original local feature paths.
 
-GIU replaces the two nearest-neighbor upsampling operations in the top-down neck. It adapts the balance between response replication and smoothing to accommodate variations in defect morphology and scale before fusion with lateral backbone features. The remaining backbone stages, bottom-up aggregation path, and three-scale detection head are retained \cite{lin2017fpn,liu2018panet}.
+Gated interpolation upsampling (GIU) replaces the two nearest-neighbor upsampling operations in the top-down neck. It adapts the reconstruction of higher-level context to the differing morphologies and scales of elongated defects and holes before fusion with lateral backbone features. A compact spatial weight map shared across channels blends two fixed interpolation paths, balancing response replication and neighborhood smoothing with a small learned computational cost. The remaining backbone stages, bottom-up aggregation path, and three-scale detection head are retained \cite{lin2017fpn,liu2018panet}.
 
 \begin{figure*}[!tbp]
 \centering
