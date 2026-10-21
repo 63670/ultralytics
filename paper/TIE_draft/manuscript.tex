@@ -187,37 +187,32 @@ GIU replaces the two nearest-neighbor upsampling operations in the top-down neck
 \end{figure*}
 
 \subsection{Morphology-Aware Context Encoding}
-MCE encodes the continuity of horizontal and vertical elongated defects through spatially extended context while retaining local C2f processing (Fig.~\ref{fig:modules}). The categories describe dominant fabric directions and allow small angular deviations. Row and column pooling follows the directional encoding principle of coordinate attention \cite{hou2021coordinate}.
+Elongated defects combine a narrow local profile with continuity across distant image regions. MCE models their horizontal and vertical morphology by aggregating spatially extended evidence to modulate local responses (Fig.~\ref{fig:modules}).
 
-\emph{1) Partial-Channel Placement:}
-The first C2f $1\times1$ convolution splits its output into branches $Z_0$ and $Z_1$, each with $c=\lfloor C_{\mathrm{out}}/2\rfloor$ channels. The original bottlenecks sequentially generate $Z_{i+1}=\mathcal{B}_i(Z_i)$, $i=1,\ldots,n$. MCE acts only on $F=Z_{n+1}$, split into active channels $F_a\in\mathbb{R}^{q\times H\times W}$ and bypass channels $F_b\in\mathbb{R}^{(c-q)\times H\times W}$, where $q=\max(1,\lfloor0.25c\rfloor)$. The one-quarter ratio thus applies to the final hidden branch.
+\emph{1) Placement and Partial-Channel Design:}
+MCE operates on the last bottleneck output of the P3 and P4 backbone C2f blocks, immediately before branch concatenation and fusion. For this feature $F\in\mathbb{R}^{c\times H\times W}$, only $q=\max(1,\lfloor0.25c\rfloor)$ channels $F_a$ receive context modulation; the remaining channels $F_b$ bypass it. Partial-channel processing limits computation and retains unmodulated local evidence. Placement at the branch end avoids repeating context encoding at every bottleneck.
 
-\emph{2) Spatial Context Aggregation:}
-For active channel $a$, the row and column descriptors are
+\emph{2) Morphology-Aware Context Aggregation:}
+Following the directional pooling principle of coordinate attention \cite{hou2021coordinate}, we compute
 \begin{align}
 R_h(a,h,1) &= \frac{1}{W}\sum_{w=1}^{W}F_a(a,h,w), \label{eq:pac-row}\\
 R_w(a,1,w) &= \frac{1}{H}\sum_{h=1}^{H}F_a(a,h,w). \label{eq:pac-column}
 \end{align}
-The descriptors retain row and column positions, respectively, and are filtered and combined as
+$R_h$ captures horizontal continuity while retaining row positions; $R_w$ captures vertical continuity while retaining column positions. The descriptors are combined as
 \begin{equation}
 T=\operatorname{DW}_{3\times1}(R_h)
  +\operatorname{DW}_{1\times3}(R_w).
 \label{eq:pac-context}
 \end{equation}
-The biased depthwise filters preserve descriptor dimensions through padding, and spatial broadcasting produces $T\in\mathbb{R}^{q\times H\times W}$. Full-axis pooling supplies the long-range context.
+The depthwise filters refine neighboring row and column responses. Padding preserves dimensions, and broadcasting gives $T\in\mathbb{R}^{q\times H\times W}$. Pooling supplies long-range context; filtering operates on compressed descriptors.
 
-\emph{3) Residual Modulation and Feature Reuse:}
-The signed context map modulates the active channels:
+\emph{3) Residual Context Modulation:}
+Context modulates the active channels through
 \begin{align}
 A &= 2\operatorname{HS}(T)-1, \label{eq:pac-map}\\
 F'_a &= F_a+\gamma\odot F_a\odot A, \label{eq:pac-modulation}
 \end{align}
-where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplication with broadcasting, and $\gamma\in\mathbb{R}^{q\times1\times1}$ is an unconstrained learnable scale. The bypass channels and earlier C2f branches are retained:
-\begin{equation}
-Y=\phi_2\bigl([Z_0,\ldots,Z_n,[F'_a,F_b]]\bigr),
-\label{eq:pac-output}
-\end{equation}
-where $\phi_2$ is the original final $1\times1$ convolution with batch normalization and SiLU. Initializing $\gamma=0$ preserves the corresponding C2f mapping when shared weights are identical. The added filters and scales contain $9q$ parameters; pooling and modulation also process the spatial feature grid.
+where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplication with broadcasting, and $\gamma\in\mathbb{R}^{q\times1\times1}$ is a learnable channel-wise scale. The signed map $A\in[-1,1]^{q\times H\times W}$ supports context-dependent enhancement and suppression. Concatenating $F'_a$ with $F_b$ restores the branch width before the original C2f fusion. Zero-initializing $\gamma$ preserves the pretrained branch features initially. The biased depthwise filters and residual scales add $9q$ parameters.
 
 \begin{figure*}[!tbp]
 \centering
