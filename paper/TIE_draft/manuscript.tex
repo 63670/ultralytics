@@ -122,33 +122,34 @@ We set the effective detection-throughput requirement to 10 frames/s, correspond
 
 Table~\ref{tab:hardware-platforms} summarizes the hardware specifications of platforms used in related defect detection studies. While high-performance platforms like the NVIDIA Jetson Orin Nano and Xilinx ZCU102 offer substantial computational power, their costs range from hundreds to over 3,000 USD, which can be prohibitive for large-scale deployment. In contrast, our self-developed Rockchip RK3566 device is optimized for the target throughput of 10 frames/s. Although its rated compute capability is 1 TOPS (INT8), it offers a cost-effective hardware basis for the proposed edge detection system. Most notably, at a hardware cost of only 60 USD, our solution offers a significant cost advantage over comparable industrial platforms, making it highly suitable for cost-sensitive mass production environments.
 
-\begin{table*}[!tbp]
+\begin{table}[!tbp]
 \caption{Hardware platforms used in related defect detection studies.}
 \label{tab:hardware-platforms}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.0}
-\begin{tabular}{@{}L{0.39\textwidth}L{0.14\textwidth}L{0.29\textwidth}L{\dimexpr0.18\textwidth-18pt\relax}@{}}
+\begin{tabular}{@{}L{0.45\columnwidth}L{0.33\columnwidth}L{\dimexpr0.22\columnwidth-12pt\relax}@{}}
 \toprule
-Platform & Memory (GB) & Compute capability & Price (USD) \\
+Platform & Compute capability & Price (USD) \\
 \midrule
-NVIDIA Jetson TX2\cite{song2021edgefabric} & 8 & 1.33 TFLOPS (FP16) & 599 \\
-NVIDIA Jetson TX2 NX\cite{li2024liteyolo} & 4 & 1.33 TFLOPS (FP16) & 249 \\
-NVIDIA Jetson Xavier NX\cite{wang2024rail} & 8 & 21 TOPS (INT8) & 399 \\
-NVIDIA Jetson Orin Nano\cite{machado2025edgefabric} & 8 & 40 TOPS (INT8) & 499 \\
-Huawei Ascend 310\cite{yan2026warplace} & 8 & 16 TOPS (INT8) & 550 \\
-AMD Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{\textdagger} & 3.45 TOPS (INT8)\textsuperscript{\textdaggerdbl} & 3234 \\
-Self-developed Rockchip RK3566 device(Ours) & 4 & 1 TOPS (INT8) & 60 \\
+NVIDIA Jetson TX2\cite{song2021edgefabric} & 1.33 TFLOPS (FP16) & 599 \\
+NVIDIA Jetson TX2 NX\cite{li2024liteyolo} & 1.33 TFLOPS (FP16) & 249 \\
+NVIDIA Jetson Xavier NX\cite{wang2024rail} & 21 TOPS (INT8) & 399 \\
+NVIDIA Jetson Orin Nano\cite{machado2025edgefabric} & 40 TOPS (INT8) & 499 \\
+Huawei Ascend 310\cite{yan2026warplace} & 16 TOPS (INT8) & 550 \\
+AMD Xilinx ZCU102\cite{zhao2025kamnet} & 3.45 TOPS (INT8)\textsuperscript{\textdaggerdbl} & 3234 \\
+Raspberry Pi\cite{wang2025edgesensing} & Not reported & 67.5\textsuperscript{\textdagger} \\
+Self-developed Rockchip RK3566 device(Ours) & 1 TOPS (INT8) & 60 \\
 \bottomrule
 \end{tabular}
 \par\vspace{1pt}
-\begin{minipage}{\textwidth}
+\begin{minipage}{\columnwidth}
 \footnotesize
-\textsuperscript{\textdagger}ZCU102 memory is the sum of 4 GB PS DDR4 and 0.5 GB PL DDR4. \textsuperscript{\textdaggerdbl}The 3.45 TOPS value is AMD's reference INT8 peak for three B4096 DPU cores.
+\textsuperscript{\textdagger}Reference price for Raspberry Pi 4 (2GB)\cite{raspberrypi2026price}; the study does not specify the board variant. \textsuperscript{\textdaggerdbl}AMD reference INT8 peak for three B4096 DPU cores.
 \end{minipage}
 \renewcommand{\arraystretch}{1.0}
-\end{table*}
+\end{table}
 
 \subsection{Hardware Implementation}
 \label{sec:hardware-implementation}
