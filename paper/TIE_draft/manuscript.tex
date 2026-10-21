@@ -231,12 +231,12 @@ where $\phi_2$ is the original final $1\times1$ convolution with batch normaliza
 
 The scale $\gamma$ is initialized to zero. Consequently, a MCE block starts with the same forward mapping as its corresponding C2f block when their shared parameters are identical. During learning, $\gamma$ controls the introduction of the directional correction. The two depthwise filters and channel scale add $9q$ parameters in total: $6q$ filter weights, $2q$ biases, and $q$ scale parameters. Descriptor filtering costs $3q(H+W)$ multiply--accumulate operations; pooling, broadcasting, and modulation additionally process the $H\times W$ feature grid. Partial-channel placement reduces this overhead while retaining the original local feature extraction paths.
 
-\begin{figure}[!tbp]
+\begin{figure*}[!tbp]
 \centering
-\includegraphics[width=\columnwidth]{MCE+GIU.png}
+\includegraphics[width=\textwidth]{MCE+GIU.png}
 \caption{Structures of C2f with MCE and GIU. MCE embeds directional context modulation in a partial C2f branch while retaining local feature paths. GIU blends nearest-neighbor and bilinear interpolation using a spatial gate shared across channels.}
 \label{fig:modules}
-\end{figure}
+\end{figure*}
 
 \subsection{Gated Interpolation Upsampling}
 Circular-knitting defects exhibit variations in morphology and scale, including horizontally and vertically elongated flaws and holes of different sizes. These variations place different demands on response continuity, local concentration, and boundary representation during feature reconstruction. Fixed interpolation applies the same replication or smoothing rule throughout the feature map, motivating a content-adaptive interpolation strategy for heterogeneous local structures.
