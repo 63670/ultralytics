@@ -394,6 +394,10 @@ Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n basel
 
 % TODO: insert the supplied matched-seed MCE/GIU ablation results and revise the discussion.
 % TODO (author): regenerate heatmap_comparison.png from the finalized MCE + GIU checkpoint.
+On the test set, MCE alone achieves 93.9\% mAP50 and 63.6\% mAP50--95, improving over the baseline by 3.4 and 5.2 percentage points, respectively. GIU alone achieves 94.4\% and 63.0\%, corresponding to gains of 3.9 and 4.6 points. Combining the two modules yields 97.2\% mAP50 and 65.5\% mAP50--95, exceeding the best single-module result for each metric by 2.8 and 1.9 points. These results support the complementary benefits of morphology-aware context encoding and adaptive feature reconstruction.
+
+The combined model increases parameters only from 3.01 to 3.02 M and FLOPs from 8.1 to 8.2 G, while improving mAP50 and mAP50--95 by 6.7 and 7.1 percentage points over the baseline. Thus, the two modules improve detection accuracy with a small increase in model complexity.
+
 Feature visualizations in Fig.~\ref{fig:heatmaps} complement the numerical analysis by comparing responses at corresponding feature stages on the same images. They are interpreted alongside localization and classification results rather than as a separate quantitative measure of detection performance.
 
 
