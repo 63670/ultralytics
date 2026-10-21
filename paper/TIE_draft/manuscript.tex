@@ -187,32 +187,32 @@ GIU replaces the two nearest-neighbor upsampling operations in the top-down neck
 \end{figure*}
 
 \subsection{Morphology-Aware Context Encoding}
-Elongated defects combine a narrow local profile with continuity across distant image regions. MCE models their horizontal and vertical morphology by aggregating spatially extended evidence to modulate local responses (Fig.~\ref{fig:modules}).
+Defects produced by circular knitting machines exhibit diverse morphologies, including horizontal and vertical elongated patterns and localized holes. Elongated defects are characterized by a large difference between their longitudinal extent and transverse width: their continuity is distributed over distant image regions, whereas their narrow profiles require local detail to remain distinguishable from the surrounding fabric texture. Local feature extraction alone does not explicitly relate these spatially separated responses as parts of the same defect. Meanwhile, introducing extensive feature interactions across all channels would increase the computational burden on the RK3566. We therefore develop MCE to incorporate the morphology prior of elongated defects through spatially extended context, while retaining local feature evidence within a compact computational budget (Fig.~\ref{fig:modules}).
 
-\emph{1) Placement and Partial-Channel Design:}
-MCE operates on the last bottleneck output of the P3 and P4 backbone C2f blocks, immediately before branch concatenation and fusion. For this feature $F\in\mathbb{R}^{c\times H\times W}$, only $q=\max(1,\lfloor0.25c\rfloor)$ channels $F_a$ receive context modulation; the remaining channels $F_b$ bypass it. Partial-channel processing limits computation and retains unmodulated local evidence. Placement at the branch end avoids repeating context encoding at every bottleneck.
+\emph{1) Placement and Channel Allocation:}
+MCE is inserted after the last bottleneck in the P3 and P4 backbone C2f blocks, before branch concatenation and fusion. As illustrated in Fig.~\ref{fig:modules}, its input $F\in\mathbb{R}^{C\times H\times W}$ is divided into two channel groups: one quarter of the channels, denoted by $F_a$, are used for morphology-aware context aggregation and residual modulation; the remaining three quarters, denoted by $F_b$, bypass these operations and retain their locally extracted responses. This allocation confines the added context operations to a small channel subset while preserving local texture and spatial detail in the larger bypass group. The two groups are concatenated after modulation, allowing the subsequent fusion to combine morphology-aware and unmodulated local features. Applying MCE only at the branch end also avoids repeating context computation at each bottleneck. Below, $q=C/4$ denotes the number of context-modulated channels.
 
 \emph{2) Morphology-Aware Context Aggregation:}
-Following the directional pooling principle of coordinate attention \cite{hou2021coordinate}, we compute
+The one-quarter-channel group $F_a$ feeds the two pooling paths shown in Fig.~\ref{fig:modules}. Following the directional pooling principle of coordinate attention \cite{hou2021coordinate}, we compute
 \begin{align}
 R_h(a,h,1) &= \frac{1}{W}\sum_{w=1}^{W}F_a(a,h,w), \label{eq:pac-row}\\
 R_w(a,1,w) &= \frac{1}{H}\sum_{h=1}^{H}F_a(a,h,w). \label{eq:pac-column}
 \end{align}
-$R_h$ captures horizontal continuity while retaining row positions; $R_w$ captures vertical continuity while retaining column positions. The descriptors are combined as
+Averaging over $W$ gathers horizontally distributed evidence while retaining row positions; averaging over $H$ gathers vertically distributed evidence while retaining column positions. The resulting descriptors have sizes $q\times H\times1$ and $q\times1\times W$, respectively. They pass through $3\times1$ and $1\times3$ depthwise convolutions and are added by broadcasting:
 \begin{equation}
 T=\operatorname{DW}_{3\times1}(R_h)
  +\operatorname{DW}_{1\times3}(R_w).
 \label{eq:pac-context}
 \end{equation}
-The depthwise filters refine neighboring row and column responses. Padding preserves dimensions, and broadcasting gives $T\in\mathbb{R}^{q\times H\times W}$. Pooling supplies long-range context; filtering operates on compressed descriptors.
+The filters refine variations between neighboring rows and columns. Padding preserves descriptor dimensions, and broadcasting produces $T\in\mathbb{R}^{q\times H\times W}$. Long-range context is supplied by pooling over the full width and height, while the learned filters operate on the compressed descriptors.
 
 \emph{3) Residual Context Modulation:}
-Context modulates the active channels through
+As shown in Fig.~\ref{fig:modules}, Hardsigmoid followed by a linear transformation converts the combined context into a signed map, which modulates $F_a$ through a learnable residual correction:
 \begin{align}
 A &= 2\operatorname{HS}(T)-1, \label{eq:pac-map}\\
 F'_a &= F_a+\gamma\odot F_a\odot A, \label{eq:pac-modulation}
 \end{align}
-where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplication with broadcasting, and $\gamma\in\mathbb{R}^{q\times1\times1}$ is a learnable channel-wise scale. The signed map $A\in[-1,1]^{q\times H\times W}$ supports context-dependent enhancement and suppression. Concatenating $F'_a$ with $F_b$ restores the branch width before the original C2f fusion. Zero-initializing $\gamma$ preserves the pretrained branch features initially. The biased depthwise filters and residual scales add $9q$ parameters.
+where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplication with broadcasting, and $\gamma\in\mathbb{R}^{q\times1\times1}$ is a learnable channel-wise scale. The signed map $A\in[-1,1]^{q\times H\times W}$ supports context-dependent enhancement and suppression. The original $F_a$ is retained through the residual connection, and the corrected one-quarter-channel group $F'_a$ is concatenated with the unchanged three-quarter-channel group $F_b$, restoring the input channel count before the original C2f fusion. Zero-initializing $\gamma$ makes the module an identity mapping at initialization. The two biased depthwise filters and residual scales add $9q$ parameters.
 
 \begin{figure*}[!tbp]
 \centering
