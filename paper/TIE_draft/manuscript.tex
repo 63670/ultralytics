@@ -118,10 +118,10 @@ f_{\min}=\frac{\pi D}{Tw}
 \end{equation}
 We set the effective detection-throughput requirement to 10 frames/s. For this throughput target, we select the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) to balance processing capability, camera connectivity, and hardware cost. It integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
 
-Table~\ref{tab:hardware-platforms} summarizes the hardware specifications of platforms used in related defect detection studies. While high-performance platforms like the NVIDIA Jetson Orin Nano and Xilinx ZCU102 offer substantial computational power, their costs range from hundreds to over 3,000 USD, which can be prohibitive for large-scale deployment. In contrast, our self-developed RK3566 device provides a cost-effective hardware basis for the proposed system at a hardware cost of 60 USD, offering a significant cost advantage over comparable industrial platforms and making it highly suitable for large-scale deployment in textile factories.
+Table~\ref{tab:hardware-platforms} summarizes the hardware specifications of platforms used in related defect detection studies. While high-performance platforms like the NVIDIA Jetson Orin Nano and Xilinx ZCU102 offer substantial computational power, their costs range from hundreds to over 3,000 USD, which can be prohibitive for large-scale deployment. In contrast, our self-developed RK3566 minimum system board costs 60 USD. For a consistent comparison, the listed prices cover computing hardware only, excluding 4G modules, cameras, enclosures, and dedicated power adapters.
 
 \begin{table}[!tbp]
-\caption{Hardware platforms used in related defect detection studies.}
+\caption{Computing platforms used in related defect detection studies. Prices refer to computing hardware only.}
 \label{tab:hardware-platforms}
 \centering
 \footnotesize
@@ -137,7 +137,7 @@ NVIDIA Jetson Xavier NX\cite{wang2024rail,zhang2026uavedge} & 21 TOPS (INT8) & 3
 NVIDIA Jetson Orin Nano\cite{machado2025edgefabric} & 40 TOPS (INT8) & 499 \\
 Huawei Ascend 310\cite{yan2026warplace} & 16 TOPS (INT8) & 550 \\
 AMD Xilinx ZCU102\cite{zhao2025kamnet} & 3.45 TOPS (INT8)\textsuperscript{\textdagger} & 3234 \\
-Self-developed Rockchip RK3566 device (Ours) & 1 TOPS (INT8) & 60 \\
+Self-developed Rockchip RK3566 board (Ours) & 1 TOPS (INT8) & 60 \\
 \bottomrule
 \end{tabular}
 \par\vspace{1pt}
