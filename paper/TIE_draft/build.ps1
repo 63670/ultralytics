@@ -24,8 +24,35 @@ try {
         & $pdfLaTeX -interaction=nonstopmode -halt-on-error -no-shell-escape -output-directory=build manuscript.tex
         if ($LASTEXITCODE -ne 0) { throw "LaTeX pass $pass failed." }
     }
-    Copy-Item -LiteralPath build/manuscript.pdf -Destination manuscript.pdf -Force
-    Write-Host "Completed: $PSScriptRoot/manuscript.pdf"
+    # Replace the output file instead of overwriting its contents: PDF previews
+    # may memory-map the current file and prevent an in-place write on Windows.
+    $publishedPdf = Join-Path $PSScriptRoot "manuscript.pdf"
+    $completedPdf = Join-Path $PSScriptRoot "build/manuscript.pdf"
+    $stagedPdf = Join-Path $PSScriptRoot (".manuscript." + [Guid]::NewGuid().ToString("N") + ".pdf")
+    try {
+        Copy-Item -LiteralPath build/manuscript.pdf -Destination $stagedPdf
+        if (Test-Path -LiteralPath $publishedPdf) {
+            [System.IO.File]::Replace($stagedPdf, $publishedPdf, [NullString]::Value)
+        } else {
+            [System.IO.File]::Move($stagedPdf, $publishedPdf)
+        }
+        $completedPdf = $publishedPdf
+    } catch {
+        $publishError = $_.Exception
+        while ($publishError.InnerException) {
+            $publishError = $publishError.InnerException
+        }
+        $fileErrorCode = $publishError.HResult -band 0xFFFF
+        if ($publishError -isnot [System.IO.IOException] -or $fileErrorCode -notin @(32, 33, 1224)) {
+            throw
+        }
+        Write-Warning "The PDF compiled successfully, but manuscript.pdf is in use. Latest PDF: $completedPdf"
+    } finally {
+        if (Test-Path -LiteralPath $stagedPdf) {
+            Remove-Item -LiteralPath $stagedPdf
+        }
+    }
+    Write-Host "Completed: $completedPdf"
 } finally {
     $env:TEXINPUTS = $savedTexInputs
     Pop-Location
