@@ -5,6 +5,13 @@
 - `manuscript.tex` 保留为迁移前的历史稿，`TIE_LaTeX_template/` 保留为原始模板；不要将后续论文修改写回这两处。
 - 每次改动后创建对应的 Git commit，遵循仓库根目录的要求。
 
+## VS Code 编译入口
+
+- 用户在 VS Code 中以 `TIE_draft/` 为工作区；其 `.vscode/settings.json` 覆盖 LaTeX Workshop 的编译配置。
+- 编辑器通过 `pdflatex -> bibtex -> pdflatex -> pdflatex` 编译，PDF、SyncTeX 和辅助文件统一输出到 `TIE_draft/build/`，预览 `build/manuscript.pdf`。
+- `pdflatex` 必须显式传入 `-output-directory=%OUTDIR%`，BibTeX 必须读取 `%OUTDIR%/%DOCFILE%`；仅修改 `latex.outDir` 不会改变自定义工具的实际输出路径。
+- 日志若显示 `I can't write on file manuscript.pdf`，先核对实际输出路径和 PDF 占用，不要据此改动公式或删除参考文献。编辑器使用 `build/manuscript.log`；根目录旧日志可能仍保留此前错误。
+
 ## Fig. 6 检测对比图生成
 
 - 直接使用现有脚本，不重新寻找旧缓存或重新运行模型推理。

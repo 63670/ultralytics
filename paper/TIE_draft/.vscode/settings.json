@@ -1,0 +1,44 @@
+{
+  "latex-workshop.latex.outDir": "%DIR%/build",
+  "latex-workshop.latex.auxDir": "%OUTDIR%",
+  "latex-workshop.latex.recipe.default": "pdf->bib->pdf->pdf",
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "pdf->bib->pdf->pdf",
+      "tools": [
+        "pdflatex-build",
+        "bibtex-build",
+        "pdflatex-build",
+        "pdflatex-build"
+      ]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "name": "pdflatex-build",
+      "command": "pdflatex",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-no-shell-escape",
+        "-output-directory=%OUTDIR%",
+        "%DOC%"
+      ],
+      "cwd": "%DIR%",
+      "env": {
+        "TEXINPUTS": "%OUTDIR%;%DIR%;"
+      }
+    },
+    {
+      "name": "bibtex-build",
+      "command": "bibtex",
+      "args": ["%OUTDIR%/%DOCFILE%"],
+      "cwd": "%DIR%",
+      "env": {
+        "TEXINPUTS": "%OUTDIR%;%DIR%;"
+      }
+    }
+  ]
+}
