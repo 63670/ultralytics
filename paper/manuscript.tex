@@ -66,64 +66,57 @@
 \maketitle
 
 \begin{abstract}
-Circular knitting machines are widely used in continuous fabric production. Persistent needle or yarn abnormalities can generate repeated fabric defects, causing material waste and economic losses. To enable in-process inspection and intervention, we design and implement a dedicated defect detection and closed-loop control system and develop a lightweight detector termed \model. The system combines global-shutter imaging and LED illumination, a coaxial SerDes camera link, a self-developed RK3566 mainboard, and a power adapter supporting 100--500 V AC input. The mainboard integrates image reception, LED brightness control, machine input/output interfaces, and 4G communication. A Hall-sensor rotation signal activates acquisition and inspection. When a defect is detected, the system issues a local wired stop command, uploads the defect record, and pushes an alert to the worker for corrective intervention. To explicitly incorporate the contrasting morphologies of elongated defects and localized holes, morphology-aware context encoding (MCE) couples extended structural context with local defect evidence. To accommodate variations in defect morphology and scale, gated interpolation upsampling (GIU) adapts the reconstruction of higher-level context before fusion with local features, using a compact content-dependent gate. On the test set of a self-collected dataset from a real circular-knitting production line, \model achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.7 and 7.1 percentage points, respectively. Deployed on the RK3566, it achieves an inference throughput of 22 frames/s and is integrated into the local wired stop-control workflow. The cloud platform supports defect reporting and worker notification.
+Defect detection is essential for circular knitting production, where persistent needle or yarn abnormalities lead to repeated fabric defects, resulting in severe material waste and economic losses. However, existing studies are generally not tailored to circular knitting machines and tend to be cost-prohibitive, which hinders their large-scale industrial deployment. To address this issue, we first design and implement a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines. The system consists of a global-shutter camera, a Hall sensor, and a self-developed edge device. The Hall sensor signal triggers image acquisition and defect detection. When a defect is detected, the device stops the circular knitting machine to interrupt defect propagation and alerts the operator for corrective intervention. To further improve detection accuracy for diverse fabric defect morphologies, we propose a lightweight detector termed \model. To explicitly incorporate the contrasting morphologies of elongated defects and localized holes, morphology-aware context encoding (MCE) couples extended structural context with local defect evidence. To accommodate variations in defect morphology and scale, gated interpolation upsampling (GIU) adapts the reconstruction of higher-level context before fusion with local features, using a compact content-dependent gate. On the test set of a self-collected dataset from a real circular-knitting production line, \model achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.7 and 7.1 percentage points, respectively, with a detection throughput of 22 FPS when deployed on the RK3566 edge device. These results demonstrate that the proposed system offers a cost-effective solution for large-scale deployment in real-time defect detection for circular-knitting production.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Industrial defect detection, YOLO, deep learning, edge computing, Internet of Things.
+Circular knitting machine, fabric defect detection, YOLO, edge computing, closed-loop control.
 \end{IEEEkeywords}
 
 \section{Introduction}
-\IEEEPARstart{C}{ircular} knitting machines are important production infrastructure for high-volume weft-knit fabrics used in T-shirts and sportswear \cite{cottonworksKnitBasics,woolmarkCircularKnitting,cottonworksSingleDouble}. The International Textile Manufacturers Federation reported approximately 24,500 global shipments of large circular knitting machines in 2025 \cite{itmf2025press}. Globally, approximately 92 million tonnes of textile waste are generated annually, highlighting the importance of reducing avoidable material losses \cite{unep2025textilewaste}. Conventional quality checks are often performed after knitting is completed. A persistent needle or yarn abnormality can therefore generate repeated defects along a fabric roll before discovery, accumulating substantial fabric waste and economic losses \cite{takeuchi2018knitted,akter2022material,xiang2023hooknet}. Real-time detection during knitting is needed to identify these defects and enable intervention before further defective fabric is produced.
+\IEEEPARstart{C}{ircular} knitting machines are are key production equipment for high-volume weft-knit fabric, which is widely used in everyday clothing such as T-shirts and sportswear \cite{cottonworksKnitBasics,woolmarkCircularKnitting,cottonworksSingleDouble}. The International Textile Manufacturers Federation reported approximately 24,500 global shipments of circular knitting machines in 2025 \cite{itmf2025press}. Globally, approximately 92 million tonnes of textile waste are generated annually, highlighting the importance of reducing avoidable material losses \cite{unep2025textilewaste}. Conventional quality checks are often performed after knitting is completed. A persistent needle or yarn abnormality can therefore generate repeated defects along a fabric roll before discovery, accumulating substantial fabric waste and economic losses \cite{takeuchi2018knitted,akter2022material,xiang2023hooknet}. To prevent such losses, real-time detection during knitting is needed to identify these defects early and enable timely intervention before further defective fabric is produced.
 
-Edge computing has been increasingly adopted for industrial defect inspection. In textile applications, Song et al. deployed EfficientDet-D0 on an NVIDIA Jetson TX2 and evaluated five fabric datasets covering dark red, grid, camouflage, digitally printed, and light blue fabrics, without specifying the fabric-formation process \cite{song2021edgefabric}. Machado et al. deployed YOLO11n on a Jetson Orin Nano to inspect solid-color cotton and linen fabrics on a fabric rolling line \cite{machado2025edgefabric}. Yan et al. deployed an improved YOLOv5s model on a Huawei Ascend 310-based Atlas platform to inspect warp-knitted lace on warp-knitting machines \cite{yan2026warplace}.
+Edge computing offers a practical pathway toward such real-time detection, and has been increasingly adopted for industrial defect detection. In textile applications, Song et al. deployed EfficientDet-D0 on an NVIDIA Jetson TX2 and evaluated five fabric datasets covering dark red, grid, camouflage, digitally printed, and light blue fabrics\cite{song2021edgefabric}. Machado et al. deployed YOLO11n on a Jetson Orin Nano to detect solid-color cotton and linen fabrics on a fabric rolling line \cite{machado2025edgefabric}. Yan et al. deployed an improved YOLOv5s model on a Huawei Ascend 310-based Atlas platform to detect warp-knitted lace on warp-knitting machines \cite{yan2026warplace}.
 
-Beyond textile inspection, Wang et al. deployed an improved YOLOv5s model on a Jetson Xavier NX for rail surface defect detection \cite{wang2024rail}. Li et al. deployed LiteYOLO-ID on a Jetson TX2 NX for insulator defect detection \cite{li2024liteyolo}, and Zhao et al. implemented KAM-Net on a Xilinx ZCU102 FPGA for glass defect segmentation \cite{zhao2025kamnet}. As summarized in Table~\ref{tab:hardware-platforms}, these studies primarily rely on general-purpose edge-computing platforms or FPGA development boards. Such platforms are not specifically designed for the sensing, control, and installation requirements of circular knitting machines. Their hardware costs, together with the additional integration required for image acquisition and machine control, can limit the economic feasibility of deployment across large numbers of machines. These limitations motivate a dedicated, low-cost inspection system tailored to circular knitting production.
+Beyond textile detection, Wang et al. deployed an improved YOLOv5s model on a Jetson Xavier NX for rail surface defect detection \cite{wang2024rail}. Li et al. deployed LiteYOLO-ID on a Jetson TX2 NX for insulator defect detection \cite{li2024liteyolo}, and Zhao et al. implemented KAM-Net on a Xilinx ZCU102 FPGA for glass defect segmentation \cite{zhao2025kamnet}. These studies predominantly adopt general-purpose edge-computing platforms or FPGA development boards. However, such platforms are not tailored to the sensing, control, and installation constraints of circular knitting machines. Their relatively high hardware cost, together with the additional integration effort required for image acquisition and machine control, hinders economically viable deployment across large numbers of machines.
 
-At the algorithm level, YOLO-based detectors have been widely explored for fabric defect detection because of their efficient inference and explicit defect localization \cite{redmon2016yolo}. Kang and Li proposed AYOLOv7-tiny for solid-color circular weft fabrics, combining space-to-depth downsampling with hybrid attention to preserve subtle defect information \cite{kang2024ayolov7}. Yang et al. developed YOLOV4-TinyS using lightweight convolutions, shallow-feature fusion, and attention, and evaluated the detector in a conveyor-based fabric inspection system \cite{yang2024yolov4tinys}. These studies demonstrate the importance of preserving fine defect details while reducing computational complexity.
+In terms of detection algorithms, YOLO-based detectors have been widely explored for industrial defect detection because of their efficient inference and explicit defect localization \cite{redmon2016yolo}. Yang et al. developed YOLOV4-TinyS using lightweight convolutions, shallow-feature fusion, and attention, and evaluated the detector in a conveyor-based fabric detection system \cite{yang2024yolov4tinys}. Kang and Li proposed AYOLOv7-tiny for solid-color circular weft fabrics, combining space-to-depth downsampling with hybrid attention to preserve subtle defect information \cite{kang2024ayolov7}. Chen et al. enhanced YOLOv8 with Swin Transformer blocks, a bidirectional feature pyramid, attention, and a modified localization loss \cite{chen2025yolov8}. FA-YOLO combines receptive-field enhancement, attention, and adaptive spatial feature fusion \cite{yu2024fayolo}. DGHR-YOLO integrates deformable convolution for morphology adaptation with a high-level screening feature pyramid and lightweight feature processing \cite{zhang2025dghr}. Together, these methods advance the representation of subtle defects, irregular shapes, and scale variation. Related work on photovoltaic-cell and pipeline-weld detection also explores task-specific feature pyramids, contextual relations, and lightweight rotated representations \cite{su2022baf,shen2024crnet,liu2025lrnet}. However, these methods do not explicitly consider the two major defect morphologies on circular knitting machines, namely horizontal and vertical defects. In addition, modules such as deformable convolution and attention often introduce substantial computational overhead, making them less suitable for deployment on resource-constrained edge devices.
 
-More recent fabric detectors have focused on context modeling and multiscale feature fusion. FA-YOLO combines receptive-field enhancement, attention, and adaptive spatial feature fusion \cite{yu2024fayolo}. Chen et al. enhanced YOLOv8 with Swin Transformer blocks, a bidirectional feature pyramid, attention, and a modified localization loss \cite{chen2025yolov8}. DGHR-YOLO integrates deformable convolution for morphology adaptation with a high-level screening feature pyramid and lightweight feature processing \cite{zhang2025dghr}. Together, these methods advance the representation of subtle defects, irregular shapes, and scale variation. Related work on photovoltaic-cell and pipeline-weld inspection also explores task-specific feature pyramids, contextual relations, and lightweight rotated representations \cite{su2022baf,shen2024crnet,liu2025lrnet}.
+Motivated by these limitations, we design and implement a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines. The system integrates a power adapter, a global-shutter camera with LED illumination, a coaxial SerDes image-transmission link, a Hall sensor, and a self-developed edge device. The Hall sensor detects machine rotation to trigger image acquisition and defect detection. When a defect is detected, the edge device stops the circular knitting machine, uploads the defect image and record, and pushes an alert to the operator through the cloud platform for corrective intervention.
 
-Despite this progress, adapting fabric detectors to in-process inspection on circular knitting machines requires joint consideration of defect morphology and deployment constraints. Prior work already addresses circular weft fabrics, scale variation, and irregular shapes. For the defect patterns considered here, a remaining design question is how to jointly represent the extended continuity of elongated defects and the localized texture disruption of holes against repetitive knitted backgrounds. These complementary forms of evidence must also remain spatially informative when coarse features are reconstructed during multiscale fusion. Explicitly incorporating these morphology priors into a compact feature representation is therefore a central requirement of our detector. The resulting operator graph must be evaluated on the target RK3566 platform, since parameter counts and floating-point operation counts alone do not establish inference latency.
-
-These requirements motivate explicit use of defect morphology as an architectural prior. Elongated defects require context that links responses over their spatial extent, whereas localized holes require concentrated evidence of a local texture disruption. We therefore combine spatially extended context with retained local feature paths and adapt feature reconstruction to the feature content during multiscale fusion. This design targets defect continuity, local appearance, and spatial fidelity as complementary representation requirements under a limited edge-computing budget. At the system level, the detector must operate alongside reliable image acquisition and local machine control so that recognizing a defect can lead directly to intervention during knitting.
-
-To this end, we first design and implement a dedicated defect detection and closed-loop control system for circular knitting machines. The system integrates a power adapter, a global-shutter camera with LED illumination, a coaxial SerDes image-transmission link, a Hall sensor, and a self-developed RK3566 edge board. The rotation signal activates image acquisition and detection. When a defect is detected, the edge device issues a local wired stop command, uploads the defect image and record, and uses the cloud platform to push an alert to the worker for corrective intervention. Local inference and machine-stop control connect defect recognition to production control, while cloud communication supports reporting and worker notification \cite{shi2016edge}.
-
-For defect recognition within this system, we develop \model (morphology-aware context and gated interpolation), a lightweight detector based on YOLOv8n that explicitly incorporates priors about defect continuity and localized texture disruption. MCE supplies spatially extended context while retaining the original local C2f feature paths for holes and fine structures. GIU addresses the different reconstruction requirements associated with defect morphology and scale by adapting the interpolation of higher-level context before fusion with local lateral features. Together, the two components connect morphology-informed context encoding with spatial reconstruction within a compact parameter budget. The detector follows an ONNX-to-RKNN deployment workflow for the RK3566 edge board.
-
+For defect detection within this system, we develop \model, a lightweight detector based on YOLOv8n that explicitly incorporates priors about defect continuity and localized texture disruption. MCE supplies spatially extended context while retaining the original local C2f feature paths for holes and fine structures. GIU addresses the different reconstruction requirements associated with defect morphology and scale by adapting the interpolation of higher-level context before fusion with local lateral features. Together, the two components connect morphology-informed context encoding with spatial reconstruction within a compact parameter budget.
 The main contributions of our work are as follows.
 \begin{enumerate}
   \renewcommand{\labelenumi}{(\arabic{enumi})}
-  \item We design and implement a dedicated detection system for circular knitting machines, integrating image acquisition, camera transmission, RK3566 edge inference, and local machine-stop control on application-specific hardware, and demonstrate its deployment on a real production line.
+  \item We design and implement a dedicated detection system for circular knitting machines, integrating image acquisition, camera transmission, edge inference, and local machine-stop control on application-specific hardware, and demonstrate its deployment on a real production line.
   \item We develop morphology-informed feature modeling for circular-knitting defects, explicitly coupling the continuity of elongated flaws with the localized appearance of holes. MCE embeds extended-context modulation in a partial C2f branch while preserving its local feature paths to address these complementary representation requirements with small additional overhead.
   \item We design GIU to accommodate the different reconstruction requirements of elongated defects and holes of varying sizes. A compact spatial gate adapts a convex combination of two fixed interpolation paths, balancing response replication and neighborhood smoothing in the top-down context path before fusion with local lateral features.
 \end{enumerate}
 
-The remainder of the paper first presents the system overview, its four subsystems, and their hardware implementation, then describes \model, its two components, and the model deployment procedure. The experimental sections then define the data and evaluation protocol before presenting detector comparisons and component ablations.
+The remainder of this paper is organized as follows. Section II presents the system overview and hardware implementation. Section III describes MCGI-YOLO, including its two components and the deployment procedure. Section IV defines the data and evaluation protocol, and reports detector comparisons and ablation studies. Section V concludes the paper.
 
 \section{Defect Detection and Closed-Loop Control System}
 \label{sec:system-design}
 \subsection{System Overview}
 \label{sec:system-overview}
-We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. Our system integrates a power adapter, a global-shutter camera with LED illumination, a SerDes image-transmission link, a Hall sensor, a self-developed RK3566 edge board, and a cloud platform. These components are organized into four functional subsystems: power supply, image acquisition and transmission, network communication, and processor-based local computation and control. The power subsystem supplies the mainboard, which in turn powers and controls the LED illumination, and the image subsystem delivers fabric images to the processor over the SerDes link. The processor performs local defect detection and machine-stop control. The network subsystem uploads defect images and records to the cloud and delivers alert notifications to workers, while also supporting equipment monitoring and quality analysis.
+We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. Our system integrates a power adapter, a global-shutter camera with LED illumination, a SerDes image-transmission link, a Hall sensor, a self-developed edge device, and a cloud platform. These components are organized into four functional subsystems: power supply, image acquisition and transmission, network communication, and processor-based local computation and control. The power subsystem supplies the device, which in turn powers and controls the LED illumination, and the image subsystem delivers fabric images to the processor over the SerDes link. The processor performs local defect detection and machine-stop control. The network subsystem uploads defect images and records to the cloud and delivers alert notifications to operator.
 
-The complete closed-loop workflow begins when a worker starts the circular knitting machine. The Hall sensor detects machine rotation and sends a signal to the processor, which switches on the camera and LED illumination and enters the detection state. When a fabric defect is detected, the processor first sends a wired stop command to the machine controller to interrupt further defect propagation. The system then uploads the defect image and associated record to the cloud, which pushes an alert notification to inform the worker that intervention is required. The worker inspects the reported defect, resolves the production fault, and restarts the machine; the rotation signal then reactivates inspection. This sequence connects production, rotation sensing, image acquisition, defect detection, machine stopping, defect reporting, worker notification, and corrective intervention into a complete production--inspection--control loop. The following subsections describe the four subsystem designs, followed by their hardware implementation.
+The complete closed-loop workflow begins when a operator starts the circular knitting machine. The Hall sensor detects machine rotation and sends a signal to the processor, which switches on the camera and LED illumination and enters the detection state. When a fabric defect is detected, the processor first sends a stop command to the machine controller to interrupt further defect propagation. The system then uploads the defect image and associated record to the cloud, which pushes an alert notification to inform the operator that intervention is required. The operator inspects the reported defect, resolves the production fault, and restarts the machine; the rotation signal then reactivates detection. This sequence connects production, rotation sensing, image acquisition, defect detection, machine stopping, defect reporting, operator notification, and corrective intervention into a complete production--detection--control loop. The following subsections describe the four subsystem designs, followed by their hardware implementation.
 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.92\textwidth]{system.png}
-\caption{System overview and subsystem interconnections. The power adapter supplies the mainboard, which powers the LED illumination and controls its brightness by adjusting the output current. Images are transmitted through the serializer, coaxial link, and deserializer to the RK3566 processor subsystem. The 4G network connects the device to the cloud for monitoring and defect alerts. Wired input/output interfaces receive the Hall-sensor rotation signal and send stop commands to the machine controller.}
+\caption{System overview and subsystem interconnections. The power adapter supplies the device, which powers the LED illumination and controls its brightness by adjusting the output current. Images are transmitted through the serializer, coaxial link, and deserializer to the RK3566 processor. The 4G network connects the device to the cloud for monitoring and defect alerts. Wired input/output interfaces receive the Hall-sensor rotation signal and send stop commands to the machine controller.}
 \label{fig:interactions}
 \end{figure*}
 
 \subsection{Power Supply Subsystem}
-To accommodate different industrial supply voltages across countries and regions, we design a power adapter with a 100--500 V AC input range and a 24 V DC output rated at 3 A. The adapter first supplies this output to the mainboard. The mainboard then supplies the LED illumination. By adjusting the current delivered to the LEDs, the mainboard controls the illumination brightness to suit the image-acquisition conditions. This arrangement integrates LED power delivery and brightness control into the mainboard.
+To accommodate different industrial supply voltages across countries and regions, we design a power adapter with a 100--500 V AC input range and a 24 V DC output rated at 3 A. The adapter first supplies this output to the device. The device then supplies the LED illumination. By adjusting the current delivered to the LEDs, the device controls the illumination brightness to suit the image-acquisition conditions. This arrangement integrates LED power delivery and brightness control into the device.
 
 \subsection{Image Acquisition and Transmission Subsystem}
-Rapid fabric motion requires imaging that preserves defect geometry and fine spatial detail. We therefore select a high-resolution global-shutter camera, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure \cite{baslerglobalshutter}. The selected VEYE MV-MIPI-SC130M monochrome camera uses a SmartSens SC130GS-M global-shutter sensor at $1280\times1024$ resolution. The illumination supports short-exposure imaging of the moving fabric. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm dimension aligned with the horizontal direction of fabric motion.
+The rapid rotation of circular knitting machines requires imaging that preserves defect geometry and fine spatial detail. We therefore select a  SmartSens SC130GS global-shutter sensor(SmartSens Technology Co., Ltd., Shanghai, China) at $1280\times1024$ resolution, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm dimension aligned with the horizontal direction of fabric motion.
 
-Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment \cite{verma2017serdes}. Specifically, the THCV241A serializer and THCV242A deserializer bridge the camera-side and processor-side MIPI CSI-2 interfaces over a V-by-One HS link. The devices support a maximum serial line rate of 4.0 Gb/s per lane, corresponding to a rated effective rate of 3.2 Gb/s \cite{thineTHCV241A,thineTHCV242A}.
+Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment. Specifically, the THCV241A serializer and THCV242A deserializer(THine Electronics, Inc., Tokyo, Japan) bridge the camera-side and processor-side MIPI CSI-2 interfaces over a V-by-One HS link. The devices support a maximum serial line rate of 4.0 Gb/s per lane, corresponding to a rated effective rate of 3.2 Gb/s \cite{thineTHCV241A,thineTHCV242A}.
 
 The camera is configured to transmit $1280\times1024$ RAW10 images at 30 frames/s. With $b=10$ bits per pixel, the active-image payload rate is
 \begin{equation}
@@ -134,28 +127,23 @@ R_{\mathrm{img}} &= W H b f_{\mathrm{cam}} \\
 \end{aligned}
 \label{eq:serdes-bandwidth}
 \end{equation}
-where $W$ and $H$ denote the image width and height, and $f_{\mathrm{cam}}$ is the camera acquisition rate. This corresponds to 49.152 MB/s, approximately 12.3\% of the rated single-lane effective capacity, leaving nominal bandwidth headroom for transport overhead. The calculation excludes packet and framing overhead and compares the active-image load with the device rating. The 30 frames/s acquisition rate is distinct from the 10 frames/s minimum detection-throughput requirement derived below. The image stream is recovered at the edge device before being passed to the processor subsystem.
-
+where $W$ and $H$ denote the image width and height, and $f_{\mathrm{cam}}$ is the camera acquisition rate. This corresponds to 49.152 MB/s, accounting for only 12.3\% of the rated single-lane effective capacity, which provides a stable image input for the system's defect detection.
 
 \subsection{Network Communication Subsystem}
-The network communication hardware is integrated on the mainboard and comprises a 4G module, a SIM-card slot, and an antenna connector for an external antenna. The SIM card provides subscriber identification and authentication for cellular network access. The antenna connector supports an external antenna, allowing flexible antenna placement according to the installation conditions.
-
-The 4G module provides the data link between the edge device and the cloud platform. As illustrated in Fig.~\ref{fig:interactions}, MQTT carries device-state and defect-event messages between the device and cloud, while an HTTP interface gives operators access to monitoring information and defect records. The cloud supports device-state visualization, remote configuration, defect statistics, and production-quality analysis.
-
-When the edge device detects a defect, it uploads the defect record and image to the cloud, which pushes a defect alert to the operator interface. The alert provides the defect category, occurrence time, and image for review and troubleshooting. These network functions complement the local display and wired stop command: defect inference and machine-stop decisions are executed by the processor subsystem without waiting for cloud communication.
+The network communication hardware is integrated on the device and comprises a 4G module, a SIM-card slot, and an antenna connector for an external antenna. The 4G module provides the data link between the device and the cloud platform. As illustrated in Fig.~\ref{fig:interactions}, MQTT carries device-state and defect-event messages between the device and cloud, while an HTTP interface gives operators access to monitoring information and defect records. When the device detects a defect, it uploads the defect record and image to the cloud, which pushes a defect alert to the operator interface. The alert provides the defect category, occurrence time, and image for review and troubleshooting. 
 
 \subsection{Processor Subsystem}
 \label{sec:coverage}
-The processor is selected according to the inspection rate required by fabric motion and the camera field of view. For a design diameter of 40 in ($D=1.016$ m) and a rotation period of $T=2$ s, the fabric travels approximately $\pi D=3.192$ m per revolution. With an effective field-of-view width of $w=0.16$ m along the direction of motion, the required frame rate is
+The processor is selected according to the detection rate required by fabric motion and the camera field of view. For a design diameter of 40 in ($D=1.016$ m) and a rotation period of $T=2$ s, the fabric travels approximately $\pi D=3.192$ m per revolution. With an effective field-of-view width of $w=0.16$ m along the direction of motion, the required frame rate is
 \begin{equation}
 f_{\min}=\frac{\pi D}{Tw}
 =\frac{\pi\times1.016}{2\times0.16}
 \approx9.97\ \mathrm{frames/s}.
 \label{eq:coverage-rate}
 \end{equation}
-We set the effective detection-throughput requirement to 10 frames/s, corresponding to 20 processed frames per revolution. Persistent needle or yarn abnormalities cause defects to propagate during knitting, providing further opportunities for detection in subsequent inspection cycles.
+We set the effective detection-throughput requirement to 10 frames/s, corresponding to 20 processed frames per revolution. For this throughput target, we select the Rockchip RK3566(Rockchip Electronics Co., Ltd., Fuzhou, China) to balance processing capability, camera connectivity, and hardware cost. It integrates a quad-core Cortex-A55 CPU, an NPU rated at 1 TOPS for INT8 operations, and camera input interfaces \cite{rockchiprk3566}. 
 
-For this throughput target, we select the Rockchip RK3566 to balance processing capability, camera connectivity, and hardware cost. It integrates a quad-core Cortex-A55 CPU, an NPU rated at 1 TOPS for INT8 operations, and camera input interfaces \cite{rockchiprk3566}. Table~\ref{tab:hardware-platforms} compares hardware specifications of the referenced platforms and our edge device. The 10 frames/s value is the system design requirement.
+Table~\ref{tab:hardware-platforms} summarizes the hardware specifications of platforms used in related defect detection studies. While high-performance platforms like the NVIDIA Jetson Orin Nano and Xilinx ZCU102 offer substantial computational power, their costs range from hundreds to over 3,000 USD, which can be prohibitive for large-scale deployment. In contrast, our self-developed Rockchip RK3566 device is optimized for the target throughput of 10 frames/s. Although its rated compute capability is 1 TOPS (INT8), it offers a cost-effective hardware basis for the proposed edge detection system. Most notably, at a hardware cost of only 60 USD, our solution offers a significant cost advantage over comparable industrial platforms, making it highly suitable for cost-sensitive mass production environments.
 
 \begin{table*}[!t]
 \caption{Hardware platforms used in related defect detection studies.}
@@ -168,13 +156,13 @@ For this throughput target, we select the Rockchip RK3566 to balance processing 
 \toprule
 Platform & Memory (GB) & Compute capability & Price (USD) \\
 \midrule
-Jetson TX2\cite{song2021edgefabric} & 8 & 1.33 TFLOPS (FP16) & 599 \\
-Jetson TX2 NX\cite{li2024liteyolo} & 4 & 1.33 TFLOPS (FP16) & 249 \\
-Jetson Xavier NX\cite{wang2024rail} & 8 & 21 TOPS (INT8) & 399 \\
-Jetson Orin Nano\cite{machado2025edgefabric} & 8 & 40 TOPS (INT8) & 499 \\
+NVIDIA Jetson TX2\cite{song2021edgefabric} & 8 & 1.33 TFLOPS (FP16) & 599 \\
+NVIDIA Jetson TX2 NX\cite{li2024liteyolo} & 4 & 1.33 TFLOPS (FP16) & 249 \\
+NVIDIA Jetson Xavier NX\cite{wang2024rail} & 8 & 21 TOPS (INT8) & 399 \\
+NVIDIA Jetson Orin Nano\cite{machado2025edgefabric} & 8 & 40 TOPS (INT8) & 499 \\
 Huawei Ascend 310\cite{yan2026warplace} & 8 & 16 TOPS (INT8) & 550 \\
-Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{\textdagger} & 3.45 TOPS (INT8)\textsuperscript{\textdaggerdbl} & 3234 \\
-Self-developed RK3566 edge device (Ours) & 4 & 1 TOPS (INT8) & 60 \\
+AMD Xilinx ZCU102\cite{zhao2025kamnet} & 4.5\textsuperscript{\textdagger} & 3.45 TOPS (INT8)\textsuperscript{\textdaggerdbl} & 3234 \\
+Self-developed Rockchip RK3566 device(Ours) & 4 & 1 TOPS (INT8) & 60 \\
 \bottomrule
 \end{tabular}
 \par\vspace{1pt}
@@ -187,25 +175,23 @@ Self-developed RK3566 edge device (Ours) & 4 & 1 TOPS (INT8) & 60 \\
 
 \subsection{Hardware Implementation}
 \label{sec:hardware-implementation}
-Based on the design requirements of the power supply, image acquisition and transmission, network communication, and processor subsystems, we develop the corresponding hardware shown in Fig.~\ref{fig:hardware}. The implementation integrates power delivery, remote camera connectivity, LED current control, local inference, 4G communication, and wired machine interfaces in a dedicated inspection device.
+Based on the design requirements of the power supply, image acquisition and transmission, network communication, and processor subsystems, we develop the corresponding hardware shown in Fig.~\ref{fig:hardware}. The implementation integrates power delivery, remote camera connectivity, LED current control, local inference, 4G communication, and input/output interfaces in a dedicated detection device.
 
-The camera assembly (A) combines the image sensor and LED illumination. We design a camera-side interface board (B) that integrates the serializer and coaxial connector, and a mainboard (C) built around the RK3566. The mainboard integrates memory and flash storage, the camera deserializer and coaxial interface, a 4G module with SIM-card and antenna interfaces, wired input/output interfaces, and power-management circuitry. The wired input/output interfaces connect the Hall sensor and machine controller, while the power circuitry receives the adapter output and provides the LED supply under mainboard current control. This board-level integration brings image reception, local processing, network communication, machine control, and illumination control into a dedicated edge device.
+The camera assembly (A) combines the image sensor and LED illumination. We design a camera-side interface board (B) that integrates the serializer and coaxial connector, and a mainboard (C) built around the RK3566. The mainboard integrates memory and flash storage, the camera deserializer and coaxial connector, a 4G module with SIM-card and antenna interfaces, wired input/output interfaces, and power-management circuitry. The input/output interfaces connect the Hall sensor and machine controller, while the power circuitry receives the adapter output and provides the LED supply under mainboard current control. This board-level integration brings image reception, local inference, network communication, machine control, and illumination control into a dedicated edge device.
 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.92\textwidth]{hardware.png}
-\caption{Hardware of the production-line defect detection system: (A) industrial camera with LED illumination; (B) camera-side interface board with a serializer and coaxial connector; and (C) RK3566 edge board with the labeled communication, memory, camera-interface, input/output, and power-management components.}
+\caption{Hardware of the defect detection system: (A) industrial camera with LED illumination; (B) camera-side interface board with a serializer and coaxial connector; and (C) RK3566 edge board with the 4G communication, flash storage, camera-interface, input/output, and power-management components.}
 \label{fig:hardware}
 \end{figure*}
-
-The detection algorithm and its deployment are introduced in the subsequent sections.
 
 % Keep system illustrations within the system-design section.
 \FloatBarrier
 \section{Detection Algorithm}
 \label{sec:method}
 \subsection{MCGI-YOLO Architecture}
-\model is developed from YOLOv8n to incorporate the morphology priors of circular-knitting defects under the computational constraints of the RK3566 platform \cite{ultralytics2023,rockchipmodelzoo}. Elongated defects motivate spatially extended contextual encoding, while localized holes motivate retention of local feature evidence. The detector uses MCE in the backbone to combine these two forms of evidence. GIU adapts the reconstruction of higher-level context in the top-down feature pyramid according to local feature content before fusion with lateral branches. The original local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained.
+\model is developed from YOLOv8n to incorporate the morphology priors of circular-knitting defects under the computational constraints of the RK3566 platform \cite{ultralytics2023}. Elongated defects motivate spatially extended contextual encoding, while localized holes motivate retention of local feature evidence. The detector uses MCE in the backbone to combine these two forms of evidence. GIU adapts the reconstruction of higher-level context in the top-down feature pyramid according to local feature content before fusion with lateral branches. The original local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained.
 
 Fig.~\ref{fig:network} shows the architecture. MCE is embedded in the C2f stages that produce the stride-8 and stride-16 backbone features, denoted $F_3$ and $F_4$. Each MCE block modulates only a subset of the final hidden C2f branch, while retaining the preceding branches and the local convolutional operations. The stride-32 feature $F_5$ is produced by the unchanged final backbone stage and spatial pyramid pooling. At an input size of $640\times640$, $F_3$, $F_4$, and $F_5$ have spatial sizes of $80\times80$, $40\times40$, and $20\times20$, respectively.
 
@@ -270,7 +256,6 @@ where $\phi_2$ is the original final $1\times1$ convolution with batch normaliza
 
 The scale $\gamma$ is initialized to zero. Consequently, a MCE block starts with the same forward mapping as its corresponding C2f block when their shared parameters are identical. During learning, $\gamma$ controls the introduction of the directional correction. The two depthwise filters and channel scale add $9q$ parameters in total: $6q$ filter weights, $2q$ biases, and $q$ scale parameters. Descriptor filtering costs $3q(H+W)$ multiply--accumulate operations; pooling, broadcasting, and modulation additionally process the $H\times W$ feature grid. Partial-channel placement reduces this overhead while keeping the local branches available for holes and fine structures.
 
-% TODO (author): replace ltfr.png with the GIU diagram; keep the image file unchanged for now.
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.8\textwidth]{ltfr.png}
@@ -321,7 +306,7 @@ MCE and GIU address the encoding and reconstruction stages of morphology-informe
 \subsection{Dataset}
 Images were collected during operation of a real circular-knitting production line. A global-shutter industrial camera captures $1280\times1024$ frames approximately 10 cm from the fabric, with a field of view of approximately $16\times12$ cm, where the 16 cm dimension follows the circumferential motion. We selected images with visible defects and manually annotated their bounding boxes. The dataset includes three defect categories: horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}).
 
-The dataset contains 403 images with 468 annotated defect instances, divided into training, validation, and test sets of 282, 40, and 81 images, respectively, as summarized in Table~\ref{tab:data}. The validation set is used for checkpoint selection, while performance is reported on the test set containing 91 labeled defects. Because the selected images contain visible defects, this test set evaluates defect localization and classification; it does not measure false-stop frequency during continuous inspection of normal fabric.
+The dataset contains 403 images with 468 annotated defect instances, divided into training, validation, and test sets of 282, 40, and 81 images, respectively, as summarized in Table~\ref{tab:data}. The validation set is used for checkpoint selection, while performance is reported on the test set containing 91 labeled defects. Because the selected images contain visible defects, this test set evaluates defect localization and classification; it does not measure false-stop frequency during continuous detection of normal fabric.
 \begin{table}[!htbp]
 \caption{Image-level split and defect-instance counts in the real production-line dataset.}
 \label{tab:data}
@@ -370,7 +355,8 @@ Data protocol
 \multirow[t]{3}{0.21\columnwidth}{Training dynamics}
 & Batch & 16  \\
 & Maximum epochs & 300 \\
-& Early-stopping patience & 80 epochs \\
+& Patience & 80 epochs \\
+& Optimizer & AdamW \\
 \bottomrule
 \end{tabular}
 \renewcommand{\arraystretch}{1.0}
@@ -400,16 +386,16 @@ mAP50--95 therefore evaluates localization over increasingly strict overlap requ
 \toprule
 Model & Params (M) & FLOPs (G) & mAP50 (\%) & mAP50--95 (\%) & FPS \\
 \midrule
-YOLOv9t & \textbf{2.12} & 8.50 & 90.1 & 53.3 & 291 \\
-YOLOv10n & 2.78 & 8.80 & 88.2 & 58.5 & \underline{524} \\
-YOLO11n & 2.62 & \underline{6.70} & 93.3 & 60.8 & 463 \\
-YOLO12n & 2.60 & 7.60 & 89.0 & 56.8 & 326 \\
-YOLO26n & \underline{2.57} & \textbf{6.20} & 90.5 & 58.2 & 425 \\
-RT-DETR-R18 & 20.09 & 60.72 & 95.2 & \textbf{67.7} & 146 \\
-DETR-R50 & 41.28 & 77.25 & 96.4 & 53.6 & 101 \\
-Deformable DETR-R50 & 39.82 & 158.66 & \underline{96.8} & 64.3 & 49 \\
-Faster R-CNN-R50 & 41.13 & 181.45 & 96.1 & 64.7 & 66 \\
-YOLOv8n (Baseline) & 3.01 & 8.10 & 90.5 & 58.4 & \textbf{554} \\
+YOLOv9t & \textbf{2.12} & 8.5 & 90.1 & 53.3 & 291 \\
+YOLOv10n & 2.78 & 8.8 & 88.2 & 58.5 & \underline{524} \\
+YOLO11n & 2.62 & \underline{6.7} & 93.3 & 60.8 & 463 \\
+YOLO12n & 2.60 & 7.6 & 89.0 & 56.8 & 326 \\
+YOLO26n & \underline{2.57} & \textbf{6.2} & 90.5 & 58.2 & 425 \\
+RT-DETR-R18 & 20.09 & 60.7 & 95.2 & \textbf{67.7} & 146 \\
+DETR-R50 & 41.28 & 77.3 & 96.4 & 53.6 & 101 \\
+Deformable DETR-R50 & 39.8 & 158.7 & \underline{96.8} & 64.3 & 49 \\
+Faster R-CNN-R50 & 41.1 & 181.5 & 96.1 & 64.7 & 66 \\
+YOLOv8n (Baseline) & 3.01 & 8.1 & 90.5 & 58.4 & \textbf{554} \\
 \model & 3.02 & 8.2 & \textbf{97.2} & \underline{65.5} & 486 \\
 \bottomrule
 \end{tabular*}
@@ -429,7 +415,7 @@ Model parameters and FLOPs are measured using the respective frameworks with an 
 % so result figures can share pages with the corresponding discussion.
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.96\textwidth]{qualitative_existing.png}
+\includegraphics[width=0.96\textwidth]{compare.png}
 \caption{Qualitative comparison of detection results on selected test images. From left to right, the columns show ground-truth annotations, YOLOv8n, YOLO11n, YOLO26n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours).}
 \label{fig:qualitative}
 \end{figure*}
@@ -451,10 +437,10 @@ The qualitative comparison in Fig.~\ref{fig:qualitative} is intended to examine 
 \toprule
 Variant & MCE & GIU & Params & FLOPs & mAP50 & mAP50--95 \\
 \midrule
-YOLOv8n & -- & -- & -- & -- & -- & -- \\
-+ MCE & \checkmark & -- & -- & -- & -- & -- \\
-+ GIU & -- & \checkmark & -- & -- & -- & -- \\
-\model & \checkmark & \checkmark & -- & -- & -- & -- \\
+YOLOv8n & -- & -- & 3.01 & 8.10 & 90.5 & 58.4 \\
++ MCE & \checkmark & -- & 3.01 & 8.2 & 93.9 & 63.6 \\
++ GIU & -- & \checkmark & 3.01 & 8.2 & 94.4 & 63.0 \\
+\model & \checkmark & \checkmark & 3.02 & 8.2 & 97.2 & 65.5 \\
 \bottomrule
 \end{tabular*}
 \end{table}
@@ -476,9 +462,7 @@ Feature visualizations in Fig.~\ref{fig:heatmaps} complement the numerical analy
 
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
-To deploy \model on the dedicated edge device, the PyTorch checkpoint selected using the validation set is first exported to ONNX with a fixed input size of $640\times640$. The ONNX graph is then converted into an INT8 RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2,jacob2018quantization}. The converted model is loaded by an Android 13 application on the RK3566 and executed on its NPU. The application integrates the detector with defect visualization, local wired stop control, and cloud reporting. Fig.~\ref{fig:system} shows the installed system on the circular knitting machine.
-
-For $640\times640$ inputs, the deployed INT8 model achieves a measured inference throughput of 22 FPS on the RK3566, equivalent to approximately 45.5 ms per frame. This throughput is 2.2 times the 10 FPS design target derived in Section~\ref{sec:coverage}, meeting the model-inference rate required for the specified machine speed and camera field of view. The reported FPS characterizes model inference; the complete acquisition-to-stop response also depends on image acquisition, preprocessing, postprocessing, and the machine's stopping dynamics.
+To deploy \model on the dedicated edge device, the trained model is exported to ONNX with a fixed input size of $640\times$640 and then converted into an INT8 RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2}. Fig.~\ref{fig:system} shows the installed system on the circular knitting machine. For $640\times$640 inputs, the deployed INT8 model achieves a measured inference throughput of 22 FPS on the RK3566. This throughput is 2.2 times the 10 FPS design target derived in Section~\ref{sec:coverage}, meeting the model-inference rate required for the specified machine speed and camera field of view.
 
 \begin{figure*}[!t]
 \centering
@@ -527,7 +511,7 @@ Since graduation, he has served as an assistant engineer, engineer, and senior e
 \begin{IEEEbiographynophoto}{Chunhua He}
 received the B.S. degree in microelectronics from Sun Yat-sen University, Guangzhou, China, in 2010, and the M.S. and Ph.D. degrees in microelectronics from Peking University, Beijing, China, in 2013 and 2018, respectively.
 
-From 2013 to 2017, he was an engineer with the No. 5 Electronics Research Institute, Ministry of Industry and Information Technology, Guangzhou, China. From 2017 to 2019, he was an engineer with Midea Group, Foshan, China. From 2019 to 2021, he was a senior engineer with Guangzhou 37 Degree Smart Home Co., Ltd., Guangzhou, China. He joined the School of Computer Science, Guangdong University of Technology, Guangzhou, China, in 2021, where he is currently an associate professor. His current research interests include the design and application of MEMS sensors and artificial intelligence algorithms.
+From 2013 to 2017, he was an engineer with the No. 5 Electronics Research Institute, Ministry of Industry and Information Technology, Guangzhou, China. From 2017 to 2019, he was an engineer with Midea Group, Foshan, China. From 2019 to 2021, he was a senior engineer with Guangzhou 37 Degree Smart Home Co., Ltd., Guangzhou, China. He joined the School of Computer Science, Guangdong University of Technology, Guangzhou, China, in 2021, where he is currently an professor. His current research interests include the design and application of MEMS sensors and artificial intelligence algorithms.
 \end{IEEEbiographynophoto}
 
 \end{document}
