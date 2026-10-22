@@ -210,7 +210,7 @@ U' &= U+\gamma\odot U\odot(2G-1), \label{eq:pac-modulation}
 \end{align}
 where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplication with broadcasting, and $\gamma\in\mathbb{R}^{1\times q\times1\times1}$ is a learnable channel-wise scale shared across batch samples and spatial positions. The context response $G\in[0,1]^{B\times q\times H\times W}$ is centered by $2G-1$ to provide signed modulation, with $\gamma$ controlling its channel-wise strength. The original $U$ is retained through the residual connection, and the corrected one-quarter-channel group $U'$ is concatenated with the unchanged three-quarter-channel group $V$. The corrected group has size $U'\in\mathbb{R}^{B\times q\times H\times W}$, and channel concatenation produces a $B\times C\times H\times W$ output before the original C2f fusion. Zero-initializing $\gamma$ makes the module an identity mapping at initialization.
 
-Each MCE adds $9q=9C/4$ parameters, comprising $6q$ depthwise-convolution weights, $2q$ biases, and $q$ residual scales. Its descriptor convolutions require $3q(H+W)$ multiply--accumulate operations (MACs) per image, with an additional $\mathcal{O}(qHW)$ cost for pooling and pointwise operations. Together, the two MCE blocks add 216 parameters and 7,680 descriptor-convolution MACs at $640\times640$ input resolution. The two biased depthwise filters and residual scales add $9q$ parameters.
+Each depthwise path has $q$ three-element kernels and $q$ biases. With two paths and $q$ residual scales, MCE adds $2(3q+q)+q=9q=9C/4$ parameters. The compressed descriptors have lengths $H$ and $W$, giving $3qH+3qW=3q(H+W)$ multiply--accumulate operations (MACs) per image. Pooling and pointwise operations additionally process $qHW$ values, contributing $\mathcal{O}(qHW)$ work.
 
 \begin{figure*}[!tbp]
 \centering
@@ -251,7 +251,7 @@ G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05L,
 \end{equation}
 so the module starts from a predominantly nearest-neighbor reconstruction, consistent with the baseline top-down pathway.
 
-Each GIU adds $9C+1$ parameters, with $9CHW$ multiply--accumulate operations per image for the gate convolution. The fixed interpolation paths, low-resolution weight prediction, and channel sharing concentrate the learned computation in a single compact convolution; the remaining reconstruction uses interpolation and element-wise mixing. This design provides content-adaptive upsampling within the computational budget of the RK3566. The individual and combined module effects are evaluated in Section~\ref{sec:component-ablation}.
+The shared gate has one $3\times3$ kernel spanning $C$ input channels, so its weights and bias contribute $3\times3\times C+1=9C+1$ parameters. Evaluating this kernel at $HW$ low-resolution locations requires $9CHW$ MACs per image. The fixed interpolation and element-wise operations add $\mathcal{O}(CHW)$ work without introducing learnable parameters.
 
 \section{Experimental Setup}
 \label{sec:experimental-setup}
