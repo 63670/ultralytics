@@ -8,6 +8,7 @@
 \usepackage{microtype}
 \usepackage{multirow}
 \usepackage{stfloats}
+\usepackage{placeins}
 \usepackage{xspace}
 \usepackage{xurl}
 \usepackage[hidelinks]{hyperref}
@@ -283,7 +284,7 @@ The comparisons include lightweight YOLO models \cite{ultralytics2023,tian2025yo
 
 The RT-DETR-R18 entry uses the RT-DETRv2 implementation from the official repository \cite{rtdetrrepository}.
 
-\begin{table}[!tbp]
+\begin{table}[!htbp]
 \caption{Implementation protocol. Training settings describe the Ultralytics experiments; deployment settings describe the installed edge device.}
 \label{tab:implementation}
 \centering
@@ -316,18 +317,7 @@ Data protocol
 \renewcommand{\arraystretch}{1.0}
 \end{table}
 
-\subsection{Evaluation Metrics}
-\label{sec:evaluation}
-Intersection over union (IoU) measures the overlap between predicted and ground-truth bounding boxes as the ratio of their intersection area to their union area. Detection accuracy is evaluated using mAP50 and mAP50--95 \cite{lin2014coco}. Let $a_c(t)$ denote the average precision for class $c$ at IoU threshold $t$. The metrics are computed as
-\begin{align}
-\operatorname{mAP}_{50} &= \frac{1}{N_c}\sum_{c=1}^{N_c}a_c(0.50),
-\label{eq:metrics}\\
-\operatorname{mAP}_{50:95} &= \frac{1}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in T}a_c(t),
-\label{eq:ap}
-\end{align}
-where $N_c=3$ and $T=\{0.50,0.55,\ldots,0.95\}$. Both metrics are reported as percentages, with improvements expressed in percentage points.
-
-% Queue the comparison table before the results discussion to keep it nearby.
+% Queue wide comparison floats before the metrics to keep results illustrations nearby.
 \begin{table*}[!tbp]
 \caption{Detector comparison on the test set. FPS denotes FP32 model-forward throughput on an RTX 3090 with batch size 1 and a $640\times640$ input. Bold and underlined values indicate the best and second-best results, respectively; lower parameters/FLOPs and higher mAP50/mAP50--95/FPS are preferred.}
 \label{tab:comparison}
@@ -356,13 +346,6 @@ YOLOv8n (Baseline)~\cite{ultralytics2023} & 3.01 & 8.1 & 90.5 & 58.4 & \textbf{5
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
 
-Model parameters and FLOPs are measured using the respective frameworks with an input resolution of $640\times640$. For the FPS comparison, all models use the same RTX 3090, FP32 with TF32 disabled, batch size 1, and GPU-resident test inputs resized to $640\times640$. Model evaluation mode and available inference fusion are enabled. After 50 warmup forwards, five rounds of 200 forwards are timed using CUDA events and synchronization; FPS is calculated as $1000/\bar{t}$, where $\bar{t}$ is the average per-image time in milliseconds. Image loading, preprocessing, host-to-device transfers, and external postprocessing are excluded. Operations intrinsic to each forward path remain included, such as detection-head decoding or Faster R-CNN proposal selection required for RoI computation. This GPU model-forward measurement is separate from the 22 frames/s RK3566 deployment result and from complete application response time.
-
-\section{Results and Discussion}
-\label{sec:results}
-\subsection{Comparison With Other Detectors}
-Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inference throughput. \model achieves the highest mAP50 of 97.2\% and the second-highest mAP50--95 of 65.5\%, improving over the YOLOv8n~\cite{ultralytics2023} baseline by 6.7 and 7.1 percentage points, respectively. This gain comes with only a marginal increase in parameters (3.01 M $\rightarrow$ 3.02 M) and FLOPs (8.1 G $\rightarrow$ 8.2 G), while throughput on the RTX 3090 decreases from 554 to 486 FPS. Among lightweight variants, YOLO11n~\cite{ultralytics2023} attains the next-best accuracy (93.3\% mAP50, 60.8\% mAP50--95); \model surpasses it by 3.9 and 4.7 points while running faster (486 vs.\ 463 FPS). YOLOv9t~\cite{wang2025yolov9}, YOLOv10n~\cite{wang2024yolov10}, YOLO12n~\cite{tian2025yolov12}, and YOLO26n~\cite{ultralytics2023} have fewer parameters or lower FLOPs but underperform on this test set, confirming that task-specific adaptation outperforms generic lightweight detectors. RT-DETR-R18~\cite{zhao2024rtdetr} leads in mAP50--95 (67.7\%) but requires 20.09 M parameters and 60.7 G FLOPs at 146 FPS. \model also outperforms DETR-R50~\cite{carion2020detr}, Deformable DETR-R50~\cite{zhu2021deformable}, and Faster R-CNN-R50~\cite{ren2015faster} on both mAP metrics with substantially lower cost, offering the best overall accuracy--efficiency tradeoff. Fig.~\ref{fig:qualitative} shows that \model produces fewer fragmented boxes and tighter localization on elongated defects and holes, consistent with the aggregate results.
-
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.96\textwidth]{compare.png}
@@ -370,9 +353,27 @@ Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inf
 \label{fig:qualitative}
 \end{figure*}
 
+\subsection{Evaluation Metrics}
+\label{sec:evaluation}
+Intersection over union (IoU) measures the overlap between predicted and ground-truth bounding boxes as the ratio of their intersection area to their union area. Detection accuracy is evaluated using mAP50 and mAP50--95 \cite{lin2014coco}. Let $a_c(t)$ denote the average precision for class $c$ at IoU threshold $t$. The metrics are computed as
+\begin{align}
+\operatorname{mAP}_{50} &= \frac{1}{N_c}\sum_{c=1}^{N_c}a_c(0.50),
+\label{eq:metrics}\\
+\operatorname{mAP}_{50:95} &= \frac{1}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in T}a_c(t),
+\label{eq:ap}
+\end{align}
+where $N_c=3$ and $T=\{0.50,0.55,\ldots,0.95\}$. Both metrics are reported as percentages, with improvements expressed in percentage points.
+
+Model parameters and FLOPs are measured using the respective frameworks with an input resolution of $640\times640$. For the FPS comparison, all models use the same RTX 3090, FP32 with TF32 disabled, batch size 1, and GPU-resident test inputs resized to $640\times640$. Model evaluation mode and available inference fusion are enabled. After 50 warmup forwards, five rounds of 200 forwards are timed using CUDA events and synchronization; FPS is calculated as $1000/\bar{t}$, where $\bar{t}$ is the average per-image time in milliseconds. Image loading, preprocessing, host-to-device transfers, and external postprocessing are excluded. Operations intrinsic to each forward path remain included, such as detection-head decoding or Faster R-CNN proposal selection required for RoI computation. This GPU model-forward measurement is separate from the 22 frames/s RK3566 deployment result and from complete application response time.
+
+\section{Results and Discussion}
+\label{sec:results}
+\subsection{Comparison With Other Detectors}
+Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inference throughput. \model achieves the highest mAP50 of 97.2\% and the second-highest mAP50--95 of 65.5\%, improving over the YOLOv8n~\cite{ultralytics2023} baseline by 6.7 and 7.1 percentage points, respectively. This gain comes with only a marginal increase in parameters (3.01 M $\rightarrow$ 3.02 M) and FLOPs (8.1 G $\rightarrow$ 8.2 G), while throughput on the RTX 3090 decreases from 554 to 486 FPS. Among lightweight variants, YOLO11n~\cite{ultralytics2023} attains the next-best accuracy (93.3\% mAP50, 60.8\% mAP50--95); \model surpasses it by 3.9 and 4.7 points while running faster (486 vs.\ 463 FPS). YOLOv9t~\cite{wang2025yolov9}, YOLOv10n~\cite{wang2024yolov10}, YOLO12n~\cite{tian2025yolov12}, and YOLO26n~\cite{ultralytics2023} have fewer parameters or lower FLOPs but underperform on this test set, confirming that task-specific adaptation outperforms generic lightweight detectors. RT-DETR-R18~\cite{zhao2024rtdetr} leads in mAP50--95 (67.7\%) but requires 20.09 M parameters and 60.7 G FLOPs at 146 FPS. \model also outperforms DETR-R50~\cite{carion2020detr}, Deformable DETR-R50~\cite{zhu2021deformable}, and Faster R-CNN-R50~\cite{ren2015faster} on both mAP metrics with substantially lower cost, offering the best overall accuracy--efficiency tradeoff. Fig.~\ref{fig:qualitative} shows that \model produces fewer fragmented boxes and tighter localization on elongated defects and holes, consistent with the aggregate results.
+
 \subsection{Component Ablation}
 \label{sec:component-ablation}
-\begin{table}[!tbp]
+\begin{table}[!htbp]
 \caption{Component ablation of MCE and GIU. Parameters are in millions, FLOPs in billions, and mAP50/mAP50--95 in percent. Numerical entries are reserved for the finalized results.}
 \label{tab:ablation}
 \centering
@@ -395,7 +396,7 @@ Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n basel
 On the test set, MCE alone achieves 93.9\% mAP50 and 63.6\% mAP50--95, improving over the baseline by 3.4 and 5.2 percentage points, respectively. GIU alone achieves 94.4\% and 63.0\%, corresponding to gains of 3.9 and 4.6 points. Combining the two modules yields 97.2\% mAP50 and 65.5\% mAP50--95, exceeding the best single-module result for each metric by 2.8 and 1.9 points. These results support the complementary benefits of morphology-aware context encoding and adaptive feature reconstruction. Feature visualizations in Fig.~\ref{fig:heatmaps} complement the numerical analysis by comparing responses at corresponding feature stages on the same images. They are interpreted alongside localization and classification results rather than as a separate quantitative measure of detection performance.
 
 % Keep the activation map in one column alongside the results discussion.
-\begin{figure}[!tbp]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\columnwidth]{heatmap_comparison.png}
 \caption{Feature visualization of YOLOv8n and \model. From left to right: ground-truth annotations (Label), YOLOv8n, and \model.}
@@ -406,6 +407,8 @@ On the test set, MCE alone achieves 93.9\% mAP50 and 63.6\% mAP50--95, improving
 \label{sec:deployment}
 To deploy \model on the dedicated edge device, the trained model is exported to ONNX with a fixed input size of $640\times$640 and then converted into an INT8 RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2}. For $640\times$640 inputs, the deployed INT8 model achieves a measured inference throughput of 22 FPS on the RK3566. This throughput is 2.2 times the 10 FPS design target derived in Section~\ref{sec:coverage}, meeting the model-inference rate required for the specified machine speed and camera field of view.
 
+% Keep all results figures and tables before the conclusion.
+\FloatBarrier
 \section{Conclusion}
 \label{sec:conclusion}
 This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, integrating image acquisition, SerDes transmission, edge inference, machine stopping, and cloud alerts. The lightweight \model combines MCE for elongated-defect morphology encoding with GIU for adaptive feature reconstruction. On the self-collected test set, it achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving over YOLOv8n by 6.7 and 7.1 percentage points. INT8 deployment on the RK3566 achieves 22 FPS, exceeding the 10 FPS design target. Future work will evaluate quantization-induced accuracy changes, end-to-end stopping performance, and false-stop frequency across fabric textures and operating conditions.
