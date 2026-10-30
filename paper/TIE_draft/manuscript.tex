@@ -182,20 +182,17 @@ The one-quarter-channel group $U$ feeds the two pooling paths. Here, $b$, $a$, $
 R_h(b,a,h,1) &= \frac{1}{W}\sum_{w=1}^{W}U(b,a,h,w), \label{eq:pac-row}\\
 R_w(b,a,1,w) &= \frac{1}{H}\sum_{h=1}^{H}U(b,a,h,w). \label{eq:pac-column}
 \end{align}
-Averaging over $W$ retains row positions, while averaging over $H$ retains column positions. The $3\times1$ and $1\times3$ depthwise convolutions preserve the descriptor sizes. Their outputs are broadcast along $W$ and $H$, respectively [Fig.~\ref{fig:modules}(d)]:
+Averaging over $W$ retains row positions, while averaging over $H$ retains column positions. The depthwise-convolution outputs $D_h=\operatorname{DW}_{3\times1}(R_h)$ and $D_w=\operatorname{DW}_{1\times3}(R_w)$ retain sizes $B\times q\times H\times1$ and $B\times q\times1\times W$, respectively. Broadcasting repeats each row response across all columns and each column response across all rows [Fig.~\ref{fig:modules}(d)]:
 \begin{equation}
 \begin{aligned}
-B\times q\times H\times1
- &\xrightarrow{\mathrm{Broadcast}} B\times q\times H\times W,\\
-B\times q\times1\times W
- &\xrightarrow{\mathrm{Broadcast}} B\times q\times H\times W.
+\widetilde D_h(b,a,h,w)&=D_h(b,a,h,1),\\
+\widetilde D_w(b,a,h,w)&=D_w(b,a,1,w),
 \end{aligned}
 \label{eq:pac-broadcast}
 \end{equation}
-The aligned responses are added to form $T\in\mathbb{R}^{B\times q\times H\times W}$:
+for every $h=1,\ldots,H$ and $w=1,\ldots,W$. Both expanded responses have size $B\times q\times H\times W$, and their element-wise sum is
 \begin{equation}
-T=\operatorname{DW}_{3\times1}(R_h)
- +\operatorname{DW}_{1\times3}(R_w).
+T=\widetilde D_h+\widetilde D_w.
 \label{eq:pac-context}
 \end{equation}
 Pooling provides long-range context, while the depthwise convolutions capture neighboring positions in the compressed descriptors.
