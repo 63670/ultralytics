@@ -182,13 +182,23 @@ The one-quarter-channel group $U$ feeds the two pooling paths. Here, $b$, $a$, $
 R_h(b,a,h,1) &= \frac{1}{W}\sum_{w=1}^{W}U(b,a,h,w), \label{eq:pac-row}\\
 R_w(b,a,1,w) &= \frac{1}{H}\sum_{h=1}^{H}U(b,a,h,w). \label{eq:pac-column}
 \end{align}
-Averaging over $W$ aggregates long-range evidence along each row while retaining row positions; averaging over $H$ aggregates long-range evidence along each column while retaining column positions. The resulting descriptors have sizes $B\times q\times H\times1$ and $B\times q\times1\times W$, where the dimension of size 1 corresponds to the spatial direction that was pooled. They pass through $3\times1$ and $1\times3$ depthwise convolutions, respectively. Both convolutions use stride 1 and padding along their non-singleton spatial dimension, preserving the descriptor sizes. The two Broadcast operations in Fig.~\ref{fig:modules}(d) then expand the singleton dimensions: the row-path response of size $B\times q\times H\times1$ is shared across all $W$ columns, while the column-path response of size $B\times q\times1\times W$ is shared across all $H$ rows. Both responses thus have the compatible size $B\times q\times H\times W$ for element-wise addition:
+Averaging over $W$ retains row positions, while averaging over $H$ retains column positions. The $3\times1$ and $1\times3$ depthwise convolutions preserve the descriptor sizes. Their outputs are broadcast along $W$ and $H$, respectively [Fig.~\ref{fig:modules}(d)]:
+\begin{equation}
+\begin{aligned}
+B\times q\times H\times1
+ &\xrightarrow{\mathrm{Broadcast}} B\times q\times H\times W,\\
+B\times q\times1\times W
+ &\xrightarrow{\mathrm{Broadcast}} B\times q\times H\times W.
+\end{aligned}
+\label{eq:pac-broadcast}
+\end{equation}
+The aligned responses are added to form $T\in\mathbb{R}^{B\times q\times H\times W}$:
 \begin{equation}
 T=\operatorname{DW}_{3\times1}(R_h)
  +\operatorname{DW}_{1\times3}(R_w).
 \label{eq:pac-context}
 \end{equation}
-At each output position $(b,a,h,w)$, this sum combines the row-path value at $(b,a,h,1)$ with the column-path value at $(b,a,1,w)$. Broadcasting reuses these values along singleton dimensions; it performs no interpolation, adds no learnable parameters, and does not mix samples or channels. The implementation performs this expansion implicitly during addition, without requiring explicitly replicated feature maps. The resulting context $T$ has size $B\times q\times H\times W$. Pooling along full rows and columns provides long-range context, while the $3\times1$ and $1\times3$ convolutions supplement local information between neighboring positions on the compressed descriptors.
+Pooling provides long-range context, while the depthwise convolutions capture neighboring positions in the compressed descriptors.
 
 \emph{3) Residual Context Modulation:}
 The combined context $T$ is mapped by Hardsigmoid and centered to construct a scaled residual correction:
