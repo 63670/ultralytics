@@ -30,10 +30,10 @@
 \begin{document}
 \raggedbottom
 
-\title{An Edge System and MCGI-YOLO for Fabric Defect Detection and Closed-Loop Control in Circular Knitting Machines}
+\title{A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines}
 
-\author{Kangzhao Tan, Jiarui Zhang, Junjie Yu, Heng Wu, Jing Lin\textsuperscript{*}, Diyu Li\textsuperscript{*}, and Chunhua He\textsuperscript{*}%
-\thanks{Manuscript received October 22, 2026. (\textsuperscript{*}Corresponding authors: Jing Lin, Diyu Li, and Chunhua He).}%
+\author{Kangzhao Tan, Jiarui Zhang, Junjie Yu, Heng Wu, Jing Lin, Diyu Li, and Chunhua He%
+\thanks{Manuscript received October 31, 2026. This work was supported in part by the National Natural Science Foundation of China under Grant U22A2012. \textit{(Corresponding authors: Jing Lin, Diyu Li, and Chunhua He.)}}%
 \thanks{\begingroup\urlstyle{same}Kangzhao Tan, Jiarui Zhang, Junjie Yu, and Chunhua He are with the School of Computer Science, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{tankangzhao@mails.gdut.edu.cn}; \protect\url{zhangjiarui1@mails.gdut.edu.cn}; \protect\url{yujunjie2@mails.gdut.edu.cn}; \protect\url{hechunhua@pku.edu.cn}). Heng Wu is with the School of Automation, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{heng.wu@gdut.edu.cn}). Jing Lin is with the Classroom Management Center, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{lj@gdut.edu.cn}). Diyu Li is with Guangzhou Vinsome Automation Technology Co., Ltd., Guangzhou, China (e-mail: \protect\url{lidiyu@vinsome.cn}).\endgroup}%
 }
 
@@ -44,7 +44,7 @@ Defect detection is critical for circular knitting production, where persistent 
 \end{abstract}
 
 \begin{IEEEkeywords}
-Circular knitting machine, fabric defect detection, edge computing, morphology-aware context encoding(MCE), gated interpolation upsampling(GIU), YOLO.
+Circular knitting machine, edge computing, fabric defect detection, gated interpolation upsampling (GIU), morphology-aware context encoding (MCE), YOLO.
 \end{IEEEkeywords}
 
 \markboth{IEEE TRANSACTIONS ON INDUSTRIAL ELECTRONICS}{}
@@ -66,7 +66,7 @@ The main contributions of our work are as follows.
   \item We design GIU to accommodate the diverse morphologies and scales of circular-knitting defects, including elongated defects and holes of varying sizes. A compact spatial gate adapts a convex combination of two fixed interpolation paths, balancing response replication and neighborhood smoothing in the top-down path.
 \end{enumerate}
 
-The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes MCGI-YOLO and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} reports detector comparisons, component ablation, and model deployment. Section~\ref{sec:conclusion} concludes the paper.
+The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes MCGI-YOLO and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} reports detector comparisons, component ablation, and model deployment. Section~\ref{sec:conclusion} concludes.
 
 \section{Defect Detection and Closed-Loop Control System}
 \label{sec:system-design}
@@ -415,7 +415,7 @@ His research interests include deep learning, computer vision, and industrial de
 \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a2.jpg}}]{Jiarui Zhang}
 received the B.S. degree in electrical engineering and automation from Guangdong Polytechnic Normal University, Guangzhou, China, in 2021. He is currently pursuing the M.S. degree in software engineering with the School of Computer Science, Guangdong University of Technology, Guangzhou, China.
 
-His research interests include electronic circuit design and intelligent internet of things.
+His research interests include electronic circuit design and intelligent Internet of Things.
 \end{IEEEbiography}
 
 \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a3.jpg}}]{Junjie Yu}

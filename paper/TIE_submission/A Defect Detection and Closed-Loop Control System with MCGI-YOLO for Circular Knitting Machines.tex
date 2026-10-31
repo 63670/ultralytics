@@ -30,10 +30,10 @@
 \begin{document}
 \raggedbottom
 
-\title{An Edge System and MCGI-YOLO for Fabric Defect Detection and Closed-Loop Control in Circular Knitting Machines}
+\title{A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines}
 
-\author{Kangzhao Tan, Jiarui Zhang, Junjie Yu, Heng Wu, Jing Lin\textsuperscript{*}, Diyu Li\textsuperscript{*}, and Chunhua He\textsuperscript{*}%
-\thanks{Manuscript received October 22, 2026. (\textsuperscript{*}Corresponding authors: Jing Lin, Diyu Li, and Chunhua He).}%
+\author{Kangzhao Tan, Jiarui Zhang, Junjie Yu, Heng Wu, Jing Lin, Diyu Li, and Chunhua He%
+\thanks{Manuscript received October 31, 2026. This work was supported in part by the National Natural Science Foundation of China under Grant U22A2012. \textit{(Corresponding authors: Jing Lin, Diyu Li, and Chunhua He.)}}%
 \thanks{\begingroup\urlstyle{same}Kangzhao Tan, Jiarui Zhang, Junjie Yu, and Chunhua He are with the School of Computer Science, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{tankangzhao@mails.gdut.edu.cn}; \protect\url{zhangjiarui1@mails.gdut.edu.cn}; \protect\url{yujunjie2@mails.gdut.edu.cn}; \protect\url{hechunhua@pku.edu.cn}). Heng Wu is with the School of Automation, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{heng.wu@gdut.edu.cn}). Jing Lin is with the Classroom Management Center, Guangdong University of Technology, Guangzhou 510006, China (e-mail: \protect\url{lj@gdut.edu.cn}). Diyu Li is with Guangzhou Vinsome Automation Technology Co., Ltd., Guangzhou, China (e-mail: \protect\url{lidiyu@vinsome.cn}).\endgroup}%
 }
 
@@ -44,7 +44,7 @@ Defect detection is critical for circular knitting production, where persistent 
 \end{abstract}
 
 \begin{IEEEkeywords}
-Circular knitting machine, fabric defect detection, edge computing, morphology-aware context encoding(MCE), gated interpolation upsampling(GIU), YOLO.
+Circular knitting machine, edge computing, fabric defect detection, gated interpolation upsampling (GIU), morphology-aware context encoding (MCE), YOLO.
 \end{IEEEkeywords}
 
 \markboth{IEEE TRANSACTIONS ON INDUSTRIAL ELECTRONICS}{}
@@ -56,7 +56,7 @@ Edge computing offers a practical pathway toward such real-time detection, and h
 
 In terms of detection algorithms, YOLO-based detectors have been widely explored for industrial defect detection because of their efficient inference and explicit defect localization \cite{redmon2016yolo}. FA-YOLO combines receptive-field enhancement, attention, and adaptive spatial feature fusion \cite{yu2024fayolo}. DGHR-YOLO integrates deformable convolution for morphology adaptation with a high-level screening feature pyramid and lightweight feature processing \cite{zhang2025dghr}. Zhao et al. proposed attention-based multiscale feature fusion (AMFF), combining intralayer feature enhancement and cross-layer attention to strengthen weak defect representations on fabric and aluminum surfaces \cite{zhao2024amff}. An and Wan introduced JDCBL, combining contextual Transformer features with balanced contrastive learning to address scale variation and long-tailed defect categories in fabric detection \cite{an2025jdcbl}. Wang et al. developed RRNet, a lightweight rotated fabric defect detector that combines position-guided fusion and multiscale rotation-guided strip coupling to model elongated and tilted defect structures \cite{wang2026rrnet}. Together, these methods advance the representation of subtle defects, irregular shapes, and scale variation. Related work on photovoltaic-cell and pipeline-weld detection also explores task-specific feature pyramids, contextual relations, and lightweight rotated representations \cite{su2022baf,shen2024crnet,liu2025lrnet}. However, these methods are tailored to their respective detection targets and may not be directly applicable to defect detection on circular knitting machines. Defects on circular knitting machines exhibit diverse morphologies and scales, ranging from horizontal and vertical elongated patterns to localized holes. In addition, modules such as deformable convolution and attention often introduce substantial computational overhead, making them less suitable for deployment on resource-constrained edge devices.
 
-Motivated by these limitations, we design and implement a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines. The system integrates a power adapter, a global-shutter camera with LED illumination, a coaxial serializer/deserializer (SerDes) image-transmission link, a Hall sensor, and a self-developed edge device. For defect detection within this system, we develop \model, a lightweight detector that incorporates morphology-aware and scale-aware design for fabric defects. MCE supplies spatially extended morphology-aware context for horizontal and vertical elongated defects. GIU addresses the differing reconstruction needs of elongated defects and holes of varying sizes by adaptively adjusting the interpolation of higher-level context. Together, the two components connect morphology-aware context encoding with spatial reconstruction within a compact parameter budget.
+Motivated by these limitations, we design and implement a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines. The system integrates a power adapter, a global-shutter camera with LED illumination, a coaxial serializer/deserializer (SerDes) image-transmission link, a Hall sensor, and an edge device. For defect detection within this system, we develop \model, a lightweight detector that incorporates morphology-aware and scale-aware design for fabric defects. MCE supplies spatially extended morphology-aware context for horizontal and vertical elongated defects. GIU addresses the differing reconstruction needs of elongated defects and holes of varying sizes by adaptively adjusting the interpolation of higher-level context. Together, the two components connect morphology-aware context encoding with spatial reconstruction within a compact parameter budget.
 
 The main contributions of our work are as follows.
 \begin{enumerate}
@@ -66,7 +66,7 @@ The main contributions of our work are as follows.
   \item We design GIU to accommodate the diverse morphologies and scales of circular-knitting defects, including elongated defects and holes of varying sizes. A compact spatial gate adapts a convex combination of two fixed interpolation paths, balancing response replication and neighborhood smoothing in the top-down path.
 \end{enumerate}
 
-The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes MCGI-YOLO and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} reports detector comparisons, component ablation, and model deployment. Section~\ref{sec:conclusion} concludes the paper.
+The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes MCGI-YOLO and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} reports detector comparisons, component ablation, and model deployment. Section~\ref{sec:conclusion} concludes.
 
 \section{Defect Detection and Closed-Loop Control System}
 \label{sec:system-design}
@@ -415,7 +415,7 @@ His research interests include deep learning, computer vision, and industrial de
 \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a2.jpg}}]{Jiarui Zhang}
 received the B.S. degree in electrical engineering and automation from Guangdong Polytechnic Normal University, Guangzhou, China, in 2021. He is currently pursuing the M.S. degree in software engineering with the School of Computer Science, Guangdong University of Technology, Guangzhou, China.
 
-His research interests include electronic circuit design and intelligent internet of things.
+His research interests include electronic circuit design and intelligent Internet of Things.
 \end{IEEEbiography}
 
 \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{a3.jpg}}]{Junjie Yu}
