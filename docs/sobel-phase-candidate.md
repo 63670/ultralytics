@@ -1,6 +1,6 @@
 # Sobel C2f 与轻量上采样候选
 
-此实验对应 DMFR-YOLO 的后续结构优化，不修改已写入论文的模型、数据和图表。三个配置均保留 YOLOv8n 的原始 bottleneck、特征拼接、检测头和基础权重名称。v1 的五种子训练结果与位置调整候选见 [v2 位置分工实验](sobel-phase-v2.md)。
+此实验对应 DMFR-YOLO 的后续结构优化，不修改已写入论文的模型、数据和图表。三个配置均保留 YOLOv8n 的原始 bottleneck、特征拼接、检测头和基础权重名称。v1 的五种子训练结果与位置调整候选见 [v2 位置分工实验](sobel-phase-v2.md)。P3/P4 每个 bottleneck 后增加 Sobel 的版本见 [v3 逐 Bottleneck 实验](sobel-bottleneck-p3-p4.md)。
 
 | 配置 | P3/P4 的 C2f | 两处上采样 |
 |---|---|---|

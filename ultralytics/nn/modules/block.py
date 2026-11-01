@@ -32,6 +32,7 @@ __all__ = (
     "Attention",
     "BNContrastiveHead",
     "Bottleneck",
+    "BottleneckSobel",
     "BottleneckCSP",
     "C2f",
     "C2fAttn",
@@ -42,6 +43,7 @@ __all__ = (
     "C2fAxisResidual",
     "C2fAxisBounded",
     "C2fSobel",
+    "C2fSobelBottleneck",
     "C2fDetailFusion",
     "C2fWWTE",
     "C2fWWTEGated",
@@ -67,6 +69,7 @@ __all__ = (
     "ResNetLayer",
     "SCAM",
     "SCDown",
+    "SobelResidual",
     "TorchVision",
 )
 
@@ -569,6 +572,47 @@ class C2fSobel(C2f):
         return self._aggregate(list(self.cv1(x).split((self.c, self.c), dim=1)))
 
 
+class SobelResidual(nn.Module):
+    """Learn a selected edge correction over the complete feature output of one bottleneck."""
+
+    def __init__(self, channels: int):
+        """Keep fixed Sobel filters outside optimizer parameters and start from the identity mapping."""
+        super().__init__()
+        self.channels = channels
+        kernel = torch.tensor([[-1.0, 0.0, 1.0], [-2.0, 0.0, 2.0], [-1.0, 0.0, 1.0]]) / 8.0
+        self.sobel_x = self._fixed_filter(kernel)
+        self.sobel_y = self._fixed_filter(kernel.t())
+        self.selector = nn.Conv2d(channels, channels, 3, padding=1, groups=channels)
+        self.edge_mix = nn.Conv2d(channels, channels, 1, bias=False)
+        self.gate = nn.Hardsigmoid()
+        nn.init.zeros_(self.selector.weight)
+        nn.init.zeros_(self.selector.bias)
+        nn.init.zeros_(self.edge_mix.weight)
+
+    def _fixed_filter(self, kernel: torch.Tensor) -> nn.Conv2d:
+        """Use a standard depthwise Conv2d with a buffered kernel for export and FLOPs accounting."""
+        layer = nn.Conv2d(self.channels, self.channels, 3, padding=1, groups=self.channels, bias=False)
+        del layer.weight
+        layer.register_buffer("weight", kernel.reshape(1, 1, 3, 3).repeat(self.channels, 1, 1, 1).contiguous())
+        return layer
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Retain semantic features while learning how much boundary response to add."""
+        edge = self.sobel_x(x).abs() + self.sobel_y(x).abs()
+        return x + self.gate(self.selector(x)) * self.edge_mix(edge)
+
+
+class C2fSobelBottleneck(C2f):
+    """Apply full-hidden-channel Sobel refinement after every progressive bottleneck in C2f."""
+
+    def __init__(self, c1: int, c2: int, n: int = 1, shortcut: bool = False, g: int = 1, e: float = 0.5):
+        """Preserve C2f projection and bottleneck convolution names for pretrained weight transfer."""
+        super().__init__(c1, c2, n, shortcut, g, e)
+        self.m = nn.ModuleList(
+            BottleneckSobel(self.c, self.c, shortcut, g, k=((3, 3), (3, 3)), e=1.0) for _ in range(n)
+        )
+
+
 class C2fDetailFusion(C2f):
     """Fuse a compressed stride-4 detail path into the stride-8 C2f neck output."""
 
@@ -919,6 +963,21 @@ class Bottleneck(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply bottleneck with optional shortcut connection."""
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+
+
+class BottleneckSobel(Bottleneck):
+    """Append a learned Sobel residual to the complete ordinary bottleneck output."""
+
+    def __init__(
+        self, c1: int, c2: int, shortcut: bool = True, g: int = 1, k: tuple[int, int] = (3, 3), e: float = 0.5
+    ):
+        """Keep both spatial convolutions and the original shortcut before edge refinement."""
+        super().__init__(c1, c2, shortcut, g, k, e)
+        self.sobel = SobelResidual(c2)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Refine the bottleneck result before it is retained and passed to the next C2f bottleneck."""
+        return self.sobel(super().forward(x))
 
 
 class DirectionalBottleneck(Bottleneck):
