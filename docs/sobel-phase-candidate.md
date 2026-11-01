@@ -1,6 +1,6 @@
 # Sobel C2f 与轻量上采样候选
 
-此实验对应 DMFR-YOLO 的后续结构优化，不修改已写入论文的模型、数据和图表。三个配置均保留 YOLOv8n 的原始 bottleneck、特征拼接、检测头和基础权重名称。
+此实验对应 DMFR-YOLO 的后续结构优化，不修改已写入论文的模型、数据和图表。三个配置均保留 YOLOv8n 的原始 bottleneck、特征拼接、检测头和基础权重名称。v1 的五种子训练结果与位置调整候选见 [v2 位置分工实验](sobel-phase-v2.md)。
 
 | 配置 | P3/P4 的 C2f | 两处上采样 |
 |---|---|---|
@@ -45,7 +45,7 @@ Sobel 核以普通深度卷积模块中的 buffer 保存，不属于优化器参
 | 新上采样 | 3,016,433 | 8.0929 | 525.5 |
 | Sobel C2f + 新上采样 | 3,016,993 | 8.0987 | 510.4 |
 
-最后复测基线为 548.0 FPS。FLOPs 为 THOP 的算子统计，不完整计入插值、逐元素操作和访存；FPS 为本次实测，精度尚未训练评估。原始逐轮数据见 [结构测速记录](benchmarks/sobel-phase-rtx3090-structure.json)。
+最后复测基线为 548.0 FPS。FLOPs 为 THOP 的算子统计，不完整计入插值、逐元素操作和访存；本表 FPS 仅代表当时的结构测速，五种子训练精度见上述 v2 说明。原始逐轮数据见 [结构测速记录](benchmarks/sobel-phase-rtx3090-structure.json)。
 
 ## 训练与测试
 
@@ -56,16 +56,16 @@ conda activate tkz-yolo
 cd /home/tkz/code/github/ultralytics
 
 # 组合版：训练完自动评估测试集
-bash scripts/run_experiment.sh --device 0 --seed 0 \
+bash scripts/run_experiment.sh --device 0 --seeds 0,1,2,3,4 \
   ultralytics/cfg/models/v8/yolov8n-fabric-sobel-phase.yaml \
   sobel-phase-v1 pretrained=yolov8n.pt workers=4
 
 # 单模块消融
-bash scripts/run_experiment.sh --device 0 --seed 0 \
+bash scripts/run_experiment.sh --device 0 --seeds 0,1,2,3,4 \
   ultralytics/cfg/models/v8/yolov8n-fabric-sobel.yaml \
   sobel-only-v1 pretrained=yolov8n.pt workers=4
 
-bash scripts/run_experiment.sh --device 0 --seed 0 \
+bash scripts/run_experiment.sh --device 0 --seeds 0,1,2,3,4 \
   ultralytics/cfg/models/v8/yolov8n-fabric-phase.yaml \
   phase-only-v1 pretrained=yolov8n.pt workers=4
 ```
