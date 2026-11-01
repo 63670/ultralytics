@@ -128,7 +128,7 @@ NVIDIA Jetson Xavier NX\cite{wang2024rail,zhang2026uavedge} & 21 TOPS (INT8) & 3
 NVIDIA Jetson Orin Nano\cite{machado2025edgefabric} & 40 TOPS (INT8) & 499 \\
 Huawei Ascend 310\cite{yan2026warplace} & 16 TOPS (INT8) & 550 \\
 AMD Xilinx ZCU102\cite{zhao2025kamnet} & 3.45 TOPS (INT8)\textsuperscript{\textdagger} & 3234 \\
-Self-developed RK3566 device (Ours) & 1 TOPS (INT8) & 60 \\
+Our device & 1 TOPS (INT8) & 60 \\
 \bottomrule
 \end{tabular}
 \par\vspace{1pt}
@@ -189,7 +189,7 @@ D_w&=\operatorname{DW}_{1\times3}(R_w)
 \end{aligned}
 \label{eq:pac-depthwise}
 \end{equation}
-\noindent The outputs $D_h$ and $D_w$ have sizes $B\times q\times H\times1$ and $B\times q\times1\times W$, respectively. Before addition, $D_h$ is broadcast along $W$ by repeating its column, while $D_w$ is broadcast along $H$ by repeating its row [Fig.~\ref{fig:modules}(d)]. The expanded features $\widetilde D_h$ and $\widetilde D_w$ both have size $B\times q\times H\times W$ and are added element-wise:
+\noindent The outputs $D_h$ and $D_w$ have sizes $B\times q\times H\times1$ and $B\times q\times1\times W$, respectively. Before addition, $D_h$ is broadcast along $W$ by repeating its column, while $D_w$ is broadcast along $H$ by repeating its row. The expanded features $\widetilde D_h$ and $\widetilde D_w$ both have size $B\times q\times H\times W$ and are added element-wise:
 \begin{equation}
 T=\widetilde D_h+\widetilde D_w.
 \label{eq:pac-context}
