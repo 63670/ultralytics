@@ -1,0 +1,141 @@
+{
+  "scope": "Untrained structural benchmark, baseline weights shared; nonzero candidate corrections; FP32, TF32 off, batch1,640x640,50 warmup,200x5 forwards,fused; no accuracy claim",
+  "results": [
+    {
+      "round_mean_ms": [
+        1.8226017761230469,
+        1.8131712341308595,
+        1.8167080688476562,
+        1.816084442138672,
+        1.8166828918457032
+      ],
+      "mean_ms": 1.8170496826171876,
+      "std_of_round_means_ms": 0.003067605893130678,
+      "fps": 550.3426843891522,
+      "timed_forwards": 1000,
+      "name": "baseline",
+      "unfused_params": 3011433,
+      "fused_params": 3006233,
+      "gflops": 8.0848896,
+      "gpu": "NVIDIA GeForce RTX 3090"
+    },
+    {
+      "round_mean_ms": [
+        3.046019287109375,
+        3.047019348144531,
+        3.048903503417969,
+        3.048478088378906,
+        3.0492877197265624
+      ],
+      "mean_ms": 3.0479415893554687,
+      "std_of_round_means_ms": 0.0012305244100182249,
+      "fps": 328.09027689125253,
+      "timed_forwards": 1000,
+      "name": "directional-carafe",
+      "unfused_params": 3394705,
+      "fused_params": 3387489,
+      "gflops": 8.9491456,
+      "gpu": "NVIDIA GeForce RTX 3090"
+    },
+    {
+      "round_mean_ms": [
+        1.8680470275878907,
+        1.8682928466796875,
+        1.867535400390625,
+        1.8678074645996094,
+        1.869071044921875
+      ],
+      "mean_ms": 1.8681507568359375,
+      "std_of_round_means_ms": 0.0005242885762681741,
+      "fps": 535.2887053364402,
+      "timed_forwards": 1000,
+      "name": "sobel",
+      "unfused_params": 3011993,
+      "fused_params": 3006793,
+      "gflops": 8.0906752,
+      "gpu": "NVIDIA GeForce RTX 3090"
+    },
+    {
+      "round_mean_ms": [
+        1.9001753234863281,
+        1.9043682861328124,
+        1.900933074951172,
+        1.903170623779297,
+        1.9068756103515625
+      ],
+      "mean_ms": 1.9031045837402343,
+      "std_of_round_means_ms": 0.002413212082814195,
+      "fps": 525.4571969106747,
+      "timed_forwards": 1000,
+      "name": "phase",
+      "unfused_params": 3016433,
+      "fused_params": 3011233,
+      "gflops": 8.0928768,
+      "gpu": "NVIDIA GeForce RTX 3090"
+    },
+    {
+      "round_mean_ms": [
+        1.9604574584960937,
+        1.9604893493652344,
+        1.9578060913085937,
+        1.9578521728515625,
+        1.959060516357422
+      ],
+      "mean_ms": 1.9591331176757814,
+      "std_of_round_means_ms": 0.0011832440641857365,
+      "fps": 510.4298380634546,
+      "timed_forwards": 1000,
+      "name": "sobel-phase",
+      "unfused_params": 3016993,
+      "fused_params": 3011793,
+      "gflops": 8.0986624,
+      "gpu": "NVIDIA GeForce RTX 3090"
+    },
+    {
+      "round_mean_ms": [
+        1.8250700378417968,
+        1.824783172607422,
+        1.8246348571777344,
+        1.824680938720703,
+        1.824163818359375
+      ],
+      "mean_ms": 1.8246665649414062,
+      "std_of_round_means_ms": 0.0002933782005111178,
+      "fps": 548.0453356321088,
+      "timed_forwards": 1000,
+      "name": "baseline",
+      "unfused_params": 3011433,
+      "fused_params": 3006233,
+      "gflops": 8.0848896,
+      "gpu": "NVIDIA GeForce RTX 3090"
+    }
+  ],
+  "protocol": {
+    "date": "2026-11-01",
+    "torch": "2.4.1+cu124",
+    "seed": 0,
+    "gpu_index": 0,
+    "precision": "FP32",
+    "tf32": false,
+    "batch": 1,
+    "imgsz": [
+      640,
+      640
+    ],
+    "warmup": 50,
+    "iterations": 200,
+    "repeat": 5,
+    "cached_images": 32,
+    "fuse": true,
+    "cudnn_benchmark": false,
+    "preprocessing_timed": false,
+    "trained_checkpoint": false
+  },
+  "source_sha256": {
+    "ultralytics/nn/modules/block.py": "2c9d72ce89d8cb9e050a32b666bc02a1e259ee85fcf7120f46d1aa6ab9b90948",
+    "ultralytics/nn/modules/__init__.py": "1c0b75f5c7cf18a68988a92a17a8c7553a4cb2ce2464d7b868b9cb2d9e7660e8",
+    "ultralytics/nn/tasks.py": "b021435415cdf533fde02593560c29adcb204afdc5b28957b9463de680158e54",
+    "tools/benchmark_torch_fps.py": "b67cd180f9a6f8fa6ff9ce173af330c333c46a2da9e96096b0f6e2ad66003d80",
+    "ultralytics/cfg/models/v8/yolov8n-fabric-sobel-phase.yaml": "dfd0e293b13429af3a572c476641322445b61ce68c0ff0364c47c99c92b842b8"
+  }
+}

@@ -40,12 +40,14 @@ from ultralytics.nn.modules import (
     C2fPartialAxis,
     C2fAxisResidual,
     C2fAxisBounded,
+    C2fSobel,
     C2fDetailFusion,
     C2fWWTE,
     C2fWWTEGated,
     ContentAwareUpsample,
     ContentAwareUpsampleLite,
     GatedInterpolationUpsample,
+    PhaseAwareUpsample,
     C2fPSA,
     C3Ghost,
     C3k2,
@@ -2046,6 +2048,7 @@ def parse_model(d, ch, verbose=True):
             C2fPartialAxis,
             C2fAxisResidual,
             C2fAxisBounded,
+            C2fSobel,
             C2fWWTE,
             C2fWWTEGated,
             C3k2,
@@ -2080,6 +2083,7 @@ def parse_model(d, ch, verbose=True):
             C2fPartialAxis,
             C2fAxisResidual,
             C2fAxisBounded,
+            C2fSobel,
             C2fWWTE,
             C2fWWTEGated,
             C3k2,
@@ -2147,7 +2151,7 @@ def parse_model(d, ch, verbose=True):
             c2 = make_divisible(min(args[0], max_channels) * width, 8)
             args = [ch[f[0]], c2, n, ch[f[1]], *args[1:]]
             n = 1
-        elif m in {ContentAwareUpsample, ContentAwareUpsampleLite, GatedInterpolationUpsample}:
+        elif m in {ContentAwareUpsample, ContentAwareUpsampleLite, GatedInterpolationUpsample, PhaseAwareUpsample}:
             c2 = ch[f]
             args = [c2, *args]
         elif m in frozenset({HGStem, HGBlock}):

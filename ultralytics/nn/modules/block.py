@@ -41,12 +41,14 @@ __all__ = (
     "C2fPartialAxis",
     "C2fAxisResidual",
     "C2fAxisBounded",
+    "C2fSobel",
     "C2fDetailFusion",
     "C2fWWTE",
     "C2fWWTEGated",
     "ContentAwareUpsample",
     "ContentAwareUpsampleLite",
     "GatedInterpolationUpsample",
+    "PhaseAwareUpsample",
     "C2fPSA",
     "C3Ghost",
     "C3k2",
@@ -522,6 +524,51 @@ class C2fAxisBounded(C2f):
         return self._aggregate(list(self.cv1(x).split((self.c, self.c), dim=1)))
 
 
+class C2fSobel(C2f):
+    """Refine a fraction of the final C2f hidden branch using selected Sobel responses."""
+
+    def __init__(self, c1: int, c2: int, n: int = 1, shortcut: bool = False, partial: float = 0.25):
+        """Retain all baseline C2f weights and start with an exactly zero edge correction."""
+        super().__init__(c1, c2, n, shortcut)
+        if not 0 < partial <= 1:
+            raise ValueError("partial must be in (0, 1].")
+        self.active = max(1, int(self.c * partial))
+        self.bypass = self.c - self.active
+        kernel = torch.tensor([[-1.0, 0.0, 1.0], [-2.0, 0.0, 2.0], [-1.0, 0.0, 1.0]]) / 8.0
+        self.sobel_x = self._fixed_filter(kernel)
+        self.sobel_y = self._fixed_filter(kernel.t())
+        self.selector = nn.Conv2d(self.active, self.active, 3, padding=1, groups=self.active)
+        self.edge_mix = nn.Conv2d(self.active, self.active, 1, bias=False)
+        self.gate = nn.Hardsigmoid()
+        nn.init.zeros_(self.selector.weight)
+        nn.init.zeros_(self.selector.bias)
+        nn.init.zeros_(self.edge_mix.weight)
+
+    def _fixed_filter(self, kernel: torch.Tensor) -> nn.Conv2d:
+        """Keep the Sobel kernel in a buffer so trainer parameter unfreezing cannot change it."""
+        layer = nn.Conv2d(self.active, self.active, 3, padding=1, groups=self.active, bias=False)
+        del layer.weight
+        layer.register_buffer("weight", kernel.reshape(1, 1, 3, 3).repeat(self.active, 1, 1, 1).contiguous())
+        return layer
+
+    def _aggregate(self, branches: list[torch.Tensor]) -> torch.Tensor:
+        """Select edge evidence once, immediately before the original C2f concatenation."""
+        branches.extend(m(branches[-1]) for m in self.m)
+        active, bypass = branches[-1].split((self.active, self.bypass), dim=1)
+        edge = self.sobel_x(active).abs() + self.sobel_y(active).abs()
+        corrected = active + self.gate(self.selector(active)) * self.edge_mix(edge)
+        branches[-1] = torch.cat((corrected, bypass), dim=1) if self.bypass else corrected
+        return self.cv2(torch.cat(branches, dim=1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Preserve the original bottlenecks and refine only their final partial-channel output."""
+        return self._aggregate(list(self.cv1(x).chunk(2, dim=1)))
+
+    def forward_split(self, x: torch.Tensor) -> torch.Tensor:
+        """Keep the Sobel correction when export switches C2f to explicit split sizes."""
+        return self._aggregate(list(self.cv1(x).split((self.c, self.c), dim=1)))
+
+
 class C2fDetailFusion(C2f):
     """Fuse a compressed stride-4 detail path into the stride-8 C2f neck output."""
 
@@ -686,6 +733,30 @@ class GatedInterpolationUpsample(nn.Module):
         linear = F.interpolate(x, scale_factor=self.scale_factor, mode="bilinear", align_corners=False)
         gate = F.interpolate(self.gate(self.gate_conv(x)), scale_factor=self.scale_factor, mode="nearest")
         return nearest + gate * (linear - nearest)
+
+
+class PhaseAwareUpsample(nn.Module):
+    """Reconstruct 2x features with low-resolution filtering and four content-dependent phase weights."""
+
+    def __init__(self, c1: int, scale_factor: int = 2):
+        """Start from nearest upsampling without constructing channel-by-neighborhood tensors."""
+        super().__init__()
+        if scale_factor != 2:
+            raise ValueError("PhaseAwareUpsample requires scale_factor=2.")
+        self.scale_factor = scale_factor
+        self.correction = nn.Conv2d(c1, c1, 3, padding=1, groups=c1, bias=False)
+        self.phase = nn.Conv2d(c1, scale_factor**2, 1)
+        self.gate = nn.Hardsigmoid()
+        nn.init.zeros_(self.correction.weight)
+        nn.init.zeros_(self.phase.weight)
+        nn.init.zeros_(self.phase.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Share each spatial phase weight across channels and add a learned local correction."""
+        base = F.interpolate(x, scale_factor=self.scale_factor, mode="nearest")
+        correction = F.interpolate(self.correction(x), scale_factor=self.scale_factor, mode="nearest")
+        weight = F.pixel_shuffle(self.gate(self.phase(x)), self.scale_factor)
+        return base + weight * correction
 
 
 class C3(nn.Module):
