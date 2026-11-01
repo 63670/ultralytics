@@ -5,6 +5,12 @@
 - `manuscript.tex` 保留为迁移前的历史稿，`TIE_LaTeX_template/` 保留为原始模板；不要将后续论文修改写回这两处。
 - 每次改动后创建对应的 Git commit，遵循仓库根目录的要求。
 
+## JIOT 草稿
+
+- 后续 JIOT 论文修改基于 `JIOT_draft/manuscript.tex`，使用 `templates/` 提供的标准 IEEEtran 模板；具体入口见 `JIOT_draft/AGENTS.md`。
+- `JIOT_draft/` 从 TIE 投稿版迁移，暂时保留 MCGI-YOLO 的方法、图片和实测结果。新模型及实验结果后续在该目录更新。
+- `TIE_submission/`、`TIE_draft/` 和历史 `JIOT_DMFR_draft/` 不随 JIOT 新稿修改。
+
 ## VS Code 编译入口
 
 - 用户在 VS Code 中以 `TIE_draft/` 为工作区；其 `.vscode/settings.json` 覆盖 LaTeX Workshop 的编译配置。
