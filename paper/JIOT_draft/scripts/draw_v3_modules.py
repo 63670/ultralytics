@@ -137,7 +137,11 @@ def saru(ax, offset=0):
 def export(fig, name):
     OUT.mkdir(exist_ok=True)
     for ext in ("pdf","svg","png"):
-        fig.savefig(OUT/f"{name}.{ext}",dpi=220,facecolor="white")
+        output = OUT/f"{name}.{ext}"
+        fig.savefig(output,dpi=220,facecolor="white")
+        if ext == "svg":
+            lines = output.read_text(encoding="utf-8").splitlines()
+            output.write_bytes(("\n".join(line.rstrip() for line in lines)+"\n").encode("utf-8"))
     plt.close(fig)
 
 
