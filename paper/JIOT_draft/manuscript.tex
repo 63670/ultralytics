@@ -36,11 +36,11 @@
 \maketitle
 
 \begin{abstract}
-Defect detection is critical for circular knitting production, where persistent needle or yarn abnormalities lead to repeated fabric defects, resulting in severe material waste and economic losses. Existing methods are rarely tailored to circular knitting machines and tend to be cost-prohibitive, limiting large-scale industrial deployment. To address this issue, we present a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines, which triggers image acquisition from machine rotation, halts the machine upon defect detection to interrupt defect propagation, and alerts the operator for corrective intervention, forming a complete production–detection–control loop. To further improve detection accuracy for diverse fabric defect morphologies and scales, we propose a lightweight detector termed \model. To model the morphological continuity of elongated defects, morphology-aware context encoding (MCE) augments backbone features with spatially extended context. To accommodate variations in defect morphology and scale, gated interpolation upsampling (GIU) adapts the reconstruction of higher-level context before fusion with local features, using a compact content-adaptive gate. On a real-world dataset collected from a circular-knitting production line, \model achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.7 and 7.1 percentage points, respectively. After INT8 conversion, the model reaches an inference throughput of 22 FPS on the edge device. The proposed system provides a cost-effective solution for real-time defect detection in circular-knitting production.
+Defect detection is critical for circular knitting production, where persistent needle or yarn abnormalities lead to repeated fabric defects, resulting in severe material waste and economic losses. Existing methods are rarely tailored to circular knitting machines and tend to be cost-prohibitive, limiting large-scale industrial deployment. To address this issue, we present a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines, which triggers image acquisition from machine rotation, halts the machine upon defect detection to interrupt defect propagation, and alerts the operator for corrective intervention, forming a complete production–detection–control loop. To further improve detection accuracy for diverse fabric defect morphologies and scales, we propose a lightweight detector termed \model. To strengthen boundary evidence against repetitive fabric texture, selective gradient residual enhancement (SGRE) learns to select and mix fixed gradient responses after each bottleneck in the P3 and P4 backbone stages. To reconstruct fine spatial responses with limited computation, subpixel-adaptive residual upsampling (SARU) adds a low-resolution filtered correction with content-dependent weights for the four upsampled positions. On a real-world dataset collected from a circular-knitting production line, \model achieves 97.4\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.9 and 7.1 percentage points, respectively. The model achieves a pure-inference throughput of 491 FPS on an RTX 3090 at FP32 precision and batch size 1. The proposed system provides a cost-effective solution for real-time defect detection in circular-knitting production.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Circular knitting machine, edge computing, fabric defect detection, gated interpolation upsampling (GIU), morphology-aware context encoding (MCE), YOLO.
+Circular knitting machine, edge computing, fabric defect detection, selective gradient residual enhancement (SGRE), subpixel-adaptive residual upsampling (SARU), YOLO.
 \end{IEEEkeywords}
 
 \markboth{IEEE INTERNET OF THINGS JOURNAL}{}
@@ -52,14 +52,14 @@ Edge computing offers a practical pathway toward such real-time detection, and h
 
 In terms of detection algorithms, YOLO-based detectors have been widely explored for industrial defect detection because of their efficient inference and explicit defect localization \cite{redmon2016yolo}. FA-YOLO combines receptive-field enhancement, attention, and adaptive spatial feature fusion \cite{yu2024fayolo}. DGHR-YOLO integrates deformable convolution for morphology adaptation with a high-level screening feature pyramid and lightweight feature processing \cite{zhang2025dghr}. Zhao et al. proposed attention-based multiscale feature fusion (AMFF), combining intralayer feature enhancement and cross-layer attention to strengthen weak defect representations on fabric and aluminum surfaces \cite{zhao2024amff}. An and Wan introduced JDCBL, combining contextual Transformer features with balanced contrastive learning to address scale variation and long-tailed defect categories in fabric detection \cite{an2025jdcbl}. Wang et al. developed RRNet, a lightweight rotated fabric defect detector that combines position-guided fusion and multiscale rotation-guided strip coupling to model elongated and tilted defect structures \cite{wang2026rrnet}. Together, these methods advance the representation of subtle defects, irregular shapes, and scale variation. Related work on photovoltaic-cell and pipeline-weld detection also explores task-specific feature pyramids, contextual relations, and lightweight rotated representations \cite{su2022baf,shen2024crnet,liu2025lrnet}. However, these methods are tailored to their respective detection targets and may not be directly applicable to defect detection on circular knitting machines. Defects on circular knitting machines exhibit diverse morphologies and scales, ranging from horizontal and vertical elongated patterns to localized holes. In addition, modules such as deformable convolution and attention often introduce substantial computational overhead, making them less suitable for deployment on resource-constrained edge devices.
 
-Motivated by these limitations, we design and implement a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines. The system integrates a power adapter, a global-shutter camera with LED illumination, a coaxial serializer/deserializer (SerDes) image-transmission link, a Hall sensor, and an edge device. For defect detection within this system, we develop \model, a lightweight detector that incorporates morphology-aware and scale-aware design for fabric defects. MCE supplies spatially extended morphology-aware context for horizontal and vertical elongated defects. GIU addresses the differing reconstruction needs of elongated defects and holes of varying sizes by adaptively adjusting the interpolation of higher-level context. Together, the two components connect morphology-aware context encoding with spatial reconstruction within a compact parameter budget.
+Motivated by these limitations, we design and implement a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines. The system integrates a power adapter, a global-shutter camera with LED illumination, a coaxial serializer/deserializer (SerDes) image-transmission link, a Hall sensor, and an edge device. For defect detection within this system, we develop \model, a lightweight detector that combines selective boundary enhancement with adaptive spatial reconstruction. SGRE combines fixed local gradients with learned selection and pointwise mixing to strengthen defect-boundary evidence while preserving the original features. SARU filters low-resolution features and predicts four subpixel-position weights to adapt the residual reconstruction before lateral fusion. Together, the components connect progressive boundary refinement with content-dependent spatial reconstruction within a compact parameter budget.
 
 The main contributions of our work are as follows.
 \begin{enumerate}
   \renewcommand{\labelenumi}{\arabic{enumi})}
   \item We design and implement a dedicated defect detection and closed-loop system for circular knitting machines, integrating image acquisition, camera transmission, edge inference, and local machine-stop control, and demonstrate its deployment on a real production line.
-  \item We develop MCE to explicitly incorporate the morphology priors of horizontal and vertical elongated defects. It embeds spatially extended, morphology-aware context in a partial C2f branch with small additional overhead.
-  \item We design GIU to accommodate the diverse morphologies and scales of circular-knitting defects, including elongated defects and holes of varying sizes. A compact spatial gate adapts a convex combination of two fixed interpolation paths, balancing response replication and neighborhood smoothing in the top-down path.
+  \item We develop SGRE to incorporate fixed gradient evidence through learned spatial selection and channel mixing. Its residual enhancement follows every bottleneck in the P3 and P4 backbone C2f blocks, preserving the original feature paths.
+  \item We design SARU to reconstruct fine spatial responses with low-resolution filtering and content-dependent subpixel weights. A shared positional weighting map modulates a residual correction to nearest-neighbor upsampling, keeping the learned convolutional cost linear in channel count.
 \end{enumerate}
 
 The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes MCGI-YOLO and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} reports detector comparisons, component ablation, and model deployment. Section~\ref{sec:conclusion} concludes.
@@ -156,90 +156,114 @@ Based on the design requirements of the subsystems described above, we develop t
 
 \section{Detection Algorithm}
 \label{sec:method}
-\subsection{MCGI-YOLO Architecture}
-Fig.~\ref{fig:network} shows \model based on YOLOv8n \cite{ultralytics2023}. Morphology-aware context encoding (MCE) is embedded in the P3 and P4 backbone C2f blocks to capture the continuity of horizontal and vertical elongated defects through spatially extended context. Gated interpolation upsampling (GIU) replaces the two top-down upsampling operations, adapting higher-level context reconstruction to different defect morphologies and scales before lateral feature fusion. The remaining backbone, bottom-up path, and detection head are retained \cite{lin2017fpn,liu2018panet}.
+\subsection{Network Architecture}
+Fig.~\ref{fig:network} shows the detector developed from YOLOv8n \cite{ultralytics2023}. Selective gradient residual enhancement (SGRE) is inserted after every bottleneck in the P3 and P4 backbone C2f blocks, progressively incorporating selected boundary responses while preserving the original feature paths. Subpixel-adaptive residual upsampling (SARU) replaces the two top-down upsampling operations, using content-dependent weights for the four output positions of each low-resolution cell. The remaining backbone stages, bottom-up aggregation path, and three-scale detection head are retained \cite{lin2017fpn,liu2018panet}.
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=0.9\textwidth]{fig4.png}
-\caption{Architecture of \model. MCE operates within the stride-8 and stride-16 backbone C2f stages. GIU replaces the two top-down upsampling operations. The local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained from YOLOv8n.}
+\includegraphics[width=0.95\textwidth]{network-v3.pdf}
+\caption{Network architecture of the proposed detector. Each bottleneck in the backbone P3 and P4 C2f blocks is followed by SGRE. SARU replaces the two top-down upsampling operations. C denotes channel concatenation; downsampling convolutions and the three-scale detection head retain the YOLOv8n structure.}
 \label{fig:network}
 \end{figure*}
 
-\subsection{Morphology-Aware Context Encoding}
-MCE focuses on horizontal and vertical elongated defects produced by circular knitting machines. Elongated defects are characterized by a high aspect ratio. Their continuity spans across large spatial regions, making it difficult for local receptive fields to establish long-range dependencies. Local feature extraction alone fails to explicitly associate these spatially separated responses as parts of the same defect. Meanwhile, modeling long-range dependencies through dense channel-wise interactions would introduce substantial redundancy, imposing an impractical computational overhead on the RK3566. We therefore develop MCE to incorporate the morphology prior of elongated defects through spatially extended context within a compact computational budget. MCE is inserted after the last bottleneck in the selected C2f blocks, before branch concatenation and fusion [Fig.~\ref{fig:modules}(a)]. The original split branches and intermediate bottleneck outputs remain separate inputs to concatenation; only the final bottleneck output is replaced by its MCE-refined counterpart.
+\subsection{Selective Gradient Residual Enhancement}
+Knitting defects can produce narrow, weak boundaries against repetitive fabric texture. Their boundary responses provide complementary evidence to the features learned by convolution, but gradient magnitude alone also responds to normal yarn patterns. We therefore develop SGRE to select and mix gradient evidence before adding it to the original features [Fig.~\ref{fig:modules}(a)]. The Sobel filters supply a fixed local derivative prior, whereas the selection and channel mixing are learned from the detection objective. SGRE is applied to all hidden channels after each complete bottleneck output, including its original shortcut, in the backbone P3 and P4 C2f blocks. This placement lets the enhanced output enter both the next bottleneck and the final C2f concatenation. P2 and P5 retain their original C2f blocks.
 
-\emph{1) Channel Allocation:}
- As illustrated in Fig.~\ref{fig:modules}(d), its input is $F\in\mathbb{R}^{B\times C\times H\times W}$. The channels are divided into two groups: one quarter of the channels, denoted by $U$, are used for morphology-aware context aggregation and residual modulation; the remaining three quarters, denoted by $V$, pass through unchanged. This design intentionally applies morphology-aware context aggregation to only a small channel subset, keeping the computational overhead compact. The two groups are concatenated after modulation, allowing the subsequent fusion to combine morphology-aware and unmodulated features with minimal performance loss. With $q=C/4$, the two groups have sizes $U\in\mathbb{R}^{B\times q\times H\times W}$ and $V\in\mathbb{R}^{B\times(C-q)\times H\times W}$. The split is performed along the channel dimension, preserving the batch and spatial dimensions.
-
-\emph{2) Morphology-Aware Context Aggregation:}
-The one-quarter-channel group $U$ feeds the two pooling paths. Here, $b$, $a$, $h$, and $w$ index the batch sample, channel, row, and column, respectively. Inspired by the pooling design of coordinate attention \cite{hou2021coordinate}, we average independently for each sample and channel:
-\begin{align}
-R_h(b,a,h,1) &= \frac{1}{W}\sum_{w=1}^{W}U(b,a,h,w) \label{eq:pac-row}\\
-R_w(b,a,1,w) &= \frac{1}{H}\sum_{h=1}^{H}U(b,a,h,w) \label{eq:pac-column}
-\end{align}
-\noindent Averaging over $W$ retains row positions, while averaging over $H$ retains column positions. The descriptors are refined by two depthwise convolutions:
+\emph{1) Fixed Gradient Extraction:}
+For a bottleneck output $F\in\mathbb{R}^{B\times C\times H\times W}$, two depthwise convolutions compute gradients using normalized Sobel kernels:
 \begin{equation}
-\begin{aligned}
-D_h&=\operatorname{DW}_{3\times1}(R_h)\\
-D_w&=\operatorname{DW}_{1\times3}(R_w)
-\end{aligned}
-\label{eq:pac-depthwise}
+K_x=\frac{1}{8}\begin{bmatrix}-1&0&1\\-2&0&2\\-1&0&1\end{bmatrix}
+\qquad K_y=K_x^{\mathsf T}
+\label{eq:sgre-kernels}
 \end{equation}
-\noindent The outputs $D_h$ and $D_w$ have sizes $B\times q\times H\times1$ and $B\times q\times1\times W$, respectively. Before addition, $D_h$ is broadcast along $W$ by repeating its column, while $D_w$ is broadcast along $H$ by repeating its row. The expanded features $\widetilde D_h$ and $\widetilde D_w$ both have size $B\times q\times H\times W$ and are added element-wise:
+\noindent The gradient evidence is formed as
 \begin{equation}
-T=\widetilde D_h+\widetilde D_w.
-\label{eq:pac-context}
+E=\left|K_x*_{\mathrm{dw}}F\right|+\left|K_y*_{\mathrm{dw}}F\right|
+\label{eq:sgre-gradient}
 \end{equation}
+\noindent where $*_{\mathrm{dw}}$ denotes channel-independent convolution with padding of one. Both absolute-value operations are performed before summation. Thus $E$ has the same $B\times C\times H\times W$ shape as $F$. The two Sobel kernels remain fixed during training.
 
-Pooling provides long-range context, while the depthwise convolutions capture neighboring positions in the compressed descriptors.
-
-\emph{3) Residual Context Modulation:}
-The combined context $T$ is mapped by Hardsigmoid and centered to construct a scaled residual correction:
+\emph{2) Selective Residual Enhancement:}
+A learned depthwise convolution and Hardsigmoid predict channel-specific spatial selection weights from the original feature, while a separate pointwise convolution mixes the gradient evidence:
 \begin{align}
-G &= \operatorname{HS}(T) \label{eq:pac-map}\\
-U' &= U+\gamma\odot U\odot(2G-1) \label{eq:pac-modulation}
+G &= \operatorname{HS}(\operatorname{DWConv}_{3\times3}(F))
+\label{eq:sgre-selection}\\
+R &= \operatorname{Conv}_{1\times1}(E)
+\label{eq:sgre-projection}\\
+Z &= F+G\odot R
+\label{eq:sgre-output}
 \end{align}
-\noindent where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplication with broadcasting, and $\gamma\in\mathbb{R}^{1\times q\times1\times1}$ is a learnable channel-wise parameter. The context response $G\in[0,1]^{B\times q\times H\times W}$ is centered by $2G-1$ to provide signed modulation, with $\gamma$ controlling its channel-wise strength. The original $U$ is retained through the residual connection, and the corrected one-quarter-channel group $U'$ is concatenated with the unchanged three-quarter-channel group $V$. The corrected group has size $U'\in\mathbb{R}^{B\times q\times H\times W}$, and channel concatenation produces a $B\times C\times H\times W$ output before the original C2f fusion. Zero-initializing $\gamma$ makes the module an identity mapping at initialization.
+\noindent where $G,R,Z\in\mathbb{R}^{B\times C\times H\times W}$. The depthwise selection convolution includes a bias, whereas the $C$-to-$C$ pointwise projection is bias-free. The selection weights regulate the contribution of gradient evidence at each channel and spatial position, and the residual connection retains the original feature. There is no partial-channel split inside SGRE. The selection convolution and pointwise projection are initialized to zero, giving $G=0.5$ and $Z=F$ at initialization.
+
+For a selected C2f block, let $U,V$ denote its two initial hidden branches. The enhanced progressive outputs satisfy
+\begin{equation}
+Z_0=V\qquad
+Z_i=\operatorname{SGRE}_i(\operatorname{Bottleneck}_i(Z_{i-1}))
+\label{eq:sgre-progressive}
+\end{equation}
+\noindent for $i=1,\ldots,n$. The original C2f fusion concatenates $U$, $V$, and all enhanced outputs $Z_1,\ldots,Z_n$. Each SGRE has independent learned weights. Under the YOLOv8n scaling used here, P3 and P4 each contain two such bottlenecks, giving four SGRE units in total.
+
+\emph{3) Computational Cost:}
+For one SGRE with $C$ hidden channels, the added parameter count and convolutional MAC count are
+\begin{align}
+P_{\mathrm{SGRE}} &= C^2+10C
+\label{eq:sgre-params}\\
+\operatorname{MAC}_{\mathrm{SGRE}} &= BHW(C^2+27C)
+\label{eq:sgre-macs}
+\end{align}
+\noindent The $C^2$ parameters belong to the pointwise projection; the depthwise selector contributes $9C$ weights and $C$ biases. The fixed Sobel filters are stored as buffers rather than model parameters. In convolutional computation, however, both filters still contribute $18C$ MACs per spatial location, in addition to the selector's $9C$ and the projection's $C^2$ MACs. Absolute values, Hardsigmoid, and element-wise arithmetic introduce additional linear cost in $BCHW$. The complete added cost is obtained by summing over the four inserted units.
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=0.9\textwidth]{fig5.png}
-\caption{Structures of the proposed modules: (a) C2f block with MCE; (b) GIU with a spatial weight map shared across channels; (c) residual bottleneck retained in C2f; and (d) MCE with context modulation on one quarter of its input channels and an unchanged bypass for the remaining three quarters.}
+\includegraphics[width=\textwidth]{modules-v3.pdf}
+\caption{Implementation-matched module structures: (a) SGRE applies fixed depthwise Sobel filters, channel-wise spatial selection, and learned pointwise mixing to a complete bottleneck output; (b) SARU adds a low-resolution filtered residual to nearest-neighbor upsampling. PixelShuffle rearranges four weights into four distinct subpixel positions; the resulting single-channel map is broadcast across feature channels before multiplication. Dashed blocks denote fixed filters.}
 \label{fig:modules}
 \end{figure*}
 
-\subsection{Gated Interpolation Upsampling}
-Circular-knitting defects vary substantially in morphology and scale, from narrow horizontal and vertical patterns to small and large holes. Their feature representations therefore place different demands on spatial continuity, response concentration, and boundary extent. In the top-down feature pyramid, higher-level context must be reconstructed at a finer resolution before fusion with lateral features. Nearest-neighbor interpolation replicates responses within local regions, whereas bilinear interpolation combines neighboring responses to produce smoother spatial transitions. A fixed interpolation rule applies the same reconstruction behavior to all locations, limiting its adaptability to these diverse defect patterns. We develop GIU to adjust the balance between response replication and neighborhood smoothing according to the input features [Fig.~\ref{fig:modules}(b)]. To achieve this adaptation with a small computational overhead, GIU combines two parameter-free interpolation paths using a single spatial weight map predicted at low resolution and shared across channels. It reconstructs the higher-level context before fusion with shallow lateral features, which retain local texture and localization cues.
+\subsection{Subpixel-Adaptive Residual Upsampling}
+In the top-down feature pyramid, a low-resolution cell is expanded into four output positions before fusion with lateral features. These positions can cover different parts of a narrow defect or a hole boundary. Nearest-neighbor interpolation assigns the same response to all four positions and does not allow their reconstruction to depend on local content. SARU retains this parameter-free base and adds a locally filtered residual with separate content-dependent weights for the four subpixel positions [Fig.~\ref{fig:modules}(b)]. The learned filtering and weight prediction operate at the low resolution to limit computation. Unlike a four-channel feature expansion, the four predicted channels encode positional weights shared across feature channels.
 
-\emph{1) Two Fixed Interpolation Paths:}
-For $X\in\mathbb{R}^{B\times C\times H\times W}$, nearest-neighbor and bilinear upsampling produce
+\emph{1) Base and Residual Paths:}
+For $X\in\mathbb{R}^{B\times C\times H\times W}$, the two feature paths are
 \begin{align}
-N &= \operatorname{Nearest}_{2}(X) \label{eq:giu-paths}\\
-L &= \operatorname{Bilinear}_{2}(X) \label{eq:giu-bilinear}
+N &= \operatorname{Nearest}_{2}(X)
+\label{eq:saru-base}\\
+R &= \operatorname{Nearest}_{2}(\operatorname{DWConv}_{3\times3}(X))
+\label{eq:saru-residual}
 \end{align}
-\noindent where $N,L\in\mathbb{R}^{B\times C\times2H\times2W}$. Both operations use fixed interpolation weights and introduce no learnable parameters.
+\noindent where $N,R\in\mathbb{R}^{B\times C\times2H\times2W}$. The residual convolution is depthwise, bias-free, and uses padding of one. It filters neighboring low-resolution responses before expansion, whereas $N$ preserves the baseline nearest-neighbor feature.
 
-\emph{2) Shared Spatial Gate:}
-A $3\times3$ convolution followed by Hardsigmoid predicts a low-resolution spatial weight map, which is then upsampled by nearest-neighbor interpolation:
+\emph{2) Subpixel Weight Prediction:}
+A biased pointwise convolution maps $C$ channels to four position-dependent weights, which are rearranged by PixelShuffle:
 \begin{align}
-g &= \operatorname{HS}(\operatorname{Conv}_{3\times3}(X)) \label{eq:giu-gate-lowres}\\
-G &= \operatorname{Nearest}_{2}(g) \label{eq:giu-gate}
+A &= \operatorname{HS}(\operatorname{Conv}^{C\rightarrow4}_{1\times1}(X))
+\label{eq:saru-weights}\\
+G &= \operatorname{PixelShuffle}_{2}(A)
+\label{eq:saru-shuffle}
 \end{align}
-\noindent where $\operatorname{Conv}_{3\times3}$ denotes a biased convolution with $C$ input channels, one output channel, and padding of 1, and $g\in[0,1]^{B\times1\times H\times W}$ is the low-resolution weight map. The map $G\in[0,1]^{B\times1\times2H\times2W}$ assigns a content-adaptive interpolation weight to each spatial location and is broadcast across feature channels. Predicting this map at $H\times W$ limits the spatial cost of the learned convolution, while channel sharing requires only one output weight per location.
+\noindent Here, $A\in[0,1]^{B\times4\times H\times W}$ and $G\in[0,1]^{B\times1\times2H\times2W}$. For zero-based spatial indices $h,w$ and offsets $i,j\in\{0,1\}$, the rearrangement is
+\begin{equation}
+G(b,1,2h+i,2w+j)=A(b,2i+j+1,h,w)
+\label{eq:saru-positions}
+\end{equation}
+\noindent so the four predicted channels correspond to the top-left, top-right, bottom-left, and bottom-right positions. Before multiplication, $G$ is broadcast along the channel dimension from $B\times1\times2H\times2W$ to $B\times C\times2H\times2W$ by reusing the same spatial weights for all $C$ channels.
 
-\emph{3) Gated Reconstruction:}
-The output $Y\in\mathbb{R}^{B\times C\times2H\times2W}$ is a convex combination:
+\emph{3) Residual Reconstruction and Cost:}
+The reconstructed feature is
 \begin{equation}
-Y=(1-G)\odot N+G\odot L
-\label{eq:giu-mixture}
+Y=N+G\odot R
+\label{eq:saru-output}
 \end{equation}
-\noindent Small values of $G$ favor response replication, while larger values favor neighborhood smoothing. This spatially varying mixture allows the reconstruction behavior to adapt to local feature content associated with different defect morphologies and scales.
-\begin{equation}
-G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05L
-\label{eq:giu-initialization}
-\end{equation}
-\noindent so the module starts from a predominantly nearest-neighbor reconstruction, consistent with the baseline top-down pathway.
+\noindent where the multiplication uses channel broadcasting and $Y\in\mathbb{R}^{B\times C\times2H\times2W}$. This additive correction can increase or decrease a feature response because $R$ is signed. Zero-initializing the depthwise residual convolution and the four-output predictor makes $R=0$, $G=0.5$, and $Y=N$ at initialization.
+
+The added parameter and convolutional MAC counts are
+\begin{align}
+P_{\mathrm{SARU}} &= 13C+4
+\label{eq:saru-params}\\
+\operatorname{MAC}_{\mathrm{SARU}} &= 13BCHW
+\label{eq:saru-macs}
+\end{align}
+\noindent The residual depthwise convolution contributes $9C$ weights, and the $C$-to-four predictor contributes $4C$ weights and four biases. Both convolutions operate at $H\times W$; PixelShuffle only rearranges weights, while nearest-neighbor interpolation copies values. The output multiplication and addition each operate on $4BCHW$ elements. Consequently, learned convolutional computation scales linearly with channel count without constructing a channel-by-neighborhood reassembly tensor. When expressing convolutional computation as FLOPs, one MAC is counted as two operations; these analytic convolution counts are separate from the full-model profiler totals.
 
 \section{Experimental Setup}
 \label{sec:experimental-setup}
@@ -317,7 +341,7 @@ DETR-R50~\cite{carion2020detr} & 41.28 & 77.3 & 96.4 & 53.6 & 101 \\
 Deformable DETR-R50~\cite{zhu2021deformable} & 39.8 & 158.7 & \underline{96.8} & 64.3 & 49 \\
 Faster R-CNN-R50~\cite{ren2015faster} & 41.1 & 181.5 & 96.1 & 64.7 & 66 \\
 YOLOv8n (Baseline)~\cite{ultralytics2023} & 3.01 & 8.1 & 90.5 & 58.4 & \textbf{554} \\
-\model & 3.02 & 8.2 & \textbf{97.2} & \underline{65.5} & 486 \\
+\model & 3.02 & 8.2 & \textbf{97.4} & \underline{65.5} & 491 \\
 \bottomrule
 \end{tabular*}
 \par\smallskip
@@ -349,41 +373,37 @@ Model parameters and FLOPs are measured at $640\times640$ input resolution using
 \section{Results and Discussion}
 \label{sec:results}
 \subsection{Comparison With Other Detectors}
-Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inference throughput. \model achieves the highest mAP50 of 97.2\% and the second-highest mAP50--95 of 65.5\%, improving over the YOLOv8n~\cite{ultralytics2023} baseline by 6.7 and 7.1 percentage points, respectively. This gain comes with only a marginal increase in parameters (3.01 M $\rightarrow$ 3.02 M) and FLOPs (8.1 G $\rightarrow$ 8.2 G), while throughput on the RTX 3090 decreases from 554 to 486 FPS. Among lightweight variants, YOLO11n~\cite{ultralytics2023} attains the next-best accuracy (93.3\% mAP50, 60.8\% mAP50--95); \model surpasses it by 3.9 and 4.7 points while running faster (486 vs.\ 463 FPS). YOLOv9t~\cite{wang2025yolov9}, YOLOv10n~\cite{wang2024yolov10}, YOLO12n~\cite{tian2025yolov12}, and YOLO26n~\cite{ultralytics2023} have fewer parameters or lower FLOPs but underperform on this test set, confirming that task-specific adaptation outperforms generic lightweight detectors. RT-DETR-R18~\cite{zhao2024rtdetr} leads in mAP50--95 (67.7\%) but requires 20.09 M parameters and 60.7 G FLOPs at 146 FPS. \model also outperforms DETR-R50~\cite{carion2020detr}, Deformable DETR-R50~\cite{zhu2021deformable}, and Faster R-CNN-R50~\cite{ren2015faster} on both mAP metrics with substantially lower cost, offering the best overall accuracy--efficiency tradeoff. Fig.~\ref{fig:qualitative} shows that \model produces fewer fragmented boxes and tighter localization on elongated defects and holes, consistent with the aggregate results.
+Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inference throughput. \model achieves the highest mAP50 of 97.4\% and the second-highest mAP50--95 of 65.5\%, improving over the YOLOv8n~\cite{ultralytics2023} baseline by 6.9 and 7.1 percentage points, respectively. This gain comes with only a marginal increase in parameters (3.01 M $\rightarrow$ 3.02 M) and FLOPs (8.1 G $\rightarrow$ 8.2 G), while throughput on the RTX 3090 decreases from 554 to 491 FPS. Among lightweight variants, YOLO11n~\cite{ultralytics2023} attains the next-best accuracy (93.3\% mAP50, 60.8\% mAP50--95); \model surpasses it by 4.1 and 4.7 points while running faster (491 vs.\ 463 FPS). YOLOv9t~\cite{wang2025yolov9}, YOLOv10n~\cite{wang2024yolov10}, YOLO12n~\cite{tian2025yolov12}, and YOLO26n~\cite{ultralytics2023} have fewer parameters or lower FLOPs but underperform on this test set, confirming that task-specific adaptation outperforms generic lightweight detectors. RT-DETR-R18~\cite{zhao2024rtdetr} leads in mAP50--95 (67.7\%) but requires 20.09 M parameters and 60.7 G FLOPs at 146 FPS. \model also outperforms DETR-R50~\cite{carion2020detr}, Deformable DETR-R50~\cite{zhu2021deformable}, and Faster R-CNN-R50~\cite{ren2015faster} on both mAP metrics with substantially lower cost, offering the best overall accuracy--efficiency tradeoff. Fig.~\ref{fig:qualitative} shows that \model produces fewer fragmented boxes and tighter localization on elongated defects and holes, consistent with the aggregate results.
 
 \subsection{Component Ablation}
 \label{sec:component-ablation}
 \begin{table}[!htbp]
-\caption{Component ablation of MCE and GIU.}
+\caption{Component ablation of SGRE and SARU.}
 \label{tab:ablation}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lccrrrr@{}}
 \toprule
-Variant & MCE & GIU & Params (M) & FLOPs (G) & mAP50 & mAP50--95 \\
+Variant & SGRE & SARU & Params (M) & FLOPs (G) & mAP50 & mAP50--95 \\
 \midrule
-YOLOv8n & -- & -- & 3.01 & 8.10 & 90.5 & 58.4 \\
-+ MCE & \checkmark & -- & 3.01 & 8.2 & 93.9 & 63.6 \\
-+ GIU & -- & \checkmark & 3.01 & 8.2 & 94.4 & 63.0 \\
-\model & \checkmark & \checkmark & 3.02 & 8.2 & 97.2 & 65.5 \\
+YOLOv8n & -- & -- & 3.01 & 8.1 & 90.5 & 58.4 \\
++ SGRE & \checkmark & -- & 3.02 & 8.2 & 94.3 & 61.5 \\
++ SARU & -- & \checkmark & 3.01 & 8.1 & 93.4 & 61.6 \\
+\model & \checkmark & \checkmark & 3.02 & 8.2 & 97.4 & 65.5 \\
 \bottomrule
 \end{tabular*}
 \end{table}
 
-Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n baseline, MCE alone, GIU alone, and their combination. The MCE-only model retains nearest-neighbor upsampling, while the GIU-only model retains the original backbone C2f blocks. On the test set, MCE alone achieves 93.9\% mAP50 and 63.6\% mAP50--95, improving over the baseline by 3.4 and 5.2 percentage points, respectively. GIU alone achieves 94.4\% and 63.0\%, corresponding to gains of 3.9 and 4.6 points. Combining the two modules yields 97.2\% mAP50 and 65.5\% mAP50--95, exceeding the best single-module result for each metric by 2.8 and 1.9 points. These results support the complementary benefits of morphology-aware context encoding and adaptive feature reconstruction. Feature visualizations in Fig.~\ref{fig:heatmaps} complement the numerical analysis by comparing responses at corresponding feature stages on the same images.
+Table~\ref{tab:ablation} compares the baseline, SGRE alone, SARU alone, and their combination. The SGRE-only model retains nearest-neighbor upsampling; the SARU-only model retains the original backbone. SGRE alone achieves 94.3\% mAP50 and 61.5\% mAP50--95, improving over the baseline by 3.8 and 3.1 percentage points. SARU alone achieves 93.4\% and 61.6\%, corresponding to gains of 2.9 and 3.2 points. Their combination achieves 97.4\% and 65.5\%, exceeding the best single-module result by 3.1 and 3.9 points for the two metrics. These results indicate complementary benefits from progressive gradient-based refinement and subpixel-adaptive residual reconstruction.
 
-
-
-\subsection{Model Deployment and On-Device Performance}
+\subsection{Model Export}
 \label{sec:deployment}
-To deploy \model on the RK3566 edge device, the trained model is exported to ONNX with a fixed input size of $640\times$640 and then converted into an INT8 RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2}. For $640\times$640 inputs, the deployed INT8 model achieves a measured inference throughput of 22 FPS on the RK3566. This throughput is 2.2 times the 10 FPS design target derived in Section~\ref{sec:coverage}, meeting the model-inference rate required for the specified machine speed and camera field of view.
-
-
+The trained detector is exported to ONNX with a fixed input size of $640\times640$. The export retains the fixed Sobel filters, learned gradient-selection branches, and the PixelShuffle-based subpixel weighting operation. The ONNX model can then be converted to RKNN using RKNN-Toolkit2 \cite{rockchiptoolkit2} for the selected Rockchip target platform.
 
 \section{Conclusion}
 \label{sec:conclusion}
-This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, integrating image acquisition, SerDes transmission, edge inference, machine stopping, and cloud alerts. The lightweight \model combines MCE for elongated-defect morphology encoding with GIU for adaptive feature reconstruction. On the self-collected test set, it achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving over YOLOv8n by 6.7 and 7.1 percentage points. INT8 deployment on the RK3566 achieves 22 FPS, exceeding the 10 FPS design target. Unlike generic object detection pipelines, our work jointly tailors both the hardware architecture and the detection algorithm to the morphology of knitting defects and the constraints of edge deployment, enabling real-time closed-loop control directly on the machine. By delivering a fully integrated and deployable system rather than an isolated algorithm, this work addresses a critical bottleneck in textile manufacturing—namely, the difficulty of translating detection performance into actionable, on-machine quality control. It offers the industry a ready-to-deploy reference for intelligent detection of circular knitting machines and, more broadly, demonstrates a reproducible pathway for deploying lightweight vision models on resource-constrained edge devices in industrial settings.
+This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, integrating image acquisition, SerDes transmission, edge inference, machine stopping, and cloud alerts. The lightweight \model combines SGRE for progressive gradient-based feature enhancement with SARU for subpixel-adaptive residual reconstruction. On the self-collected test set, it achieves 97.4\% mAP50 and 65.5\% mAP50--95, improving over YOLOv8n by 6.9 and 7.1 percentage points. The detector reaches 491 FPS in pure FP32 inference on an RTX 3090 with batch size 1. Unlike generic object detection pipelines, our work jointly tailors both the hardware architecture and the detection algorithm to the morphology of knitting defects and the constraints of edge deployment, enabling real-time closed-loop control directly on the machine. By delivering a fully integrated and deployable system rather than an isolated algorithm, this work addresses a critical bottleneck in textile manufacturing—namely, the difficulty of translating detection performance into actionable, on-machine quality control. It offers the industry a ready-to-deploy reference for intelligent detection of circular knitting machines and, more broadly, demonstrates a reproducible pathway for deploying lightweight vision models on resource-constrained edge devices in industrial settings.
 
 \begin{figure}[!hb]
 \centering
