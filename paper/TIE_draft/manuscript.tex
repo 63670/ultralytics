@@ -386,15 +386,15 @@ To deploy \model on the RK3566 edge device, the trained model is exported to ONN
 
 \subsection{Illustrative Analysis of Delayed Intervention}
 \label{sec:delayed-intervention}
-A persistent yarn abnormality at one active feeder can generate a new defective course on each machine revolution, following the course-formation mechanism of circular weft knitting \cite{cottonworksKnitMachinery}. Consider a hypothetical five-minute delay between defect onset and operator discovery. Using the diameter $D=1.016$ m and rotation period $T=2$ s specified in Section~\ref{sec:coverage}, the machine completes $N=300/T=150$ revolutions during this interval. If the abnormality persists throughout each revolution and produces a horizontal defect extending approximately around the fabric circumference, the cumulative transverse defect length is
+A persistent yarn abnormality at one active feeder can generate a new defective course on each machine revolution, following the course-formation mechanism of circular weft knitting \cite{cottonworksKnitMachinery}. Consider a hypothetical five-minute delay between defect onset and operator discovery. With the rotation period $T=2$ s specified in Section~\ref{sec:coverage}, the machine completes $N=300/T=150$ revolutions during this interval. Taking an approximate fabric take-down increment of $p=0.03$ m per revolution, the affected fabric length in the production direction is
 \begin{equation}
-L_{\mathrm{sum}}=N\pi D
-=150\times\pi\times1.016
-\approx478.8\ \mathrm{m}.
-\label{eq:cumulative-defect-length}
+L_{\mathrm{affected}}=Np
+=\frac{300}{2}\times0.03
+\approx4.5\ \mathrm{m}.
+\label{eq:affected-fabric-length}
 \end{equation}
 
-This scenario corresponds to approximately 150 circumferential defective courses with a combined transverse length of 479 m. The affected fabric length in the production direction depends separately on the take-down speed: for a constant speed $v_{\mathrm{out}}$ in m/min, the five-minute interval produces $5v_{\mathrm{out}}$ metres of fabric. The estimate illustrates how delayed intervention allows a persistent yarn fault to produce repeated defects, motivating on-machine detection and timely stopping.
+Under this operating assumption, a five-minute discovery delay allows approximately 150 defective courses to recur over a 4.5 m length of fabric. This estimate connects intervention delay to the extent of affected production and illustrates the value of on-machine detection and timely stopping in limiting further defect propagation.
 
 \section{Conclusion}
 \label{sec:conclusion}
