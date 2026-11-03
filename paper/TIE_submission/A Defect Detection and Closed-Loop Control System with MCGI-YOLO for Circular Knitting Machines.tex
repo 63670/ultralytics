@@ -65,13 +65,13 @@ The main contributions of our work are as follows.
   \item We design GIU to accommodate the diverse morphologies and scales of circular-knitting defects, including elongated defects and holes of varying sizes. A compact spatial gate adapts a convex combination of two fixed interpolation paths, balancing response replication and neighborhood smoothing in the top-down path.
 \end{enumerate}
 
-The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes MCGI-YOLO and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} reports detector comparisons, component ablation, and model deployment. Section~\ref{sec:conclusion} concludes.
+The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes MCGI-YOLO and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} reports detector comparisons and component ablation. Section~\ref{sec:system-operation} presents model deployment, client and cloud operation, configurable stopping rules, and the analysis of delayed intervention. Section~\ref{sec:conclusion} concludes.
 
 \section{Defect Detection and Closed-Loop Control System}
 \label{sec:system-design}
 \subsection{System Overview}
 \label{sec:system-overview}
-We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. The closed-loop workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and triggers the edge device to activate the camera and LED illumination for image acquisition and defect detection. When the detections in a frame satisfy the configured stopping criteria, the edge device immediately sends a stop command to the machine controller to prevent further defect propagation, uploads the defect image and record to the cloud, and pushes an alert notification to the operator. After the operator inspects the reported defect, resolves the production fault, and restarts the machine, the rotation signal reactivates detection. This sequence forms a complete production–detection–control loop. The system comprises power supply, image acquisition and transmission, processing, and network communication functions. The following subsections describe these functions, the client and cloud interfaces, the stopping rules, and their hardware implementation.
+We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. The closed-loop workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and triggers the edge device to activate the camera and LED illumination for image acquisition and defect detection. When the detections in a frame satisfy the configured stopping criteria, the edge device immediately sends a stop command to the machine controller to prevent further defect propagation, uploads the defect image and record to the cloud, and pushes an alert notification to the operator. After the operator inspects the reported defect, resolves the production fault, and restarts the machine, the rotation signal reactivates detection. This sequence forms a complete production–detection–control loop. The system comprises power supply, image acquisition and transmission, processing, and network communication functions. The following subsections describe the hardware subsystems and their implementation. Model deployment, client and cloud interfaces, and stopping rules are presented in Section~\ref{sec:system-operation}.
 
 \begin{figure*}[!tbp]
 \centering
@@ -146,69 +146,8 @@ Our device & 1 TOPS (INT8) & 60 \\
 \renewcommand{\arraystretch}{1.0}
 \end{table}
 
-\subsection{Network Communication and Client Interaction}
-\label{sec:network-client}
-The edge device connects to the cloud through a 4G module with a SIM-card slot and an external antenna interface. This connection supports defect-image and event uploads, alert notifications, device-state reporting, and remote client configuration. Local detection and machine-stop commands are executed on the edge device, while the cloud provides centralized monitoring and management.
-
-Fig.~\ref{fig:client-detection} shows the client interface during detection and after a defect is found. The home page displays the detection state, device information, and current sensitivity setting. Upon defect detection, the client automatically switches to the defect-detail page, displaying the captured image, the localized defect, and its category for operator review. This transition links the detection result to an accessible on-machine record for fault handling.
-
-\begin{figure*}[!tbp]
-\centering
-\includegraphics[width=0.98\textwidth]{detect.png}
-\caption{Client interface transition upon defect detection: the detection home page (left) switches to the defect-detail page (right), showing the defect image, localization result, and category.}
-\label{fig:client-detection}
-\end{figure*}
-
-The IoT platform in Fig.~\ref{fig:iot-platform} consolidates the uploaded information. Panel A) summarizes defect counts and defect events associated with machine stopping, while panel B) presents image-based defect records for individual devices. Panels C) and D) form the digital-twin interface for the edge client: the cloud displays the reported runtime state and provides controls that update the client's detection configuration. The state view includes the application version, camera status, CPU temperature, fabric type, and detection state. The control view allows remote adjustment of sensitivity and associated decision thresholds. Together, state synchronization and configuration feedback connect the physical client with its cloud-side representation, supporting remote supervision and control.
-
-\begin{figure*}[!tbp]
-\centering
-\includegraphics[width=0.98\textwidth]{iot_platform.png}
-\caption{IoT platform interfaces: A) defect-event statistics; B) device-specific defect records; C) digital-twin view of the client's runtime state; and D) digital-twin controls for remotely configuring client sensitivity and decision thresholds.}
-\label{fig:iot-platform}
-\end{figure*}
-
-\subsection{Configurable Machine-Stop Rules}
-\label{sec:stop-rules}
-Textile factories differ in their tolerance for fabric defects and the quality requirements of their products. The client therefore provides three preset sensitivity levels, low, medium, and high, with editable stopping thresholds for each defect category. Operators can select a preset and adjust its parameters to match the factory's acceptance criteria. The configuration can also be updated remotely through the interface in Fig.~\ref{fig:iot-platform}(D).
-
-Each sensitivity preset combines a confidence threshold, three geometric thresholds, and a defect-count threshold per frame, as listed in Table~\ref{tab:stop-rules}. Predicted bounding boxes are mapped back to the original $1280\times1024$ camera image before their dimensions are evaluated. For sensitivity level $s$, let $\tau_s$ denote the confidence threshold, $W_s$ and $H_s$ the horizontal- and vertical-defect length thresholds in pixels, $A_s$ the hole-area threshold in square pixels, and $N_s$ the defect-count threshold. For detection $i$ with class $c_i$, bounding-box width $w_i$, and height $h_i$, the geometric qualification indicator is
-\begin{equation}
-r_i^{(s)}=
-\begin{cases}
-\mathbb{I}(w_i>W_s), & c_i=\mathrm{row}\\
-\mathbb{I}(h_i>H_s), & c_i=\mathrm{col}\\
-\mathbb{I}(w_i h_i>A_s), & c_i=\mathrm{hole}
-\end{cases}
-\label{eq:stop-rule}
-\end{equation}
-\noindent where $\mathbb{I}$ equals 1 when the condition is satisfied and 0 otherwise. Width measures the horizontal extent of a row defect, height measures the vertical extent of a column defect, and bounding-box area measures the extent of a hole. With $p_i$ denoting detection confidence, let $\mathcal{D}_s=\{i\mid p_i\geq\tau_s\}$ be the set of confidence-qualified detections in the current frame. The stopping decision is
-\begin{equation}
-S_s=\mathbb{I}\!\left(\sum_{i\in\mathcal{D}_s}r_i^{(s)}\geq1\;\lor\;|\mathcal{D}_s|\geq N_s\right)
-\label{eq:frame-stop-rule}
-\end{equation}
-\noindent A stop command is issued when either a confidence-qualified detection exceeds its class-specific size threshold or the total number of confidence-qualified detections reaches $N_s$. The count criterion includes defects below the geometric thresholds, allowing multiple small defects to trigger stopping. Counts are evaluated independently for each frame.
-
-\begin{table}[!tbp]
-\caption{Preset stopping parameters. Geometric thresholds use the original $1280\times1024$ image coordinates; $N_s$ is the confidence-qualified defect-count threshold per frame.}
-\label{tab:stop-rules}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.08}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrr@{}}
-\toprule
-Level & $\tau_s$ & \shortstack{$A_s$\\(pixels$^2$)} & \shortstack{$W_s$\\(pixels)} & \shortstack{$H_s$\\(pixels)} & $N_s$ \\
-\midrule
-Low & 0.50 & 6400 & 800 & 400 & 3 \\
-Medium & 0.40 & 2500 & 400 & 200 & 2 \\
-High & 0.30 & 1000 & 200 & 100 & 1 \\
-\bottomrule
-\end{tabular*}
-\renewcommand{\arraystretch}{1.0}
-\end{table}
-
-Higher sensitivity lowers the confidence, size, and count thresholds, allowing stopping for smaller defects or fewer detections within a frame. Lower sensitivity raises these thresholds to accommodate less stringent acceptance criteria. The editable presets convert detection outputs into factory-specific production decisions without retraining the detector.
+\subsection{Network Communication Subsystem}
+The edge device connects to the cloud through a 4G module with a SIM-card slot and an external antenna interface. This connection supports defect-image and event uploads, alert notifications, device-state reporting, and remote client configuration. The client and cloud functions are detailed in Section~\ref{sec:system-operation}.
 
 \subsection{Hardware Implementation}
 \label{sec:hardware-implementation}
@@ -456,11 +395,81 @@ Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n basel
 \label{fig:heatmaps}
 \end{figure}
 
+\section{System Deployment and Operation}
+\label{sec:system-operation}
+The trained detector is deployed on the dedicated edge device and integrated with the client interface, cloud platform, and configurable stopping rules. This section describes on-device inference performance and how detection outputs support local intervention and remote supervision.
+
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
 To deploy \model on the RK3566 edge device, the trained model is exported to ONNX with a fixed input size of $640\times$640 and then converted into an INT8 RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2}. For $640\times$640 inputs, the deployed INT8 model achieves a measured inference throughput of 22 FPS on the RK3566. This throughput is 2.2 times the 10 FPS design target derived in Section~\ref{sec:coverage}, meeting the model-inference rate required for the specified machine speed and camera field of view.
 
 
+
+\subsection{Client Detection Interface}
+\label{sec:client-interface}
+Fig.~\ref{fig:client-detection} shows the client interface during detection and after a defect is found. The home page displays the detection state, device information, and current sensitivity setting. Upon defect detection, the client automatically switches to the defect-detail page, displaying the captured image, the localized defect, and its category for operator review. This transition links the detection result to an accessible on-machine record for fault handling.
+
+\begin{figure*}[!tbp]
+\centering
+\includegraphics[width=0.98\textwidth]{detect.png}
+\caption{Client interface transition upon defect detection: the detection home page (left) switches to the defect-detail page (right), showing the defect image, localization result, and category.}
+\label{fig:client-detection}
+\end{figure*}
+
+\subsection{Cloud Platform and Digital Twin}
+\label{sec:network-client}
+The edge device reports defect events and runtime states to the cloud and receives remote configuration updates. Local detection and machine-stop commands are executed on the edge device, while the cloud provides centralized monitoring and management.
+
+The IoT platform in Fig.~\ref{fig:iot-platform} consolidates the uploaded information. Panel A) summarizes defect counts and defect events associated with machine stopping, while panel B) presents image-based defect records for individual devices. Panels C) and D) form the digital-twin interface for the edge client: the cloud displays the reported runtime state and provides controls that update the client's detection configuration. The state view includes the application version, camera status, CPU temperature, fabric type, and detection state. The control view allows remote adjustment of sensitivity and associated decision thresholds. Together, state synchronization and configuration feedback connect the physical client with its cloud-side representation, supporting remote supervision and control.
+
+\begin{figure*}[!tbp]
+\centering
+\includegraphics[width=0.98\textwidth]{iot_platform.png}
+\caption{IoT platform interfaces: A) defect-event statistics; B) device-specific defect records; C) digital-twin view of the client's runtime state; and D) digital-twin controls for remotely configuring client sensitivity and decision thresholds.}
+\label{fig:iot-platform}
+\end{figure*}
+
+\subsection{Configurable Machine-Stop Rules}
+\label{sec:stop-rules}
+Textile factories differ in their tolerance for fabric defects and the quality requirements of their products. The client therefore provides three preset sensitivity levels, low, medium, and high, with editable stopping thresholds for each defect category. Operators can select a preset and adjust its parameters to match the factory's acceptance criteria. The configuration can also be updated remotely through the interface in Fig.~\ref{fig:iot-platform}(D).
+
+Each sensitivity preset combines a confidence threshold, three geometric thresholds, and a defect-count threshold per frame, as listed in Table~\ref{tab:stop-rules}. Predicted bounding boxes are mapped back to the original $1280\times1024$ camera image before their dimensions are evaluated. For sensitivity level $s$, let $\tau_s$ denote the confidence threshold, $W_s$ and $H_s$ the horizontal- and vertical-defect length thresholds in pixels, $A_s$ the hole-area threshold in square pixels, and $N_s$ the defect-count threshold. For detection $i$ with class $c_i$, bounding-box width $w_i$, and height $h_i$, the geometric qualification indicator is
+\begin{equation}
+r_i^{(s)}=
+\begin{cases}
+\mathbb{I}(w_i>W_s), & c_i=\mathrm{row}\\
+\mathbb{I}(h_i>H_s), & c_i=\mathrm{col}\\
+\mathbb{I}(w_i h_i>A_s), & c_i=\mathrm{hole}
+\end{cases}
+\label{eq:stop-rule}
+\end{equation}
+\noindent where $\mathbb{I}$ equals 1 when the condition is satisfied and 0 otherwise. Width measures the horizontal extent of a row defect, height measures the vertical extent of a column defect, and bounding-box area measures the extent of a hole. With $p_i$ denoting detection confidence, let $\mathcal{D}_s=\{i\mid p_i\geq\tau_s\}$ be the set of confidence-qualified detections in the current frame. The stopping decision is
+\begin{equation}
+S_s=\mathbb{I}\!\left(\sum_{i\in\mathcal{D}_s}r_i^{(s)}\geq1\;\lor\;|\mathcal{D}_s|\geq N_s\right)
+\label{eq:frame-stop-rule}
+\end{equation}
+\noindent A stop command is issued when either a confidence-qualified detection exceeds its class-specific size threshold or the total number of confidence-qualified detections reaches $N_s$. The count criterion includes defects below the geometric thresholds, allowing multiple small defects to trigger stopping. Counts are evaluated independently for each frame.
+
+\begin{table}[!tbp]
+\caption{Preset stopping parameters. Geometric thresholds use the original $1280\times1024$ image coordinates; $N_s$ is the confidence-qualified defect-count threshold per frame.}
+\label{tab:stop-rules}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrr@{}}
+\toprule
+Level & $\tau_s$ & \shortstack{$A_s$\\(pixels$^2$)} & \shortstack{$W_s$\\(pixels)} & \shortstack{$H_s$\\(pixels)} & $N_s$ \\
+\midrule
+Low & 0.50 & 6400 & 800 & 400 & 3 \\
+Medium & 0.40 & 2500 & 400 & 200 & 2 \\
+High & 0.30 & 1000 & 200 & 100 & 1 \\
+\bottomrule
+\end{tabular*}
+\renewcommand{\arraystretch}{1.0}
+\end{table}
+
+Higher sensitivity lowers the confidence, size, and count thresholds, allowing stopping for smaller defects or fewer detections within a frame. Lower sensitivity raises these thresholds to accommodate less stringent acceptance criteria. The editable presets convert detection outputs into factory-specific production decisions without retraining the detector.
 
 \subsection{Illustrative Analysis of Delayed Intervention}
 \label{sec:delayed-intervention}
