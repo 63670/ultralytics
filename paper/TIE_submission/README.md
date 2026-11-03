@@ -3,7 +3,8 @@
 本目录是 **A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines** 的唯一维护入口，后续转投修订也在此进行。
 
 - 同名 `.tex` 与 `.pdf` 为正文和编译结果，保留以论文标题命名的文件名。
-- `figures/fig1.png` 至 `fig7.png` 为正文插图，`a1.jpg` 至 `a7.jpg` 为作者照片。
+- `figures/fig1.png` 至 `fig7.png` 为原有正文插图，`a1.jpg` 至 `a7.jpg` 为作者照片；文件名保持稳定，正文图号由 LaTeX 自动生成。
+- `figures/serdes.png` 为 SerDes 与 PoC 链路示意图（单栏）；`detect.png` 为客户端检测页面跳转图（双栏）；`iot_platform.png` 为 IoT 平台图（双栏），其中 C)、D) 展示客户端状态与远程配置的数字孪生界面。
 - `fig6.layout.json`、`fig6.sources.json` 和 `fig7.layout.json` 保留对比图与热力图的排版、来源记录。
 - `references.bib`、`IEEEtranTIE.cls` 和 `Bibliography/IEEEtranTIE.bst` 为独立编译所需文件。
 - `.vscode/settings.json` 提供 LaTeX Workshop 编译配置；辅助文件和编辑器预览位于 `build/`。

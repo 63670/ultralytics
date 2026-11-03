@@ -71,7 +71,7 @@ The remainder of this paper is organized as follows. Section~\ref{sec:system-des
 \label{sec:system-design}
 \subsection{System Overview}
 \label{sec:system-overview}
-We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. The closed-loop workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and triggers the edge device to activate the camera and LED illumination for image acquisition and defect detection. When a defect is detected, the edge device immediately sends a stop command to the machine controller to prevent further defect propagation, uploads the defect image and record to the cloud, and pushes an alert notification to the operator. After the operator inspects the reported defect, resolves the production fault, and restarts the machine, the rotation signal reactivates detection. This sequence forms a complete production–detection–control loop. The system is organized into three functional subsystems: power supply, image acquisition and transmission, and processor. The following subsections describe their designs and hardware implementation.
+We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. The closed-loop workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and triggers the edge device to activate the camera and LED illumination for image acquisition and defect detection. When a defect is detected, the edge device immediately sends a stop command to the machine controller to prevent further defect propagation, uploads the defect image and record to the cloud, and pushes an alert notification to the operator. After the operator inspects the reported defect, resolves the production fault, and restarts the machine, the rotation signal reactivates detection. This sequence forms a complete production–detection–control loop. The system comprises power supply, image acquisition and transmission, processing, and network communication functions. The following subsections describe these functions, the client and cloud interfaces, and their hardware implementation.
 
 \begin{figure*}[!tbp]
 \centering
@@ -86,7 +86,14 @@ To accommodate different industrial supply voltages across countries and regions
 \subsection{Image Acquisition and Transmission Subsystem}
 The rapid rotation of circular knitting machines requires imaging that preserves defect geometry and fine spatial detail. We therefore select a SmartSens SC130GS global-shutter sensor (SmartSens Technology Co., Ltd., Shanghai, China) at $1280\times1024$ resolution, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm dimension aligned with the horizontal direction of fabric motion.
 
-Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment. Specifically, the THCV241A serializer and THCV242A deserializer (THine Electronics, Inc., Tokyo, Japan) bridge the camera-side and processor-side MIPI CSI-2 interfaces. The link supports a maximum serial line rate of 4.0 Gb/s per lane, corresponding to a rated effective rate of 3.2 Gb/s \cite{thineTHCV241A,thineTHCV242A}.
+Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment. Specifically, the THCV241A serializer and THCV242A deserializer (THine Electronics, Inc., Tokyo, Japan) bridge the camera-side and processor-side MIPI CSI-2 interfaces. As illustrated in Fig.~\ref{fig:serdes}, the serializer converts the camera output into a serial stream, which is transmitted over the coaxial cable and recovered by the deserializer for the RK3566. Power over Coax (PoC) supplies the camera side through the same cable, combining image transmission and power delivery in a single connection. The link supports a maximum serial line rate of 4.0 Gb/s per lane, corresponding to a rated effective rate of 3.2 Gb/s \cite{thineTHCV241A,thineTHCV242A}.
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\columnwidth]{serdes.png}
+\caption{SerDes camera link using the THCV241A serializer and THCV242A deserializer. Image data travel from the sensor to the RK3566 over coaxial cable, while PoC supplies power to the camera side.}
+\label{fig:serdes}
+\end{figure}
 
 The camera is configured to transmit $1280\times1024$ RAW10 images at 30 frames/s. With $b=10$ bits per pixel, the active-image payload rate is
 \begin{equation}
@@ -138,6 +145,28 @@ Our device & 1 TOPS (INT8) & 60 \\
 \end{minipage}
 \renewcommand{\arraystretch}{1.0}
 \end{table}
+
+\subsection{Network Communication and Client Interaction}
+\label{sec:network-client}
+The edge device connects to the cloud through a 4G module with a SIM-card slot and an external antenna interface. This connection supports defect-image and event uploads, alert notifications, device-state reporting, and remote client configuration. Local detection and machine-stop commands are executed on the edge device, while the cloud provides centralized monitoring and management.
+
+Fig.~\ref{fig:client-detection} shows the client interface during detection and after a defect is found. The home page displays the detection state, device information, and current sensitivity setting. Upon defect detection, the client automatically switches to the defect-detail page, displaying the captured image, the localized defect, and its category for operator review. This transition links the detection result to an accessible on-machine record for fault handling.
+
+\begin{figure*}[!tbp]
+\centering
+\includegraphics[width=0.98\textwidth]{detect.png}
+\caption{Client interface transition upon defect detection: the detection home page (left) switches to the defect-detail page (right), showing the defect image, localization result, and category.}
+\label{fig:client-detection}
+\end{figure*}
+
+The IoT platform in Fig.~\ref{fig:iot-platform} consolidates the uploaded information. Panel A) summarizes defect counts and defect events associated with machine stopping, while panel B) presents image-based defect records for individual devices. Panels C) and D) form the digital-twin interface for the edge client: the cloud displays the reported runtime state and provides controls that update the client's detection configuration. The state view includes the application version, camera status, CPU temperature, fabric type, and detection state. The control view allows remote adjustment of sensitivity and associated decision thresholds. Together, state synchronization and configuration feedback connect the physical client with its cloud-side representation, supporting remote supervision and control.
+
+\begin{figure*}[!tbp]
+\centering
+\includegraphics[width=0.98\textwidth]{iot_platform.png}
+\caption{IoT platform interfaces: A) defect-event statistics; B) device-specific defect records; C) digital-twin view of the client's runtime state; and D) digital-twin controls for remotely configuring client sensitivity and decision thresholds.}
+\label{fig:iot-platform}
+\end{figure*}
 
 \subsection{Hardware Implementation}
 \label{sec:hardware-implementation}

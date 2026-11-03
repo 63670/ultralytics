@@ -1,7 +1,8 @@
 # 论文维护入口
 
 - 后续 MCGI-YOLO 论文修改默认基于 `TIE_submission/A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex`；转投修订也在此维护。
-- 对应图片、参考文献和编译脚本位于 `TIE_submission/figures/`、`TIE_submission/references.bib` 和 `TIE_submission/build.ps1`。正文图片按 `fig1.png` 至 `fig7.png` 命名。旧草稿目录已删除，不重新创建。
+- 对应图片、参考文献和编译脚本位于 `TIE_submission/figures/`、`TIE_submission/references.bib` 和 `TIE_submission/build.ps1`。原有正文图片文件名 `fig1.png` 至 `fig7.png` 保持稳定；正文图号由 LaTeX 自动生成，不再等同于文件名。旧草稿目录已删除，不重新创建。
+- 系统部分新增 `serdes.png`（单栏）、`detect.png`（双栏）和 `iot_platform.png`（双栏）；平台图 C)、D) 分别说明客户端实时状态与远程配置的数字孪生功能。
 - `manuscript.tex` 保留为迁移前的历史稿，`TIE_LaTeX_template/` 保留为原始模板；不要将后续论文修改写回这两处。
 - 每次改动后创建对应的 Git commit，遵循仓库根目录的要求。
 
@@ -18,7 +19,7 @@
 - `pdflatex` 必须显式传入 `-output-directory=%OUTDIR%`，BibTeX 必须读取 `%OUTDIR%/%DOCFILE%`；仅修改 `latex.outDir` 不会改变自定义工具的实际输出路径。
 - 日志若显示 `I can't write on file manuscript.pdf`，先核对实际输出路径和 PDF 占用，不要据此改动公式或删除参考文献。编辑器使用 `build/<论文标题>.log`；根目录旧日志可能仍保留此前错误。
 
-## Fig. 6 检测对比图生成
+## 检测对比图生成（fig6.png）
 
 - 直接使用现有脚本，不重新寻找旧缓存或重新运行模型推理。
 - 服务器：`ssh -p 13022 tkz@8.138.122.96`。
@@ -44,7 +45,7 @@ scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_c
 scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.sources.json paper/TIE_submission/figures/fig6.sources.json
 ```
 
-## Fig. 7 热力图生成
+## 热力图生成（fig7.png）
 
 - 原始素材在本地 `C:/Users/tankz/Desktop/heat`，包含 `src/`、`yolov8n/`、`ours/`。不要转到服务器寻找热力图。
 - 使用现有 `paper/compose_heatmap_figure.py`。三列固定为 Label、YOLOv8n、MCGI-YOLO，不显示字母下标，模型名字号 64。
@@ -57,8 +58,8 @@ $paperPython = 'C:/Users/tankz/.cache/codex-runtimes/codex-primary-runtime/depen
 
 ## 出图后检查
 
-- Fig. 6 保留双栏，Fig. 7 保留单栏；不要修改其他图片或重新生成旧稿的 figures。
-- 保留输出旁的 `.layout.json` 和 Fig. 6 的 `.sources.json`，用于核对样例顺序、预测值和来源。
+- 检测对比图（`fig6.png`）保留双栏，热力图（`fig7.png`）保留单栏；不要修改其他图片或重新生成旧稿的 figures。
+- 保留输出旁的 `.layout.json` 和检测对比图的 `.sources.json`，用于核对样例顺序、预测值和来源。
 - 查看两张图的标签、模型名及正文中的对应排版，再编译当前稿件并核对总页数：
 
 ```powershell
