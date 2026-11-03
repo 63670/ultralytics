@@ -39,7 +39,7 @@
 \maketitle
 
 \begin{abstract}
-Defect detection is critical for circular knitting production, where persistent needle or yarn abnormalities lead to repeated fabric defects, resulting in severe material waste and economic losses. Existing methods are rarely tailored to circular knitting machines and tend to be cost-prohibitive, limiting large-scale industrial deployment. To address this issue, we present a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines, which triggers image acquisition from machine rotation, halts the machine upon defect detection to interrupt defect propagation, and alerts the operator for corrective intervention, forming a complete production–detection–control loop. To further improve detection accuracy for diverse fabric defect morphologies and scales, we propose a lightweight detector termed \model. To model the morphological continuity of elongated defects, morphology-aware context encoding (MCE) augments backbone features with spatially extended context. To accommodate variations in defect morphology and scale, gated interpolation upsampling (GIU) adapts the reconstruction of higher-level context before fusion with local features, using a compact content-adaptive gate. On a real-world dataset collected from a circular-knitting production line, \model achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.7 and 7.1 percentage points, respectively. After INT8 conversion, the model reaches an inference throughput of 22 FPS on the edge device. The proposed system provides a cost-effective solution for real-time defect detection in circular-knitting production.
+Defect detection is critical for circular knitting production, where persistent needle or yarn abnormalities lead to repeated fabric defects, resulting in severe material waste and economic losses. Existing methods are rarely tailored to circular knitting machines and tend to be cost-prohibitive, limiting large-scale industrial deployment. To address this issue, we present a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines, which triggers image acquisition from machine rotation, halts the machine when a detected defect meets configurable stopping criteria, and alerts the operator for corrective intervention, forming a complete production–detection–control loop. To further improve detection accuracy for diverse fabric defect morphologies and scales, we propose a lightweight detector termed \model. To model the morphological continuity of elongated defects, morphology-aware context encoding (MCE) augments backbone features with spatially extended context. To accommodate variations in defect morphology and scale, gated interpolation upsampling (GIU) adapts the reconstruction of higher-level context before fusion with local features, using a compact content-adaptive gate. On a real-world dataset collected from a circular-knitting production line, \model achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.7 and 7.1 percentage points, respectively. After INT8 conversion, the model reaches an inference throughput of 22 FPS on the edge device. The proposed system provides a cost-effective solution for real-time defect detection in circular-knitting production.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -71,7 +71,7 @@ The remainder of this paper is organized as follows. Section~\ref{sec:system-des
 \label{sec:system-design}
 \subsection{System Overview}
 \label{sec:system-overview}
-We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. The closed-loop workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and triggers the edge device to activate the camera and LED illumination for image acquisition and defect detection. When a defect is detected, the edge device immediately sends a stop command to the machine controller to prevent further defect propagation, uploads the defect image and record to the cloud, and pushes an alert notification to the operator. After the operator inspects the reported defect, resolves the production fault, and restarts the machine, the rotation signal reactivates detection. This sequence forms a complete production–detection–control loop. The system comprises power supply, image acquisition and transmission, processing, and network communication functions. The following subsections describe these functions, the client and cloud interfaces, and their hardware implementation.
+We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. The closed-loop workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and triggers the edge device to activate the camera and LED illumination for image acquisition and defect detection. When a detected defect satisfies the configured stopping criteria, the edge device immediately sends a stop command to the machine controller to prevent further defect propagation, uploads the defect image and record to the cloud, and pushes an alert notification to the operator. After the operator inspects the reported defect, resolves the production fault, and restarts the machine, the rotation signal reactivates detection. This sequence forms a complete production–detection–control loop. The system comprises power supply, image acquisition and transmission, processing, and network communication functions. The following subsections describe these functions, the client and cloud interfaces, the stopping rules, and their hardware implementation.
 
 \begin{figure*}[!tbp]
 \centering
@@ -167,6 +167,43 @@ The IoT platform in Fig.~\ref{fig:iot-platform} consolidates the uploaded inform
 \caption{IoT platform interfaces: A) defect-event statistics; B) device-specific defect records; C) digital-twin view of the client's runtime state; and D) digital-twin controls for remotely configuring client sensitivity and decision thresholds.}
 \label{fig:iot-platform}
 \end{figure*}
+
+\subsection{Configurable Machine-Stop Rules}
+\label{sec:stop-rules}
+Textile factories differ in their tolerance for fabric defects and the quality requirements of their products. The client therefore provides three preset sensitivity levels, low, medium, and high, with editable stopping thresholds for each defect category. Operators can select a preset and adjust its parameters to match the factory's acceptance criteria. The configuration can also be updated remotely through the interface in Fig.~\ref{fig:iot-platform}(D).
+
+The decision uses the geometry of each accepted detection. For sensitivity level $s$, let $W_s$ and $H_s$ denote the horizontal- and vertical-defect length thresholds in pixels, and let $A_s$ denote the hole-area threshold in square pixels. For detection $i$ with class $c_i$, bounding-box width $w_i$, and height $h_i$, the class-specific stopping indicator is
+\begin{equation}
+r_i^{(s)}=
+\begin{cases}
+\mathbb{I}(w_i>W_s), & c_i=\mathrm{row}\\
+\mathbb{I}(h_i>H_s), & c_i=\mathrm{col}\\
+\mathbb{I}(w_i h_i>A_s), & c_i=\mathrm{hole}
+\end{cases}
+\label{eq:stop-rule}
+\end{equation}
+\noindent where $\mathbb{I}$ equals 1 when the condition is satisfied and 0 otherwise. Width measures the horizontal extent of a row defect, height measures the vertical extent of a column defect, and bounding-box area measures the extent of a hole. Box dimensions and their corresponding thresholds use the same client image coordinate system. A stop command is issued when any accepted detection has $r_i^{(s)}=1$.
+
+\begin{table}[!tbp]
+\caption{Class-specific criteria for configurable machine stopping.}
+\label{tab:stop-rules}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Defect & Measurement & Criterion & Unit \\
+\midrule
+Horizontal & Box width & $w_i>W_s$ & pixels \\
+Vertical & Box height & $h_i>H_s$ & pixels \\
+Hole & Box area & $w_i h_i>A_s$ & pixels$^2$ \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1.0}
+\end{table}
+
+Table~\ref{tab:stop-rules} summarizes the three criteria. Higher sensitivity uses smaller geometric thresholds to respond to less extensive defects, while lower sensitivity tolerates larger defects before stopping. The editable presets convert detection outputs into factory-specific production decisions without retraining the detector.
 
 \subsection{Hardware Implementation}
 \label{sec:hardware-implementation}
@@ -407,6 +444,13 @@ Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n basel
 
 
 
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\columnwidth]{fig7.png}
+\caption{Feature visualization of YOLOv8n and \model. From left to right: ground-truth annotations (Label), YOLOv8n, and \model.}
+\label{fig:heatmaps}
+\end{figure}
+
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
 To deploy \model on the RK3566 edge device, the trained model is exported to ONNX with a fixed input size of $640\times$640 and then converted into an INT8 RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2}. For $640\times$640 inputs, the deployed INT8 model achieves a measured inference throughput of 22 FPS on the RK3566. This throughput is 2.2 times the 10 FPS design target derived in Section~\ref{sec:coverage}, meeting the model-inference rate required for the specified machine speed and camera field of view.
@@ -437,12 +481,6 @@ Under these operating assumptions, a five-minute discovery delay allows approxim
 \label{sec:conclusion}
 This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, integrating image acquisition, SerDes transmission, edge inference, machine stopping, and cloud alerts. The lightweight \model combines MCE for elongated-defect morphology encoding with GIU for adaptive feature reconstruction. On the self-collected test set, it achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving over YOLOv8n by 6.7 and 7.1 percentage points. INT8 deployment on the RK3566 achieves 22 FPS, exceeding the 10 FPS design target. Unlike generic object detection pipelines, our work jointly tailors both the hardware architecture and the detection algorithm to the morphology of knitting defects and the constraints of edge deployment, enabling real-time closed-loop control directly on the machine. By delivering a fully integrated and deployable system rather than an isolated algorithm, this work addresses a critical bottleneck in textile manufacturing—namely, the difficulty of translating detection performance into actionable, on-machine quality control. It offers the industry a ready-to-deploy reference for intelligent detection of circular knitting machines and, more broadly, demonstrates a reproducible pathway for deploying lightweight vision models on resource-constrained edge devices in industrial settings.
 
-\begin{figure}[!hb]
-\centering
-\includegraphics[width=\columnwidth]{fig7.png}
-\caption{Feature visualization of YOLOv8n and \model. From left to right: ground-truth annotations (Label), YOLOv8n, and \model.}
-\label{fig:heatmaps}
-\end{figure}
 
 \FloatBarrier
 \bibliographystyle{Bibliography/IEEEtranTIE}
