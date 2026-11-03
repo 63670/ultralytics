@@ -397,7 +397,7 @@ Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n basel
 
 \section{System Deployment and Operation}
 \label{sec:system-operation}
-The trained detector is deployed on the dedicated edge device and integrated with the client interface, cloud platform, and configurable stopping rules. This section describes on-device inference performance and how detection outputs support local intervention and remote supervision.
+The trained detector is deployed on the dedicated edge device and integrated with the client interface, cloud platform, and configurable stopping rules. This section describes on-device inference performance, local intervention, remote supervision, and operator feedback for model refinement.
 
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
@@ -405,14 +405,14 @@ To deploy \model on the RK3566 edge device, the trained model is exported to ONN
 
 
 
-\subsection{Client Detection Interface}
+\subsection{Client Detection Interface and Operator Feedback}
 \label{sec:client-interface}
-Fig.~\ref{fig:client-detection} shows the client interface during detection and after a defect is found. The home page displays the detection state, device information, and current sensitivity setting. Upon defect detection, the client automatically switches to the defect-detail page, displaying the captured image, the localized defect, and its category for operator review. This transition links the detection result to an accessible on-machine record for fault handling.
+Fig.~\ref{fig:client-detection} shows the client interface during detection and after a defect is found. The home page displays the detection state, device information, and current sensitivity setting. Upon defect detection, the client automatically switches to the defect-detail page, displaying the captured image, the localized defect, and its category for operator review. The confirmation buttons on the right side of the defect-detail page allow the operator to indicate whether the detected defect warrants machine stopping under the factory's quality requirements. These assessments link detection images and results to operator feedback, providing samples for review, annotation, and subsequent model refinement.
 
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.98\textwidth]{detect.png}
-\caption{Client interface transition upon defect detection: the detection home page (left) switches to the defect-detail page (right), showing the defect image, localization result, and category.}
+\caption{Client interface transition upon defect detection: the detection home page (left) switches to the defect-detail page (right), showing the defect image, localization result, category, and buttons for operator confirmation of whether the defect warrants machine stopping.}
 \label{fig:client-detection}
 \end{figure*}
 
@@ -421,6 +421,8 @@ Fig.~\ref{fig:client-detection} shows the client interface during detection and 
 The edge device reports defect events and runtime states to the cloud and receives remote configuration updates. Local detection and machine-stop commands are executed on the edge device, while the cloud provides centralized monitoring and management.
 
 The IoT platform in Fig.~\ref{fig:iot-platform} consolidates the uploaded information. Panel A) summarizes defect counts and defect events associated with machine stopping, while panel B) presents image-based defect records for individual devices. Panels C) and D) form the digital-twin interface for the edge client: the cloud displays the reported runtime state and provides controls that update the client's detection configuration. The state view includes the application version, camera status, CPU temperature, fabric type, and detection state. The control view allows remote adjustment of sensitivity and associated decision thresholds. Together, state synchronization and configuration feedback connect the physical client with its cloud-side representation, supporting remote supervision and control.
+
+The cloud platform also supports on-demand over-the-air (OTA) updates of the detection model. Refined models can be distributed remotely to edge devices for subsequent local inference. Operator feedback, model refinement, and OTA redeployment thus form an iterative improvement workflow that incorporates production experience into model updates.
 
 \begin{figure*}[!tbp]
 \centering
