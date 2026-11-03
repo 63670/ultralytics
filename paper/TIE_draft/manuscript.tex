@@ -384,6 +384,18 @@ To deploy \model on the RK3566 edge device, the trained model is exported to ONN
 
 
 
+\subsection{Illustrative Analysis of Delayed Intervention}
+\label{sec:delayed-intervention}
+A persistent yarn abnormality at one active feeder can generate a new defective course on each machine revolution, following the course-formation mechanism of circular weft knitting \cite{cottonworksKnitMachinery}. Consider a hypothetical five-minute delay between defect onset and operator discovery. Using the diameter $D=1.016$ m and rotation period $T=2$ s specified in Section~\ref{sec:coverage}, the machine completes $N=300/T=150$ revolutions during this interval. If the abnormality persists throughout each revolution and produces a horizontal defect extending approximately around the fabric circumference, the cumulative transverse defect length is
+\begin{equation}
+L_{\mathrm{sum}}=N\pi D
+=150\times\pi\times1.016
+\approx478.8\ \mathrm{m}.
+\label{eq:cumulative-defect-length}
+\end{equation}
+
+This scenario corresponds to approximately 150 circumferential defective courses with a combined transverse length of 479 m. The affected fabric length in the production direction depends separately on the take-down speed: for a constant speed $v_{\mathrm{out}}$ in m/min, the five-minute interval produces $5v_{\mathrm{out}}$ metres of fabric. The estimate illustrates how delayed intervention allows a persistent yarn fault to produce repeated defects, motivating on-machine detection and timely stopping.
+
 \section{Conclusion}
 \label{sec:conclusion}
 This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, integrating image acquisition, SerDes transmission, edge inference, machine stopping, and cloud alerts. The lightweight \model combines MCE for elongated-defect morphology encoding with GIU for adaptive feature reconstruction. On the self-collected test set, it achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving over YOLOv8n by 6.7 and 7.1 percentage points. INT8 deployment on the RK3566 achieves 22 FPS, exceeding the 10 FPS design target. Unlike generic object detection pipelines, our work jointly tailors both the hardware architecture and the detection algorithm to the morphology of knitting defects and the constraints of edge deployment, enabling real-time closed-loop control directly on the machine. By delivering a fully integrated and deployable system rather than an isolated algorithm, this work addresses a critical bottleneck in textile manufacturing—namely, the difficulty of translating detection performance into actionable, on-machine quality control. It offers the industry a ready-to-deploy reference for intelligent detection of circular knitting machines and, more broadly, demonstrates a reproducible pathway for deploying lightweight vision models on resource-constrained edge devices in industrial settings.
