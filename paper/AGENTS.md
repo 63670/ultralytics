@@ -1,7 +1,7 @@
 # 论文维护入口
 
-- 后续论文修改默认基于 `TIE_draft/manuscript.tex`，这是当前 TIE 投稿草稿。
-- 对应图片、参考文献和编译脚本位于 `TIE_draft/figures/`、`TIE_draft/references.bib` 和 `TIE_draft/build.ps1`。
+- 后续 MCGI-YOLO 论文修改默认基于 `TIE_submission/A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex`；转投修订也在此维护。
+- 对应图片、参考文献和编译脚本位于 `TIE_submission/figures/`、`TIE_submission/references.bib` 和 `TIE_submission/build.ps1`。正文图片按 `fig1.png` 至 `fig7.png` 命名。旧草稿目录已删除，不重新创建。
 - `manuscript.tex` 保留为迁移前的历史稿，`TIE_LaTeX_template/` 保留为原始模板；不要将后续论文修改写回这两处。
 - 每次改动后创建对应的 Git commit，遵循仓库根目录的要求。
 
@@ -9,14 +9,14 @@
 
 - 后续 JIOT 论文修改基于 `JIOT_draft/manuscript.tex`，使用 `templates/` 提供的标准 IEEEtran 模板；具体入口见 `JIOT_draft/AGENTS.md`。
 - `JIOT_draft/` 从 TIE 投稿版迁移，暂时保留 MCGI-YOLO 的方法、图片和实测结果。新模型及实验结果后续在该目录更新。
-- `TIE_submission/`、`TIE_draft/` 和历史 `JIOT_DMFR_draft/` 不随 JIOT 新稿修改。
+- `TIE_submission/` 和历史 `JIOT_DMFR_draft/` 不随 JIOT 新稿修改。
 
 ## VS Code 编译入口
 
-- 用户在 VS Code 中以 `TIE_draft/` 为工作区；其 `.vscode/settings.json` 覆盖 LaTeX Workshop 的编译配置。
-- 编辑器通过 `pdflatex -> bibtex -> pdflatex -> pdflatex` 编译，PDF、SyncTeX 和辅助文件统一输出到 `TIE_draft/build/`，预览 `build/manuscript.pdf`。
+- 用户在 VS Code 中以 `TIE_submission/` 为工作区；其 `.vscode/settings.json` 覆盖 LaTeX Workshop 的编译配置。
+- 编辑器通过 `pdflatex -> bibtex -> pdflatex -> pdflatex` 编译，PDF、SyncTeX 和辅助文件统一输出到 `TIE_submission/build/`，预览 `build/<论文标题>.pdf`；`build.ps1` 另发布一份同名 PDF 到正文所在目录。
 - `pdflatex` 必须显式传入 `-output-directory=%OUTDIR%`，BibTeX 必须读取 `%OUTDIR%/%DOCFILE%`；仅修改 `latex.outDir` 不会改变自定义工具的实际输出路径。
-- 日志若显示 `I can't write on file manuscript.pdf`，先核对实际输出路径和 PDF 占用，不要据此改动公式或删除参考文献。编辑器使用 `build/manuscript.log`；根目录旧日志可能仍保留此前错误。
+- 日志若显示 `I can't write on file manuscript.pdf`，先核对实际输出路径和 PDF 占用，不要据此改动公式或删除参考文献。编辑器使用 `build/<论文标题>.log`；根目录旧日志可能仍保留此前错误。
 
 ## Fig. 6 检测对比图生成
 
@@ -39,9 +39,9 @@
 ```powershell
 scp -P 13022 paper/compose_detection_figure.py paper/redraw_detection_labels.py tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/scripts/
 ssh -p 13022 -o BatchMode=yes -o ConnectTimeout=10 tkz@8.138.122.96 'python3 /home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/scripts/redraw_detection_labels.py --source /home/tkz/code/github/ultralytics/runs/detection_comparison --output-dir /home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures --font-size 44 --model-font-size 48 --gap 12'
-scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.png paper/TIE_draft/figures/compare.png
-scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.layout.json paper/TIE_draft/figures/compare.layout.json
-scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.sources.json paper/TIE_draft/figures/compare.sources.json
+scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.png paper/TIE_submission/figures/fig6.png
+scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.layout.json paper/TIE_submission/figures/fig6.layout.json
+scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.sources.json paper/TIE_submission/figures/fig6.sources.json
 ```
 
 ## Fig. 7 热力图生成
@@ -52,15 +52,15 @@ scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_c
 
 ```powershell
 $paperPython = 'C:/Users/tankz/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'
-& $paperPython paper/compose_heatmap_figure.py --input C:/Users/tankz/Desktop/heat --output paper/TIE_draft/figures/heatmap_comparison.png --label-font-size 64 --images VFDS66RK26040002_20260801_201333180.png VFDS66RK26040002_20260805_003052459.png VFDS66RK26040002_20260729_040549805.png
+& $paperPython paper/compose_heatmap_figure.py --input C:/Users/tankz/Desktop/heat --output paper/TIE_submission/figures/fig7.png --label-font-size 64 --images VFDS66RK26040002_20260801_201333180.png VFDS66RK26040002_20260805_003052459.png VFDS66RK26040002_20260729_040549805.png
 ```
 
 ## 出图后检查
 
 - Fig. 6 保留双栏，Fig. 7 保留单栏；不要修改其他图片或重新生成旧稿的 figures。
 - 保留输出旁的 `.layout.json` 和 Fig. 6 的 `.sources.json`，用于核对样例顺序、预测值和来源。
-- 查看两张图的标签、模型名及正文中的对应排版，再编译 TIE 草稿并核对总页数：
+- 查看两张图的标签、模型名及正文中的对应排版，再编译当前稿件并核对总页数：
 
 ```powershell
-& ./paper/TIE_draft/build.ps1 -TeXBin 'C:/Users/tankz/application/MiKTex/miktex/bin/x64'
+& ./paper/TIE_submission/build.ps1 -TeXBin 'C:/Users/tankz/application/MiKTex/miktex/bin/x64'
 ```
