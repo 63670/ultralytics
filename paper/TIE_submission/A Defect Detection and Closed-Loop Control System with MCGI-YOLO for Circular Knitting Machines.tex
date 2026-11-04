@@ -281,6 +281,15 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 \end{tabular}
 \end{table}
 
+Fig.~\ref{fig:annotation-shapes} visualizes the shape and scale variation of all 468 annotated boxes across the training, validation, and test sets. Each box is translated to a common center while retaining its width and height normalized by the image dimensions. Horizontal and vertical defects form distinct elongated patterns, whereas hole annotations span a wide range of spatial extents. These differences motivate morphology-aware context encoding and content-adaptive reconstruction in the feature pyramid, as implemented by MCE and GIU, respectively.
+
+\begin{figure*}[!tbp]
+\centering
+\includegraphics[width=\textwidth]{annotation_shapes.png}
+\caption{Centered annotation-box overlays: (a) all 468 instances; (b) horizontal defects; (c) vertical defects; and (d) holes. All boxes are centered at $(0.5,0.5)$ with their original normalized widths and heights retained. Colors indicate defect categories.}
+\label{fig:annotation-shapes}
+\end{figure*}
+
 \subsection{Implementation Details}
 \label{sec:implementation}
 \begin{table}[!htbp]
@@ -513,7 +522,29 @@ Fig.~\ref{fig:waste-fabric} shows actual waste fabric with repeated horizontal d
 \label{fig:waste-fabric}
 \end{figure}
 
-Consider a hypothetical five-minute delay between defect onset and operator discovery. With the rotation period $T=2$ s specified in Section~\ref{sec:coverage}, the machine completes $N=300/T=150$ revolutions during this interval. If the abnormality persists throughout each revolution and each horizontal defect extends approximately around the fabric circumference, the diameter $D=1.016$ m gives a cumulative transverse defect length of
+Table~\ref{tab:production-inputs} summarizes the operating inputs used for the coverage calculation in Section~\ref{sec:coverage} and the following loss estimates.
+
+\begin{table}[!tbp]
+\caption{Operating inputs for frame coverage and delayed-intervention estimates.}
+\label{tab:production-inputs}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}llr@{}}
+\toprule
+Parameter & Symbol & Value \\
+\midrule
+Design machine diameter & $D$ & 1.016 m (40 in) \\
+Rotation period & $T$ & 2 s/revolution \\
+Horizontal field-of-view width & $w$ & 0.16 m \\
+Fabric take-down per revolution & $p$ & $\approx0.03$ m/revolution \\
+Assumed discovery delay & $\tau$ & 300 s (5 min) \\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+Consider a hypothetical five-minute delay between defect onset and operator discovery. The machine completes $N=\tau/T=150$ revolutions during this interval. If the abnormality persists throughout each revolution and each horizontal defect extends approximately around the fabric circumference, the cumulative transverse defect length is
 \begin{equation}
 L_{\mathrm{sum}}=N\pi D
 =150\times\pi\times1.016

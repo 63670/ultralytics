@@ -7,6 +7,7 @@
 - `figures/serdes.png` 为硬件部分的 SerDes 与 PoC 链路示意图（单栏）。实验结果之后单设 `System Deployment and Operation`，集中介绍部署流程与23 FPS、客户端、云平台、停机规则及延迟干预分析；其中 `detect.png` 为客户端页面跳转图（双栏），`iot_platform.png` 为 IoT 平台图（双栏），C)、D) 展示客户端状态与远程配置的数字孪生界面。
 - 数据集样本图使用 `figures/defect.png`，在 Dataset 小节双栏展示，标签为 `fig:dataset-examples`；四行依次为 row、col、hole 及多类瑕疵共存样本。
 - 真实废布照片使用 `figures/fabric_with_defect.jpg`，在延迟干预损失估算小节单栏展示，标签为 `fig:waste-fabric`，说明持续纱线异常造成重复横向瑕疵和布面报废。
+- 标注框形态与尺度图为 `figures/annotation_shapes.png`（双栏，`fig:annotation-shapes`）；由 `paper/plot_annotation_shapes.py --labels <数据集labels目录> --output paper/TIE_submission/figures/annotation_shapes.png` 生成，全部框中心对齐并保留归一化宽高，附 `.stats.json` 记录统计和标注哈希。生产工况及延迟估算输入见 `tab:production-inputs`。
 - `fig6.layout.json`、`fig6.sources.json` 和 `fig7.layout.json` 保留对比图与热力图的排版、来源记录。
 - `references.bib`、`IEEEtranTIE.cls` 和 `Bibliography/IEEEtranTIE.bst` 为独立编译所需文件。
 - `.vscode/settings.json` 提供 LaTeX Workshop 编译配置；辅助文件和编辑器预览位于 `build/`。
