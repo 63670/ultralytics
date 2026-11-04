@@ -39,7 +39,7 @@
 \maketitle
 
 \begin{abstract}
-Defect detection is critical for circular knitting production, where persistent needle or yarn abnormalities lead to repeated fabric defects, resulting in severe material waste and economic losses. Existing methods are rarely tailored to circular knitting machines and tend to be cost-prohibitive, limiting large-scale industrial deployment. To address this issue, we present a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines, which triggers image acquisition from machine rotation, halts the machine when configurable stopping criteria are met, and alerts the operator for corrective intervention, forming a complete production–detection–control loop. To further improve detection accuracy for diverse fabric defect morphologies and scales, we propose a lightweight detector termed \model. To model the morphological continuity of elongated defects, morphology-aware context encoding (MCE) augments backbone features with spatially extended context. To accommodate variations in defect morphology and scale, gated interpolation upsampling (GIU) adapts the reconstruction of higher-level context before fusion with local features, using a compact content-adaptive gate. On a real-world dataset collected from a circular-knitting production line, \model achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.7 and 7.1 percentage points, respectively. After INT8 conversion, the deployed model achieves 96.7\% mAP50 and 64.0\% mAP50--95 at 23 FPS on the RK3566 edge device. The proposed system provides a cost-effective solution for real-time defect detection in circular-knitting production.
+Defect detection is critical for circular knitting production, where persistent needle or yarn abnormalities lead to repeated fabric defects, resulting in severe material waste and economic losses. Existing methods are rarely tailored to circular knitting machines and tend to be cost-prohibitive, limiting large-scale industrial deployment. To address this issue, we present a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines, which triggers image acquisition from machine rotation, halts the machine when configurable stopping criteria are met, and alerts the operator for corrective intervention, forming a complete production–detection–control loop. To further improve detection accuracy for diverse fabric defect morphologies and scales, we propose a lightweight detector termed \model. To model the morphological continuity of elongated defects, morphology-aware context encoding (MCE) augments backbone features with spatially extended context. To accommodate variations in defect morphology and scale, gated interpolation upsampling (GIU) adapts the reconstruction of higher-level context before fusion with local features, using a compact content-adaptive gate. On a real-world dataset collected from a circular-knitting production line, \model achieves 97.2\% mAP@50 and 65.5\% mAP@50:95, improving on the YOLOv8n baseline by 6.7 and 7.1 percentage points, respectively. After INT8 conversion, the deployed model achieves 96.7\% mAP@50 and 64.0\% mAP@50:95 at 23 FPS on the RK3566 edge device. The proposed system provides a cost-effective solution for real-time defect detection in circular-knitting production.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -318,7 +318,7 @@ Data protocol
 \renewcommand{\arraystretch}{1.06}
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrr}
 \toprule
-Model & Params (M) & FLOPs (G) & P (\%) & R (\%) & mAP50 (\%) & mAP50--95 (\%) & FPS \\
+Model & Params (M) & FLOPs (G) & P (\%) & R (\%) & mAP@50 (\%) & mAP@50:95 (\%) & FPS \\
 \midrule
 YOLOv9t~\cite{wang2025yolov9} & \textbf{2.12} & 8.5 & 82.4 & 90.8 & 90.1 & 53.3 & 291 \\
 YOLOv10n~\cite{wang2024yolov10} & 2.78 & 8.8 & 88.6 & 74.2 & 88.2 & 58.5 & \underline{524} \\
@@ -348,30 +348,25 @@ Table~\ref{tab:implementation} summarizes the training and deployment settings. 
 
 \subsection{Evaluation Metrics}
 \label{sec:evaluation}
-Intersection over union (IoU) measures the overlap between predicted and ground-truth bounding boxes as the ratio of their intersection area to their union area. Detection accuracy is evaluated using mAP50 and mAP50--95. Let $a_c(t)$ denote the average precision for class $c$ at IoU threshold $t$. The metrics are computed as
+Intersection over union (IoU) measures the overlap between predicted and ground-truth bounding boxes as the ratio of their intersection area to their union area. Precision (P), recall (R), average precision (AP), and mean average precision (mAP) are defined as
 \begin{align}
-\operatorname{mAP}_{50} &= \frac{1}{N_c}\sum_{c=1}^{N_c}a_c(0.50)
-\label{eq:metrics}\displaybreak[1]\\
-\operatorname{mAP}_{50:95} &= \frac{1}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in T}a_c(t)
-\label{eq:ap}
-\end{align}
-\noindent where $N_c=3$ and $T=\{0.50,0.55,\ldots,0.95\}$. Both metrics are reported as percentages, with improvements expressed in percentage points.
-
-Precision (P) and recall (R) are macro-averaged across the three defect categories as
-\begin{align}
-P &= \frac{1}{N_c}\sum_{c=1}^{N_c}\frac{\mathrm{TP}_c}{\mathrm{TP}_c+\mathrm{FP}_c}
+P &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}}
 \label{eq:precision}\\
-R &= \frac{1}{N_c}\sum_{c=1}^{N_c}\frac{\mathrm{TP}_c}{\mathrm{TP}_c+\mathrm{FN}_c}
-\label{eq:recall}
+R &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}
+\label{eq:recall}\\
+\mathrm{AP} &= \int_0^1 P(R)\,\mathrm{d}R
+\label{eq:ap}\\
+\mathrm{mAP} &= \frac{1}{N_c}\sum_{c=1}^{N_c}\mathrm{AP}_c
+\label{eq:metrics}
 \end{align}
-\noindent where $\mathrm{TP}_c$, $\mathrm{FP}_c$, and $\mathrm{FN}_c$ denote correctly detected defects, false-positive detections, and missed defects for class $c$, respectively. True positives require a correct class label and one-to-one matching with an annotated defect at IoU $\geq0.5$. For YOLO-based detectors, P and R follow the Ultralytics reporting convention: they are taken at a model-specific confidence threshold that maximizes the smoothed class-mean F1 curve.
+\noindent where TP, FP, and FN denote true-positive, false-positive, and false-negative counts, respectively; $\mathrm{AP}_c$ is the AP of class $c$, and $N_c=3$. mAP@50 uses an IoU threshold of 0.5, while mAP@50:95 averages mAP over IoU thresholds from 0.50 to 0.95 in steps of 0.05. Reported P and R are averaged across classes, with YOLO-based detectors evaluated at the best mean-F1 operating point. All accuracy metrics are expressed as percentages.
 
 Model parameters and FLOPs are measured at $640\times640$ input resolution using each model's respective framework. For FPS comparison, all models are evaluated on an RTX 3090 with FP32 precision, batch size 1, and $640\times640$ inputs. This measurement is separate from the RK3566 deployment result.
 
 \section{Results and Discussion}
 \label{sec:results}
 \subsection{Comparison With Other Detectors}
-Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inference throughput. \model achieves the highest mAP50 of 97.2\% and the second-highest mAP50--95 of 65.5\%, improving over the YOLOv8n~\cite{ultralytics2023} baseline by 6.7 and 7.1 percentage points, respectively. Its precision and recall are 96.1\% and 94.3\%, exceeding the baseline by 6.7 and 13.2 percentage points, respectively. This gain comes with only a marginal increase in parameters (3.01 M $\rightarrow$ 3.02 M) and FLOPs (8.1 G $\rightarrow$ 8.2 G), while throughput on the RTX 3090 decreases from 554 to 486 FPS. Among lightweight variants, YOLO26n~\cite{ultralytics2023} attains the next-best accuracy (93.8\% mAP50, 61.1\% mAP50--95); \model surpasses it by 3.4 and 4.4 points while running faster (486 vs.\ 425 FPS). YOLOv9t~\cite{wang2025yolov9}, YOLOv10n~\cite{wang2024yolov10}, YOLO12n~\cite{tian2025yolov12}, and YOLO26n~\cite{ultralytics2023} have fewer parameters or lower FLOPs but underperform on this test set, confirming that task-specific adaptation outperforms generic lightweight detectors. RT-DETR-R18~\cite{zhao2024rtdetr} leads in mAP50--95 (67.7\%) but requires 20.09 M parameters and 60.7 G FLOPs at 146 FPS. \model also outperforms DETR-R50~\cite{carion2020detr}, Deformable DETR-R50~\cite{zhu2021deformable}, and Faster R-CNN-R50~\cite{ren2015faster} on both mAP metrics with substantially lower cost, offering the best overall accuracy--efficiency tradeoff. Fig.~\ref{fig:qualitative} shows that \model produces fewer fragmented boxes and tighter localization on elongated defects and holes, consistent with the aggregate results.
+Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inference throughput. \model achieves the highest mAP@50 of 97.2\% and the second-highest mAP@50:95 of 65.5\%, improving over the YOLOv8n~\cite{ultralytics2023} baseline by 6.7 and 7.1 percentage points, respectively. Its precision and recall are 96.1\% and 94.3\%, exceeding the baseline by 6.7 and 13.2 percentage points, respectively. This gain comes with only a marginal increase in parameters (3.01 M $\rightarrow$ 3.02 M) and FLOPs (8.1 G $\rightarrow$ 8.2 G), while throughput on the RTX 3090 decreases from 554 to 486 FPS. Among lightweight variants, YOLO26n~\cite{ultralytics2023} attains the next-best accuracy (93.8\% mAP@50, 61.1\% mAP@50:95); \model surpasses it by 3.4 and 4.4 points while running faster (486 vs.\ 425 FPS). YOLOv9t~\cite{wang2025yolov9}, YOLOv10n~\cite{wang2024yolov10}, YOLO12n~\cite{tian2025yolov12}, and YOLO26n~\cite{ultralytics2023} have fewer parameters or lower FLOPs but underperform on this test set, confirming that task-specific adaptation outperforms generic lightweight detectors. RT-DETR-R18~\cite{zhao2024rtdetr} leads in mAP@50:95 (67.7\%) but requires 20.09 M parameters and 60.7 G FLOPs at 146 FPS. \model also outperforms DETR-R50~\cite{carion2020detr}, Deformable DETR-R50~\cite{zhu2021deformable}, and Faster R-CNN-R50~\cite{ren2015faster} on both mAP metrics with substantially lower cost, offering the best overall accuracy--efficiency tradeoff. Fig.~\ref{fig:qualitative} shows that \model produces fewer fragmented boxes and tighter localization on elongated defects and holes, consistent with the aggregate results.
 
 \subsection{Component Ablation}
 \label{sec:component-ablation}
@@ -380,10 +375,10 @@ Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inf
 \label{tab:ablation}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lccrrrr@{}}
 \toprule
-Variant & MCE & GIU & Params (M) & FLOPs (G) & mAP50 & mAP50--95 \\
+Variant & MCE & GIU & Params (M) & FLOPs (G) & mAP@50 & mAP@50:95 \\
 \midrule
 YOLOv8n & -- & -- & 3.01 & 8.10 & 90.5 & 58.4 \\
 + MCE & \checkmark & -- & 3.01 & 8.2 & 93.9 & 63.6 \\
@@ -393,7 +388,7 @@ YOLOv8n & -- & -- & 3.01 & 8.10 & 90.5 & 58.4 \\
 \end{tabular*}
 \end{table}
 
-Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n baseline, MCE alone, GIU alone, and their combination. The MCE-only model retains nearest-neighbor upsampling, while the GIU-only model retains the original backbone C2f blocks. On the test set, MCE alone achieves 93.9\% mAP50 and 63.6\% mAP50--95, improving over the baseline by 3.4 and 5.2 percentage points, respectively. GIU alone achieves 94.4\% and 63.0\%, corresponding to gains of 3.9 and 4.6 points. Combining the two modules yields 97.2\% mAP50 and 65.5\% mAP50--95, exceeding the best single-module result for each metric by 2.8 and 1.9 points. These results support the complementary benefits of morphology-aware context encoding and adaptive feature reconstruction. Feature visualizations in Fig.~\ref{fig:heatmaps} complement the numerical analysis by comparing responses at corresponding feature stages on the same images.
+Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n baseline, MCE alone, GIU alone, and their combination. The MCE-only model retains nearest-neighbor upsampling, while the GIU-only model retains the original backbone C2f blocks. On the test set, MCE alone achieves 93.9\% mAP@50 and 63.6\% mAP@50:95, improving over the baseline by 3.4 and 5.2 percentage points, respectively. GIU alone achieves 94.4\% and 63.0\%, corresponding to gains of 3.9 and 4.6 points. Combining the two modules yields 97.2\% mAP@50 and 65.5\% mAP@50:95, exceeding the best single-module result for each metric by 2.8 and 1.9 points. These results support the complementary benefits of morphology-aware context encoding and adaptive feature reconstruction. Feature visualizations in Fig.~\ref{fig:heatmaps} complement the numerical analysis by comparing responses at corresponding feature stages on the same images.
 
 
 
@@ -412,7 +407,7 @@ The trained detector is deployed on the dedicated edge device and integrated wit
 \label{sec:deployment}
 To deploy \model on the RK3566 edge device, the trained model is exported to ONNX with a fixed input size of $640\times640$ and then converted into an INT8 RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2}. The converted \model and YOLOv8n baseline are evaluated under Linux on the same 81 test images with 91 annotated defects. Both models use a prediction confidence cutoff of 0.001, an NMS IoU threshold of 0.7, and a maximum of 16 detections per image.
 
-Table~\ref{tab:rknn-deployment} reports the deployed models' overall and class-specific results. \model achieves 96.685\% mAP50 and 64.020\% mAP50--95, exceeding the deployed YOLOv8n baseline by 6.492 and 6.730 percentage points, respectively. Its overall precision and recall reach 97.599\% and 93.001\%. Relative to the PyTorch results in Table~\ref{tab:comparison}, the deployed \model shows reductions of 0.515 and 1.480 percentage points in the two mAP metrics. On the RK3566, YOLOv8n and \model achieve model-inference throughputs of 30 and 23 FPS, respectively. The latter is 2.3 times the 10 FPS design target derived in Section~\ref{sec:coverage}, meeting the model-inference rate required for the specified machine speed and camera field of view.
+Table~\ref{tab:rknn-deployment} reports the deployed models' overall and class-specific results. \model achieves 96.685\% mAP@50 and 64.020\% mAP@50:95, exceeding the deployed YOLOv8n baseline by 6.492 and 6.730 percentage points, respectively. Its overall precision and recall reach 97.599\% and 93.001\%. Relative to the PyTorch results in Table~\ref{tab:comparison}, the deployed \model shows reductions of 0.515 and 1.480 percentage points in the two mAP metrics. On the RK3566, YOLOv8n and \model achieve model-inference throughputs of 30 and 23 FPS, respectively. The latter is 2.3 times the 10 FPS design target derived in Section~\ref{sec:coverage}, meeting the model-inference rate required for the specified machine speed and camera field of view.
 
 \begin{table}[!htbp]
 \caption{INT8 RKNN deployment on the RK3566. Accuracy metrics are in percent; FPS is measured per model. Bold and underlined values indicate the best and second-best results for the corresponding class or overall.}
@@ -423,7 +418,7 @@ Table~\ref{tab:rknn-deployment} reports the deployed models' overall and class-s
 \renewcommand{\arraystretch}{1.08}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}llrrrrr@{}}
 \toprule
-Model & Class & P & R & mAP50 & mAP50--95 & FPS \\
+Model & Class & P & R & mAP@50 & mAP@50:95 & FPS \\
 \midrule
 \multirow{4}{*}{YOLOv8n} & All & \underline{88.323} & \underline{81.316} & \underline{90.193} & \underline{57.290} & \multirow{4}{*}{\textbf{30}} \\
 & row & \textbf{96.619} & \underline{95.265} & \underline{97.217} & \underline{56.609} & \\
@@ -529,7 +524,7 @@ Under these operating assumptions, a five-minute discovery delay allows approxim
 
 \section{Conclusion}
 \label{sec:conclusion}
-This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, integrating image acquisition, SerDes transmission, edge inference, machine stopping, and cloud alerts. The lightweight \model combines MCE for elongated-defect morphology encoding with GIU for adaptive feature reconstruction. On the self-collected test set, it achieves 97.2\% mAP50 and 65.5\% mAP50--95, improving over YOLOv8n by 6.7 and 7.1 percentage points. INT8 deployment on the RK3566 achieves 96.7\% mAP50 and 64.0\% mAP50--95 at 23 FPS, exceeding the 10 FPS design target. Unlike generic object detection pipelines, our work jointly tailors both the hardware architecture and the detection algorithm to the morphology of knitting defects and the constraints of edge deployment, enabling real-time closed-loop control directly on the machine. By delivering a fully integrated and deployable system rather than an isolated algorithm, this work addresses a critical bottleneck in textile manufacturing—namely, the difficulty of translating detection performance into actionable, on-machine quality control. It offers the industry a ready-to-deploy reference for intelligent detection of circular knitting machines and, more broadly, demonstrates a reproducible pathway for deploying lightweight vision models on resource-constrained edge devices in industrial settings.
+This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, integrating image acquisition, SerDes transmission, edge inference, machine stopping, and cloud alerts. The lightweight \model combines MCE for elongated-defect morphology encoding with GIU for adaptive feature reconstruction. On the self-collected test set, it achieves 97.2\% mAP@50 and 65.5\% mAP@50:95, improving over YOLOv8n by 6.7 and 7.1 percentage points. INT8 deployment on the RK3566 achieves 96.7\% mAP@50 and 64.0\% mAP@50:95 at 23 FPS, exceeding the 10 FPS design target. Unlike generic object detection pipelines, our work jointly tailors both the hardware architecture and the detection algorithm to the morphology of knitting defects and the constraints of edge deployment, enabling real-time closed-loop control directly on the machine. By delivering a fully integrated and deployable system rather than an isolated algorithm, this work addresses a critical bottleneck in textile manufacturing—namely, the difficulty of translating detection performance into actionable, on-machine quality control. It offers the industry a ready-to-deploy reference for intelligent detection of circular knitting machines and, more broadly, demonstrates a reproducible pathway for deploying lightweight vision models on resource-constrained edge devices in industrial settings.
 
 
 \FloatBarrier
