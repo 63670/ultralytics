@@ -504,7 +504,16 @@ Higher sensitivity lowers the confidence, size, and count thresholds, allowing s
 
 \subsection{Illustrative Analysis of Delayed Intervention}
 \label{sec:delayed-intervention}
-A persistent yarn abnormality at one active feeder can generate a new defective course on each machine revolution, following the course-formation mechanism of circular weft knitting \cite{cottonworksKnitMachinery}. Consider a hypothetical five-minute delay between defect onset and operator discovery. With the rotation period $T=2$ s specified in Section~\ref{sec:coverage}, the machine completes $N=300/T=150$ revolutions during this interval. If the abnormality persists throughout each revolution and each horizontal defect extends approximately around the fabric circumference, the diameter $D=1.016$ m gives a cumulative transverse defect length of
+Fig.~\ref{fig:waste-fabric} shows actual waste fabric with repeated horizontal defects caused by a yarn abnormality. When the abnormality persists at an active feeder, a new defective course can be generated on each machine revolution, following the course-formation mechanism of circular weft knitting \cite{cottonworksKnitMachinery}. Without timely detection and intervention, these horizontal defects recur as the fabric is knitted and taken down, extending the affected region along the production direction and causing the affected fabric to be discarded.
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\columnwidth]{fabric_with_defect.jpg}
+\caption{Actual waste fabric with repeated horizontal defects caused by a persistent yarn abnormality.}
+\label{fig:waste-fabric}
+\end{figure}
+
+Consider a hypothetical five-minute delay between defect onset and operator discovery. With the rotation period $T=2$ s specified in Section~\ref{sec:coverage}, the machine completes $N=300/T=150$ revolutions during this interval. If the abnormality persists throughout each revolution and each horizontal defect extends approximately around the fabric circumference, the diameter $D=1.016$ m gives a cumulative transverse defect length of
 \begin{equation}
 L_{\mathrm{sum}}=N\pi D
 =150\times\pi\times1.016
