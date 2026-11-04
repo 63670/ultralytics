@@ -357,7 +357,14 @@ Intersection over union (IoU) measures the overlap between predicted and ground-
 \end{align}
 \noindent where $N_c=3$ and $T=\{0.50,0.55,\ldots,0.95\}$. Both metrics are reported as percentages, with improvements expressed in percentage points.
 
-Precision (P) measures the fraction of predictions correctly matched to annotated defects, while recall (R) measures the fraction of annotated defects retrieved, using IoU $\geq0.5$. For YOLO-based detectors, P and R follow the Ultralytics reporting convention: they are taken at a model-specific confidence threshold that maximizes the smoothed class-mean F1 curve and are macro-averaged across the three classes.
+Precision (P) and recall (R) are macro-averaged across the three defect categories as
+\begin{align}
+P &= \frac{1}{N_c}\sum_{c=1}^{N_c}\frac{\mathrm{TP}_c}{\mathrm{TP}_c+\mathrm{FP}_c}
+\label{eq:precision}\\
+R &= \frac{1}{N_c}\sum_{c=1}^{N_c}\frac{\mathrm{TP}_c}{\mathrm{TP}_c+\mathrm{FN}_c}
+\label{eq:recall}
+\end{align}
+\noindent where $\mathrm{TP}_c$, $\mathrm{FP}_c$, and $\mathrm{FN}_c$ denote correctly detected defects, false-positive detections, and missed defects for class $c$, respectively. True positives require a correct class label and one-to-one matching with an annotated defect at IoU $\geq0.5$. For YOLO-based detectors, P and R follow the Ultralytics reporting convention: they are taken at a model-specific confidence threshold that maximizes the smoothed class-mean F1 curve.
 
 Model parameters and FLOPs are measured at $640\times640$ input resolution using each model's respective framework. For FPS comparison, all models are evaluated on an RTX 3090 with FP32 precision, batch size 1, and $640\times640$ inputs. This measurement is separate from the RK3566 deployment result.
 
