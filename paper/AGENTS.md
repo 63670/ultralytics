@@ -2,6 +2,7 @@
 
 - 后续 MCGI-YOLO 论文修改默认基于 `TIE_submission/A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex`；转投修订也在此维护。
 - 对应图片、参考文献和编译脚本位于 `TIE_submission/figures/`、`TIE_submission/references.bib` 和 `TIE_submission/build.ps1`。原有正文图片文件名 `fig1.png` 至 `fig7.png` 保持稳定；正文图号由 LaTeX 自动生成，不再等同于文件名。旧草稿目录已删除，不重新创建。
+- 数据集样本图使用 `figures/defect.png`，在 Dataset 小节双栏展示，标签为 `fig:dataset-examples`；四行依次为 row、col、hole 及多类瑕疵共存样本。
 - 硬件系统部分保留 `serdes.png`（单栏）。实验结果后单设 `System Deployment and Operation`，依次介绍部署与23 FPS、客户端、云平台与数字孪生、停机规则、延迟干预分析；`detect.png`、`iot_platform.png`（均双栏）放在该节。平台图 C)、D) 分别说明客户端实时状态与远程配置的数字孪生功能。
 - RK3566 部署评估在 Linux 下进行：YOLOv8n 为30 FPS、MCGI-YOLO 为23 FPS；两者输入640×640、conf=0.001、NMS IoU=0.7、max_det=16。P/R 按 IoU=0.5 的最佳类别平均F1位置报告，并按类别宏平均。部署结果见正文 `tab:rknn-deployment`，不得混入 RTX 3090 的主对比表。
 - 客户端停机规则按原始 `1280×1024` 图像计算；预设元组依次为（置信度、破洞检测框面积、横向检测框宽度、竖向检测框高度、每帧数量）：低 `(0.50, 6400, 800, 400, 3)`，中 `(0.40, 2500, 400, 200, 2)`，高 `(0.30, 1000, 200, 100, 1)`。先按置信度筛选，再判断“任意一个对应类别尺寸超过阈值，或者该帧通过置信度筛选的瑕疵总数达到数量阈值”，二者为或关系，不跨帧累计。三档均可编辑。

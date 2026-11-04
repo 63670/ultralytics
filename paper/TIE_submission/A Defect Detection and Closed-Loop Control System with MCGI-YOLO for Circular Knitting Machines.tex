@@ -257,7 +257,14 @@ G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05L
 \section{Experimental Setup}
 \label{sec:experimental-setup}
 \subsection{Dataset}
-The dataset was collected from a real circular-knitting production line and covers three defect categories: horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}). It comprises 403 images with 468 annotated defect instances, divided into training, validation, and test sets of 282, 40, and 81 images, respectively, as summarized in Table~\ref{tab:data}.
+The dataset was collected from a real circular-knitting production line and covers three defect categories: horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}). It comprises 403 images with 468 annotated defect instances, divided into training, validation, and test sets of 282, 40, and 81 images, respectively, as summarized in Table~\ref{tab:data}. Fig.~\ref{fig:dataset-examples} presents representative annotated samples, showing variations in the extent and appearance of elongated defects, hole size, and the co-occurrence of defect categories.
+\begin{figure*}[!tbp]
+\centering
+\includegraphics[width=\textwidth]{defect.png}
+\caption{Representative annotated fabric-defect samples. From top to bottom, the rows show horizontal defects (row), vertical defects (col), holes (hole), and images containing multiple defect categories.}
+\label{fig:dataset-examples}
+\end{figure*}
+
 \begin{table}[!htbp]
 \caption{Image-level split and defect-instance counts in the real production-line dataset.}
 \label{tab:data}
