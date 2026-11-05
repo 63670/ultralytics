@@ -6,6 +6,7 @@
 - 真实废布照片使用 `figures/fabric_with_defect.jpg`，在延迟干预损失估算小节单栏展示，标签为 `fig:waste-fabric`，说明持续纱线异常造成重复横向瑕疵和布面报废。
 - 标注框形态与尺度图为 `figures/annotation_shapes.png`（双栏，`fig:annotation-shapes`）；由 `paper/plot_annotation_shapes.py --labels <数据集labels目录> --output paper/TIE_submission/figures/annotation_shapes.png` 生成，全部框中心对齐并保留归一化宽高，附 `.stats.json` 记录统计和标注哈希。生产工况及延迟估算输入见 `tab:production-inputs`。
 - FPS–mAP 散点图为 `figures/fps_accuracy.png` 与矢量版 `.pdf`，运行 `python paper/plot_fps_accuracy.py` 从当前正文 `tab:comparison` 自动读取数据；使用 RTX 3090、FP32、batch=1、640×640 的纯推理 FPS，数据快照保存在同名 `.json`。正文使用矢量 PDF 在检测器对比部分双栏展示，标签为 `fig:fps-accuracy`。
+- 手动标注用纯散点底图运行 `python paper/plot_fps_accuracy.py --unlabeled`，另存 `figures/fps_accuracy_unlabeled.{png,pdf,svg,json}`，左图 mAP@50、右图 mAP@50:95；无文字、坐标轴、网格及引线，保留颜色、点形和数据位置。此版本不自动替换正文已标注插图。
 - 硬件系统部分保留 `serdes.png`（单栏）。实验结果后单设 `System Deployment and Operation`，依次介绍部署与23 FPS、客户端、云平台与数字孪生、规则配置与停机执行、延迟干预分析；`detect.png`、`iot_platform.png`（均双栏）放在该节。平台图 C)、D) 分别说明客户端实时状态与远程配置的数字孪生功能。
 - RK3566 部署评估在 Linux 下进行：YOLOv8n 为30 FPS、MCGI-YOLO 为23 FPS；两者输入640×640、conf=0.001、NMS IoU=0.7、max_det=16。P/R 按 IoU=0.5 的最佳类别平均F1位置报告，并按类别宏平均。部署结果见正文 `tab:rknn-deployment`，不得混入 RTX 3090 的主对比表。
 - 用户可配置停机规则作为 Detection Algorithm 的末尾子节 `User-Configurable Post-NMS Stopping Decision`（`sec:stop-rules`），包含 NMS 后置信度筛选、原图尺度判断、数量条件和预设表；系统运行部分仅描述参数配置和停机执行，不将停机规则称为改进 NMS。

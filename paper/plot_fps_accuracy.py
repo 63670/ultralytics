@@ -60,7 +60,7 @@ def read_comparison(path: Path):
     return rows
 
 
-def draw_panel(ax, rows, metric, panel):
+def draw_panel(ax, rows, metric, panel, unlabeled=False):
     for row in rows:
         name = row["model"]
         ours = name == "MCGI-YOLO"
@@ -69,6 +69,8 @@ def draw_panel(ax, rows, metric, panel):
         ax.scatter(row["fps"], row[metric], s=440 if ours else 210,
                    marker="*" if ours else "D" if baseline else "o", c=color,
                    edgecolor="white", linewidth=1.2, zorder=4)
+        if unlabeled:
+            continue
         dx, dy = OFFSETS[panel].get(name, (8, 10))
         label = name.replace(" (Baseline)", "\n(Baseline)")
         label = label.replace("Deformable DETR-R50", "Deformable\nDETR-R50").replace("Faster R-CNN-R50", "Faster R-CNN\n(R50)")
@@ -79,6 +81,9 @@ def draw_panel(ax, rows, metric, panel):
                     arrowprops={"arrowstyle": "-", "color": color, "lw": 1.1, "alpha": 0.8}, zorder=5)
     ax.set_xlim(0, 650)
     ax.set_ylim((87, 99.2) if panel == 0 else (51, 70))
+    if unlabeled:
+        ax.set_axis_off()
+        return
     ax.set_xticks(range(0, 651, 100))
     ax.set_xlabel("Inference throughput (FPS)")
     ax.set_ylabel("mAP@50 (%)" if panel == 0 else "mAP@50:95 (%)")
@@ -93,28 +98,36 @@ def draw_panel(ax, rows, metric, panel):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manuscript", type=Path, default=MANUSCRIPT)
-    parser.add_argument("--output", type=Path, default=PAPER / "figures" / "fps_accuracy")
+    parser.add_argument("--output", type=Path, help="Output stem; defaults to fps_accuracy or fps_accuracy_unlabeled")
+    parser.add_argument("--unlabeled", action="store_true", help="Export points only, without axes, text, grid, or leaders")
     args = parser.parse_args()
+    if args.output is None:
+        args.output = PAPER / "figures" / ("fps_accuracy_unlabeled" if args.unlabeled else "fps_accuracy")
     rows = read_comparison(args.manuscript)
     plt.rcParams.update({"font.family": "serif", "font.size": 11, "font.weight": "bold",
                          "axes.labelsize": 13, "axes.labelweight": "bold",
                          "axes.titlesize": 13, "axes.titleweight": "bold", "pdf.fonttype": 42, "ps.fonttype": 42})
     fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.8))
     for panel, metric in enumerate(("map50", "map50_95")):
-        draw_panel(axes[panel], rows, metric, panel)
+        draw_panel(axes[panel], rows, metric, panel, args.unlabeled)
     fig.subplots_adjust(left=0.065, right=0.985, bottom=0.13, top=0.9, wspace=0.22)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    for extension in ("png", "pdf"):
+    for extension in ("png", "pdf", "svg"):
         fig.savefig(args.output.with_suffix("." + extension), dpi=600, facecolor="white", bbox_inches="tight", pad_inches=0.08)
+    svg_path = args.output.with_suffix(".svg")
+    svg_path.write_bytes(b"\n".join(line.rstrip() for line in svg_path.read_bytes().splitlines()) + b"\n")
     plt.close(fig)
     provenance = {"manuscript": str(args.manuscript.resolve()),
                   "manuscript_sha256": hashlib.sha256(args.manuscript.read_bytes()).hexdigest(),
                   "source_table": "tab:comparison", "platform": "RTX 3090", "precision": "FP32",
                   "batch_size": 1, "input_size": [640, 640], "fps_scope": "model forward only",
-                  "accuracy_unit": "percent", "models": rows}
+                  "accuracy_unit": "percent", "unlabeled": args.unlabeled,
+                  "panels": [{"metric": "map50", "xlim": [0, 650], "ylim": [87, 99.2]},
+                             {"metric": "map50_95", "xlim": [0, 650], "ylim": [51, 70]}],
+                  "models": rows}
     args.output.with_suffix(".json").write_bytes((json.dumps(provenance, indent=2) + "\n").encode())
     print(json.dumps(rows, indent=2))
-    print(f"Saved {args.output}.png and {args.output}.pdf")
+    print(f"Saved {args.output}.png, {args.output}.pdf, and {args.output}.svg")
 
 
 if __name__ == "__main__":
