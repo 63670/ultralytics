@@ -72,10 +72,9 @@ To this end, we have developed a complete defect detection and closed-loop contr
 The main contributions are as follows.
 \begin{enumerate}
   \renewcommand{\labelenumi}{\arabic{enumi})}
-  \item We implement inspection during knitting as a production--detection--intervention workflow, coupling detection of developing fabric defects to configurable stopping and operator response on the production machine.
-  \item We design dedicated hardware that integrates image acquisition, SerDes transmission, illumination control, edge processing, and machine-control interfaces for practical installation on circular knitting machines.
-  \item We develop \model with MCE and GIU to address elongated-defect continuity and the reconstruction needs of diverse defect morphologies and scales under edge-computing constraints.
-  \item We evaluate detection accuracy and deployed performance and document industrial application at a 48-machine factory, where the standalone inspection stage has been removed and estimated monthly fabric waste has decreased substantially.
+  \item We develop an embedded defect detection and closed-loop control system for circular-knitting production, integrating image acquisition, illumination, SerDes transmission, edge processing, and machine-control interfaces.
+  \item We propose \model, a lightweight detector incorporating MCE and GIU to address elongated-defect continuity and multiscale feature reconstruction under edge-computing constraints. A user-configurable post-NMS stopping module further translates detection outputs into local machine-stop decisions according to factory quality requirements.
+  \item We deploy the system in a textile factory, where it replaces the separate manual fabric-inspection workflow and reduces fabric waste, demonstrating its practical production value.
 \end{enumerate}
 
 The remainder of this paper is organized as follows. Section~\ref{sec:related-work} reviews inspection workflows, edge systems, and detection algorithms. Section~\ref{sec:system-design} presents the system design, and Section~\ref{sec:method} describes the detection method. Section~\ref{sec:results} reports the experimental protocol and results. Section~\ref{sec:system-operation} presents deployment, system operation, and industrial application. Section~\ref{sec:conclusion} concludes the paper.
