@@ -16,6 +16,20 @@ import matplotlib.pyplot as plt
 
 PAPER = Path(__file__).resolve().parent / "TIE_submission"
 MANUSCRIPT = PAPER / "A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex"
+# Tableau categorical colors, extended with a dark indigo for the eleventh model.
+MODEL_COLORS = {
+    "YOLOv9t": "#1F77B4",
+    "YOLOv10n": "#BCBD22",
+    "YOLO11n": "#2CA02C",
+    "YOLO12n": "#9467BD",
+    "YOLO26n": "#17BECF",
+    "RT-DETR-R18": "#8C564B",
+    "DETR-R50": "#E377C2",
+    "Deformable DETR-R50": "#7F7F7F",
+    "Faster R-CNN-R50": "#393B79",
+    "YOLOv8n (Baseline)": "#FF7F0E",
+    "MCGI-YOLO": "#D62728",
+}
 OFFSETS = (
     {"YOLOv9t": (-8, 15), "YOLOv10n": (-4, -20), "YOLO11n": (12, -14),
      "YOLO12n": (8, -16), "YOLO26n": (-8, 15), "RT-DETR-R18": (40, 0),
@@ -51,10 +65,10 @@ def draw_panel(ax, rows, metric, panel):
         name = row["model"]
         ours = name == "MCGI-YOLO"
         baseline = "Baseline" in name
-        color = "#C53334" if ours else "#C58323" if baseline else "#228078" if name.startswith("YOLO") else "#4E69A2"
-        ax.scatter(row["fps"], row[metric], s=175 if ours else 65,
+        color = MODEL_COLORS[name]
+        ax.scatter(row["fps"], row[metric], s=320 if ours else 150,
                    marker="*" if ours else "D" if baseline else "o", c=color,
-                   edgecolor="white", linewidth=0.8, zorder=4)
+                   edgecolor="white", linewidth=1.0, zorder=4)
         dx, dy = OFFSETS[panel].get(name, (8, 10))
         label = name.replace(" (Baseline)", "\n(Baseline)")
         label = label.replace("Deformable DETR-R50", "Deformable\nDETR-R50").replace("Faster R-CNN-R50", "Faster R-CNN\n(R50)")
@@ -86,8 +100,7 @@ def main():
     fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.8))
     for panel, metric in enumerate(("map50", "map50_95")):
         draw_panel(axes[panel], rows, metric, panel)
-    fig.text(0.5, 0.025, "RTX 3090  |  FP32  |  Batch size 1  |  Input 640 x 640", ha="center", fontsize=10, color="#555555")
-    fig.subplots_adjust(left=0.065, right=0.985, bottom=0.17, top=0.9, wspace=0.22)
+    fig.subplots_adjust(left=0.065, right=0.985, bottom=0.13, top=0.9, wspace=0.22)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     for extension in ("png", "pdf"):
         fig.savefig(args.output.with_suffix("." + extension), dpi=600, facecolor="white", bbox_inches="tight", pad_inches=0.08)
