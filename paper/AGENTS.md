@@ -1,6 +1,7 @@
 # 论文维护入口
 
 - 后续 MCGI-YOLO 论文修改默认基于 `Elsevier_submission/A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex`；转投修订也在此维护。
+- 全文主线是将检测从成布后的独立验布环节前移到织造中的检测与停机干预；章节为 Introduction、Related Work、System Design、Detection Method、Experiments and Results、System Deployment and Industrial Application、Conclusion。相关工作区分成布后验布和已有机上检测，不声称首次提出边织边检；先行工作包括 Saeidi (2005)、Li (2013)、Çelik (2022)、Ni (2025)。用户已确认明海工厂取消独立验布机环节，无需另购或使用验布机；仅对该工厂的实际工作流程作此表述，不虚构验布机购置价或将其计入月布损减少额。
 - `TIE_submission/` 保留为迁移前归档；后续正文、图表、实验数据和编译默认只更新 `Elsevier_submission/`。
 - 图注和表题采用 JMS 常见的简短主题式写法，原则上一个短句；多子图仅保留必要的(a)–(d)对应。参数、测试口径、百分数和最优/次优标记规则放在正文，避免在图表标题重复说明。
 - 对应图片、参考文献和编译脚本位于 `Elsevier_submission/figures/`、`Elsevier_submission/references.bib` 和 `Elsevier_submission/build.ps1`。模板采用 `els-cas-templates/` 提供的 `cas-dc` 双栏类；原有正文图片文件名 `fig1.png` 至 `fig7.png` 保持稳定；正文图号由 LaTeX 自动生成，不再等同于文件名。旧草稿目录已删除，不重新创建。
@@ -10,9 +11,9 @@
 - 标注框形态与尺度图为 `figures/annotation_shapes.png`（双栏，`fig:annotation-shapes`）；由 `paper/plot_annotation_shapes.py --labels <数据集labels目录> --output paper/Elsevier_submission/figures/annotation_shapes.png` 生成，全部框中心对齐并保留归一化宽高，附 `.stats.json` 记录统计和标注哈希。生产工况及延迟估算输入见 `tab:production-inputs`。
 - FPS–mAP 散点图为 `figures/fps_accuracy.png` 与矢量版 `.pdf`，运行 `python paper/plot_fps_accuracy.py` 从当前正文 `tab:comparison` 自动读取数据；使用 RTX 3090、FP32、batch=1、640×640 的纯推理 FPS，数据快照保存在同名 `.json`。正文使用矢量 PDF 在检测器对比部分双栏展示，标签为 `fig:fps-accuracy`。
 - 手动标注用散点底图运行 `python paper/plot_fps_accuracy.py --unlabeled`，另存 `figures/fps_accuracy_unlabeled.{png,pdf,svg,json}`，左图 mAP@50、右图 mAP@50:95；保留坐标轴、刻度数字、网格、颜色、点形和数据位置；仅去掉模型名称、引线、图标题及轴标题。此版本不自动替换正文已标注插图。
-- 硬件系统部分保留 `serdes.png`（单栏）。实验结果后单设 `System Deployment and Operation`，依次介绍部署与23 FPS、客户端、云平台与数字孪生、规则配置与停机执行、延迟干预分析；`detect.png`、`iot_platform.png`（均双栏）放在该节。平台图 C)、D) 分别说明客户端实时状态与远程配置的数字孪生功能。
+- 硬件系统部分保留 `serdes.png`（单栏）。实验结果后单设 `System Deployment and Industrial Application`，依次介绍部署与23 FPS、客户端、云平台与数字孪生、规则配置与停机执行、延迟干预分析；`detect.png`、`iot_platform.png`（均双栏）放在该节。平台图 C)、D) 分别说明客户端实时状态与远程配置的数字孪生功能。
 - RK3566 部署评估在 Linux 下进行：YOLOv8n 为30 FPS、MCGI-YOLO 为23 FPS；两者输入640×640、conf=0.001、NMS IoU=0.7、max_det=16。P/R 按 IoU=0.5 的最佳类别平均F1位置报告，并按类别宏平均。部署结果见正文 `tab:rknn-deployment`，不得混入 RTX 3090 的主对比表。
-- 用户可配置停机规则作为 Detection Algorithm 的末尾子节 `User-Configurable Post-NMS Stopping Decision`（`sec:stop-rules`），包含 NMS 后置信度筛选、原图尺度判断、数量条件和预设表；系统运行部分仅描述参数配置和停机执行，不将停机规则称为改进 NMS。
+- 用户可配置停机规则作为 Detection Method 的末尾子节 `User-Configurable Post-NMS Stopping Decision`（`sec:stop-rules`），包含 NMS 后置信度筛选、原图尺度判断、数量条件和预设表；系统运行部分仅描述参数配置和停机执行，不将停机规则称为改进 NMS。
 - 客户端停机规则按原始 `1280×1024` 图像计算；预设元组依次为（置信度、破洞检测框面积、横向检测框宽度、竖向检测框高度、每帧数量）：低 `(0.50, 6400, 800, 400, 3)`，中 `(0.40, 2500, 400, 200, 2)`，高 `(0.30, 1000, 200, 100, 1)`。先按置信度筛选，再判断“任意一个对应类别尺寸超过阈值，或者该帧通过置信度筛选的瑕疵总数达到数量阈值”，二者为或关系，不跨帧累计。三档均可编辑。
 - `manuscript.tex` 保留为迁移前的历史稿，`TIE_LaTeX_template/` 保留为原始模板；不要将后续论文修改写回这两处。
 - 每次改动后创建对应的 Git commit，遵循仓库根目录的要求。
