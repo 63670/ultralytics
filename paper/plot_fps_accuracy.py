@@ -81,13 +81,11 @@ def draw_panel(ax, rows, metric, panel, unlabeled=False):
                     arrowprops={"arrowstyle": "-", "color": color, "lw": 1.1, "alpha": 0.8}, zorder=5)
     ax.set_xlim(0, 650)
     ax.set_ylim((87, 99.2) if panel == 0 else (51, 70))
-    if unlabeled:
-        ax.set_axis_off()
-        return
     ax.set_xticks(range(0, 651, 100))
-    ax.set_xlabel("Inference throughput (FPS)")
-    ax.set_ylabel("mAP@50 (%)" if panel == 0 else "mAP@50:95 (%)")
-    ax.set_title("(a) FPS vs. mAP@50" if panel == 0 else "(b) FPS vs. mAP@50:95", pad=12)
+    if not unlabeled:
+        ax.set_xlabel("Inference throughput (FPS)")
+        ax.set_ylabel("mAP@50 (%)" if panel == 0 else "mAP@50:95 (%)")
+        ax.set_title("(a) FPS vs. mAP@50" if panel == 0 else "(b) FPS vs. mAP@50:95", pad=12)
     ax.grid(color="#E4E7EB", linewidth=0.85, zorder=0)
     ax.spines[["top", "right"]].set_visible(False)
     ax.spines[["left", "bottom"]].set_color("#777777")
@@ -99,7 +97,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manuscript", type=Path, default=MANUSCRIPT)
     parser.add_argument("--output", type=Path, help="Output stem; defaults to fps_accuracy or fps_accuracy_unlabeled")
-    parser.add_argument("--unlabeled", action="store_true", help="Export points only, without axes, text, grid, or leaders")
+    parser.add_argument("--unlabeled", action="store_true", help="Keep axes, numeric ticks, and grid; omit model labels, leaders, and titles")
     args = parser.parse_args()
     if args.output is None:
         args.output = PAPER / "figures" / ("fps_accuracy_unlabeled" if args.unlabeled else "fps_accuracy")
