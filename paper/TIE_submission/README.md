@@ -7,6 +7,7 @@
 - `figures/serdes.png` 为硬件部分的 SerDes 与 PoC 链路示意图（单栏）。实验结果之后单设 `System Deployment and Operation`，集中介绍部署流程与23 FPS、客户端、云平台、规则配置与停机执行及延迟干预分析；其中 `detect.png` 为客户端页面跳转图（双栏），`iot_platform.png` 为 IoT 平台图（双栏），C)、D) 展示客户端状态与远程配置的数字孪生界面。
 - 数据集样本图使用 `figures/defect.png`，在 Dataset 小节双栏展示，标签为 `fig:dataset-examples`；四行依次为 row、col、hole 及多类瑕疵共存样本。
 - 真实废布照片使用 `figures/fabric_with_defect.jpg`，在延迟干预损失估算小节单栏展示，标签为 `fig:waste-fabric`，说明持续纱线异常造成重复横向瑕疵和布面报废。
+- 产线应用效果见 `sec:factory-benefits` 和 `tab:factory-benefits`：用户确认的明海纺织厂月均估计，48台圆机、约350 t/月，废布约2030→148 kg/月；按20 CNY/kg估算月损失40,600→2,960 CNY，减少92.7%，月差额37,640 CNY，年化推算451,680 CNY。用户已确认按全厂2030 kg/月的口径，不使用每台30–40 kg/月的概略范围；未提供具体统计月份，不写成特定月份的实测结果。
 - 标注框形态与尺度图为 `figures/annotation_shapes.png`（双栏，`fig:annotation-shapes`）；由 `paper/plot_annotation_shapes.py --labels <数据集labels目录> --output paper/TIE_submission/figures/annotation_shapes.png` 生成，全部框中心对齐并保留归一化宽高，附 `.stats.json` 记录统计和标注哈希。生产工况及延迟估算输入见 `tab:production-inputs`。
 - FPS–mAP 散点图为 `figures/fps_accuracy.png` 与矢量版 `.pdf`，运行 `python paper/plot_fps_accuracy.py` 从当前正文 `tab:comparison` 自动读取数据；使用 RTX 3090、FP32、batch=1、640×640 的纯推理 FPS，数据快照保存在同名 `.json`。正文使用矢量 PDF 在检测器对比部分双栏展示，标签为 `fig:fps-accuracy`。
 - 手动标注用散点底图运行 `python paper/plot_fps_accuracy.py --unlabeled`，另存 `figures/fps_accuracy_unlabeled.{png,pdf,svg,json}`，左图 mAP@50、右图 mAP@50:95；保留坐标轴、刻度数字、网格、颜色、点形和数据位置；仅去掉模型名称、引线、图标题及轴标题。此版本不自动替换正文已标注插图。

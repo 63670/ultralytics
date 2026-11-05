@@ -572,6 +572,33 @@ L_{\mathrm{affected}}=Np
 
 Under these operating assumptions, a five-minute discovery delay allows approximately 150 defective courses, with a cumulative transverse length of 479 m, to recur over a 4.5 m length of fabric in the production direction. These estimates connect intervention delay to the extent of affected production and illustrate the value of on-machine detection and timely stopping in limiting further defect propagation.
 
+\subsection{Factory Application and Waste Reduction}
+\label{sec:factory-benefits}
+The system is applied at our collaborating factory, Dongguan Minghai Textile Co., Ltd., Dongguan, Guangdong, China, which operates 48 circular knitting machines and reports an approximate monthly fabric output of 350 t. Table~\ref{tab:factory-benefits} summarizes the factory-provided estimates of average monthly fabric waste before and after introducing the detection system. Estimated monthly fabric waste decreases from approximately 2030 to 148 kg/month, a reduction of 1882 kg/month or 92.7\%. Using 350 t as the monthly production reference, the corresponding waste rate decreases from 0.580\% to approximately 0.042\%.
+
+\begin{table}[!tbp]
+\caption{Factory-provided estimates of average monthly fabric waste before and after introducing the detection system. Waste rates use an approximate monthly output of 350 t; loss estimates value the affected fabric at CNY 20/kg.}
+\label{tab:factory-benefits}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrr@{}}
+\toprule
+Indicator & Before & After \\
+\midrule
+Number of machines & 48 & 48 \\
+Monthly fabric waste (kg) & $\approx2030$ & $\approx148$ \\
+Waste rate (\%) & 0.580 & 0.042 \\
+Estimated monthly fabric loss (CNY) & 40,600 & 2,960 \\
+Monthly loss per machine (CNY) & 845.8 & 61.7 \\
+\bottomrule
+\end{tabular*}
+\renewcommand{\arraystretch}{1.0}
+\end{table}
+
+At a fabric valuation of CNY 20/kg, the estimated monthly fabric loss decreases from CNY 40,600 to CNY 2960, corresponding to a monthly reduction of CNY 37,640. The per-machine monthly loss decreases from approximately CNY 845.8 to CNY 61.7. Annualizing the monthly difference gives an estimated fabric-loss reduction of CNY 451,680. These factory-provided monthly estimates complement the image-level accuracy and on-device throughput results by connecting on-machine detection and intervention with reduced material waste in production.
+
 \section{Conclusion}
 \label{sec:conclusion}
 This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, integrating image acquisition, SerDes transmission, edge inference, machine stopping, and cloud alerts. The lightweight \model combines MCE for elongated-defect morphology encoding with GIU for adaptive feature reconstruction. On the self-collected test set, it achieves 97.2\% mAP@50 and 65.5\% mAP@50:95, improving over YOLOv8n by 6.7 and 7.1 percentage points. INT8 deployment on the RK3566 achieves 96.7\% mAP@50 and 64.0\% mAP@50:95 at 23 FPS, exceeding the 10 FPS design target. Unlike generic object detection pipelines, our work jointly tailors both the hardware architecture and the detection algorithm to the morphology of knitting defects and the constraints of edge deployment, enabling real-time closed-loop control directly on the machine. By delivering a fully integrated and deployable system rather than an isolated algorithm, this work addresses a critical bottleneck in textile manufacturing—namely, the difficulty of translating detection performance into actionable, on-machine quality control. It offers the industry a ready-to-deploy reference for intelligent detection of circular knitting machines and, more broadly, demonstrates a reproducible pathway for deploying lightweight vision models on resource-constrained edge devices in industrial settings.
