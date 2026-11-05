@@ -1,6 +1,6 @@
 {
   "manuscript": "C:\\Users\\tankz\\code\\github\\ultralytics\\paper\\TIE_submission\\A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex",
-  "manuscript_sha256": "72b25336910e6e61373ee743f388c6d2b458c69ac554d1142be5ab20c9ff1329",
+  "manuscript_sha256": "782ff5223f35e97763e8728be511e0a2f2d548e745c4aa3c9579d9496e5adcf7",
   "source_table": "tab:comparison",
   "platform": "RTX 3090",
   "precision": "FP32",

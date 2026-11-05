@@ -31,14 +31,14 @@ MODEL_COLORS = {
     "MCGI-YOLO": "#D62728",
 }
 OFFSETS = (
-    {"YOLOv9t": (-8, 15), "YOLOv10n": (-4, -20), "YOLO11n": (12, -14),
-     "YOLO12n": (8, -16), "YOLO26n": (-8, 15), "RT-DETR-R18": (40, 0),
-     "DETR-R50": (48, 6), "Deformable DETR-R50": (8, 21),
-     "Faster R-CNN-R50": (10, -48), "YOLOv8n (Baseline)": (-5, 12), "MCGI-YOLO": (-8, 18)},
-    {"YOLOv9t": (-8, 15), "YOLOv10n": (-38, 19), "YOLO11n": (12, -17),
-     "YOLO12n": (-8, -18), "YOLO26n": (-8, 16), "RT-DETR-R18": (8, 15),
-     "DETR-R50": (10, 12), "Deformable DETR-R50": (20, -28),
-     "Faster R-CNN-R50": (28, 10), "YOLOv8n (Baseline)": (0, -23), "MCGI-YOLO": (8, 15)},
+    {"YOLOv9t": (-8, 20), "YOLOv10n": (-4, -16), "YOLO11n": (12, -18),
+     "YOLO12n": (8, -19), "YOLO26n": (-8, 22), "RT-DETR-R18": (20, 10),
+     "DETR-R50": (48, 8), "Deformable DETR-R50": (8, 27),
+     "Faster R-CNN-R50": (10, -52), "YOLOv8n (Baseline)": (-5, 18), "MCGI-YOLO": (-8, 22)},
+    {"YOLOv9t": (12, -12), "YOLOv10n": (-38, 22), "YOLO11n": (18, -22),
+     "YOLO12n": (-8, -22), "YOLO26n": (-8, 22), "RT-DETR-R18": (8, 20),
+     "DETR-R50": (10, -19), "Deformable DETR-R50": (20, -34),
+     "Faster R-CNN-R50": (32, 17), "YOLOv8n (Baseline)": (-3, -33), "MCGI-YOLO": (8, 20)},
 )
 
 
@@ -66,27 +66,28 @@ def draw_panel(ax, rows, metric, panel):
         ours = name == "MCGI-YOLO"
         baseline = "Baseline" in name
         color = MODEL_COLORS[name]
-        ax.scatter(row["fps"], row[metric], s=320 if ours else 150,
+        ax.scatter(row["fps"], row[metric], s=440 if ours else 210,
                    marker="*" if ours else "D" if baseline else "o", c=color,
-                   edgecolor="white", linewidth=1.0, zorder=4)
+                   edgecolor="white", linewidth=1.2, zorder=4)
         dx, dy = OFFSETS[panel].get(name, (8, 10))
         label = name.replace(" (Baseline)", "\n(Baseline)")
         label = label.replace("Deformable DETR-R50", "Deformable\nDETR-R50").replace("Faster R-CNN-R50", "Faster R-CNN\n(R50)")
         ax.annotate(label, (row["fps"], row[metric]), xytext=(dx, dy), textcoords="offset points",
-                    ha="right" if dx < 0 else "left", va="center", fontsize=9,
-                    fontweight="bold" if ours else "normal", color=color if ours or baseline else "#333333",
+                    ha="right" if dx < 0 else "left", va="center", fontsize=11,
+                    fontweight="bold", color=color if ours or baseline else "#333333",
                     bbox={"facecolor": "white", "edgecolor": "none", "pad": 0.5, "alpha": 0.9},
-                    arrowprops={"arrowstyle": "-", "color": color, "lw": 0.55, "alpha": 0.65}, zorder=5)
+                    arrowprops={"arrowstyle": "-", "color": color, "lw": 1.1, "alpha": 0.8}, zorder=5)
     ax.set_xlim(0, 650)
     ax.set_ylim((87, 99.2) if panel == 0 else (51, 70))
     ax.set_xticks(range(0, 651, 100))
     ax.set_xlabel("Inference throughput (FPS)")
     ax.set_ylabel("mAP@50 (%)" if panel == 0 else "mAP@50:95 (%)")
     ax.set_title("(a) FPS vs. mAP@50" if panel == 0 else "(b) FPS vs. mAP@50:95", pad=12)
-    ax.grid(color="#E4E7EB", linewidth=0.6, zorder=0)
+    ax.grid(color="#E4E7EB", linewidth=0.85, zorder=0)
     ax.spines[["top", "right"]].set_visible(False)
     ax.spines[["left", "bottom"]].set_color("#777777")
-    ax.tick_params(color="#777777")
+    ax.spines[["left", "bottom"]].set_linewidth(1.2)
+    ax.tick_params(color="#777777", width=1.2, labelsize=11)
 
 
 def main():
@@ -95,8 +96,9 @@ def main():
     parser.add_argument("--output", type=Path, default=PAPER / "figures" / "fps_accuracy")
     args = parser.parse_args()
     rows = read_comparison(args.manuscript)
-    plt.rcParams.update({"font.family": "serif", "font.size": 10, "axes.labelsize": 11,
-                         "axes.titlesize": 12, "pdf.fonttype": 42, "ps.fonttype": 42})
+    plt.rcParams.update({"font.family": "serif", "font.size": 11, "font.weight": "bold",
+                         "axes.labelsize": 13, "axes.labelweight": "bold",
+                         "axes.titlesize": 13, "axes.titleweight": "bold", "pdf.fonttype": 42, "ps.fonttype": 42})
     fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.8))
     for panel, metric in enumerate(("map50", "map50_95")):
         draw_panel(axes[panel], rows, metric, panel)
