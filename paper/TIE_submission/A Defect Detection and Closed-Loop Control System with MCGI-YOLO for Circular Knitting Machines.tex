@@ -76,7 +76,7 @@ We design and implement a dedicated defect detection and closed-loop control sys
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.92\textwidth]{fig1.png}
-\caption{The device comprises LED illumination control, a coaxial image link to the RK3566, 4G cloud connectivity, and I/O for rotation sensing and machine control.}
+\caption{Overview of the proposed defect detection and closed-loop control system.}
 \label{fig:interactions}
 \end{figure*}
 
@@ -91,7 +91,7 @@ Factory machinery creates an electromagnetically noisy environment, and installa
 \begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{serdes.png}
-\caption{SerDes camera link using the THCV241A serializer and THCV242A deserializer. Image data travel from the sensor to the RK3566 over coaxial cable, while PoC supplies power to the camera side.}
+\caption{SerDes image-transmission link with coaxial power delivery.}
 \label{fig:serdes}
 \end{figure}
 
@@ -120,7 +120,7 @@ f_{\min}=\frac{\pi D}{Tw}
 Table~\ref{tab:hardware-platforms} summarizes the hardware specifications of platforms used in related defect detection studies. While high-performance platforms like the NVIDIA Jetson Orin Nano and Xilinx ZCU102 offer substantial computational power, their costs range from hundreds to over 3,000 USD, which can be prohibitive for large-scale deployment. In contrast, our device provides a cost-effective hardware basis for the proposed system at a hardware cost of 60 USD, offering a significant cost advantage over comparable industrial platforms and making it highly suitable for large-scale deployment in textile factories.
 
 \begin{table}[!tbp]
-\caption{Hardware platforms used in related defect detection studies.}
+\caption{Edge computing platforms for defect detection.}
 \label{tab:hardware-platforms}
 \centering
 \footnotesize
@@ -156,14 +156,14 @@ Based on the design requirements of the subsystems described above, we develop t
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.86\textwidth]{fig2.png}
-\caption{Hardware of the defect detection system: (a) industrial camera with LED illumination; (b) camera-side interface board with a serializer and coaxial connector; and (c) RK3566 edge board with the 4G communication, flash storage, camera-interface, input/output interface, and power-management components.}
+\caption{System hardware: (a) camera and illumination, (b) camera interface board, and (c) RK3566 edge board.}
 \label{fig:hardware}
 \end{figure*}
 
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.86\textwidth]{fig3.png}
-\caption{Actual deployment on the circular knitting machine at Dongguan Minghai Textile Co., Ltd., Dongguan, Guangdong, China. The insets highlight the start button, Hall sensor, industrial camera, and RK3566 edge device, respectively.}
+\caption{System installation on a circular knitting machine.}
 \label{fig:system}
 \end{figure*}
 
@@ -175,7 +175,7 @@ Fig.~\ref{fig:network} shows \model based on YOLOv8n \cite{ultralytics2023}. Mor
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.9\textwidth]{fig4.png}
-\caption{Architecture of \model. MCE operates within the stride-8 and stride-16 backbone C2f stages. GIU replaces the two top-down upsampling operations. The local bottlenecks, bottom-up aggregation path, and three-scale detection head are retained from YOLOv8n.}
+\caption{Architecture of \model.}
 \label{fig:network}
 \end{figure*}
 
@@ -218,7 +218,7 @@ U' &= U+\gamma\odot U\odot(2G-1) \label{eq:pac-modulation}
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.9\textwidth]{fig5.png}
-\caption{Structures of the proposed modules: (a) C2f block with MCE; (b) GIU with a spatial weight map shared across channels; (c) residual bottleneck retained in C2f; and (d) MCE with context modulation on one quarter of its input channels and an unchanged bypass for the remaining three quarters.}
+\caption{Module structures: (a) MCE-integrated C2f, (b) GIU, (c) bottleneck, and (d) MCE.}
 \label{fig:modules}
 \end{figure*}
 
@@ -276,7 +276,7 @@ S_s=\mathbb{I}\!\left(\sum_{i\in\mathcal{D}_s}r_i^{(s)}\geq1\;\lor\;|\mathcal{D}
 \noindent A stop command is issued when either a confidence-qualified detection exceeds its class-specific size threshold or the total number of confidence-qualified detections reaches $N_s$. The count criterion includes defects below the geometric thresholds, allowing multiple small defects to trigger stopping. Counts are evaluated independently for each frame.
 
 \begin{table}[!tbp]
-\caption{Preset stopping parameters. Geometric thresholds use the original $1280\times1024$ image coordinates; $N_s$ is the confidence-qualified defect-count threshold per frame.}
+\caption{User-configurable machine-stop parameters.}
 \label{tab:stop-rules}
 \centering
 \footnotesize
@@ -303,12 +303,12 @@ The dataset was collected from a real circular-knitting production line and cove
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=\textwidth]{defect.png}
-\caption{Representative annotated fabric-defect samples. From top to bottom, the rows show horizontal defects (row), vertical defects (col), holes (hole), and images containing multiple defect categories.}
+\caption{Representative annotated fabric-defect samples.}
 \label{fig:dataset-examples}
 \end{figure*}
 
 \begin{table}[!htbp]
-\caption{Image-level split and defect-instance counts in the real production-line dataset.}
+\caption{Dataset split and defect-instance counts.}
 \label{tab:data}
 \centering
 \footnotesize
@@ -323,19 +323,19 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 \end{tabular}
 \end{table}
 
-Fig.~\ref{fig:annotation-shapes} visualizes the shape and scale variation of all 468 annotated boxes across the training, validation, and test sets. Each box is translated to a common center while retaining its width and height normalized by the image dimensions. Horizontal and vertical defects form distinct elongated patterns, whereas hole annotations span a wide range of spatial extents. These differences motivate morphology-aware context encoding and content-adaptive reconstruction in the feature pyramid, as implemented by MCE and GIU, respectively.
+Fig.~\ref{fig:annotation-shapes} visualizes the shape and scale variation of all 468 annotated boxes across the training, validation, and test sets. Each box is translated to the common center $(0.5,0.5)$ while retaining its width and height normalized by the image dimensions. Horizontal and vertical defects form distinct elongated patterns, whereas hole annotations span a wide range of spatial extents. These differences motivate morphology-aware context encoding and content-adaptive reconstruction in the feature pyramid, as implemented by MCE and GIU, respectively.
 
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=\textwidth]{annotation_shapes.png}
-\caption{Centered annotation-box overlays: (a) all 468 instances; (b) horizontal defects; (c) vertical defects; and (d) holes. All boxes are centered at $(0.5,0.5)$ with their original normalized widths and heights retained. Colors indicate defect categories.}
+\caption{Centered bounding-box distributions for all defects and each defect category.}
 \label{fig:annotation-shapes}
 \end{figure*}
 
 \subsection{Implementation Details}
 \label{sec:implementation}
 \begin{table}[!htbp]
-\caption{Implementation protocol covering training (Ultralytics) and deployment (edge device).}
+\caption{Training and edge-deployment settings.}
 \label{tab:implementation}
 \centering
 \footnotesize
@@ -368,7 +368,7 @@ Data protocol
 \end{table}
 
 \begin{table*}[!tbp]
-\caption{Detector comparison on the test set. FPS denotes FP32 model-forward throughput on an RTX 3090 with batch size 1 and a $640\times640$ input. Bold and underlined values indicate the best and second-best results, respectively.}
+\caption{Accuracy, complexity, and throughput comparison on the test set.}
 \label{tab:comparison}
 \centering
 \small
@@ -398,14 +398,14 @@ YOLOv8n (Baseline)~\cite{ultralytics2023} & 3.01 & 8.1 & 89.4 & 81.1 & 90.5 & 58
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=\textwidth]{fps_accuracy.pdf}
-\caption{Accuracy--throughput comparison on the test set: (a) mAP@50 versus FPS and (b) mAP@50:95 versus FPS. Throughput is measured on an RTX 3090 with FP32 precision, batch size 1, and $640\times640$ inputs. The red star denotes \model.}
+\caption{Accuracy--throughput comparison using (a) mAP@50 and (b) mAP@50:95.}
 \label{fig:fps-accuracy}
 \end{figure*}
 
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.86\textwidth]{fig6.png}
-\caption{Qualitative comparison of detection results across different methods. From left to right: ground-truth annotations (Label), YOLOv8n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours).}
+\caption{Qualitative comparison of fabric-defect detection results.}
 \label{fig:qualitative}
 \end{figure*}
 
@@ -424,7 +424,7 @@ R &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}
 \mathrm{mAP} &= \frac{1}{N_c}\sum_{c=1}^{N_c}\mathrm{AP}_c
 \label{eq:metrics}
 \end{align}
-\noindent where TP, FP, and FN denote true-positive, false-positive, and false-negative counts, respectively; $\mathrm{AP}_c$ is the AP of class $c$, and $N_c=3$. mAP@50 uses an IoU threshold of 0.5, while mAP@50:95 averages mAP over IoU thresholds from 0.50 to 0.95 in steps of 0.05. Reported P and R are averaged across classes, with YOLO-based detectors evaluated at the best mean-F1 operating point. All accuracy metrics are expressed as percentages.
+\noindent where TP, FP, and FN denote true-positive, false-positive, and false-negative counts, respectively; $\mathrm{AP}_c$ is the AP of class $c$, and $N_c=3$. mAP@50 uses an IoU threshold of 0.5, while mAP@50:95 averages mAP over IoU thresholds from 0.50 to 0.95 in steps of 0.05. Reported P and R are averaged across classes, with YOLO-based detectors evaluated at the best mean-F1 operating point. All accuracy metrics are expressed as percentages. In comparison tables, bold and underlined values indicate the best and second-best results, respectively.
 
 Model parameters and FLOPs are measured at $640\times640$ input resolution using each model's respective framework. For FPS comparison, all models are evaluated on an RTX 3090 with FP32 precision, batch size 1, and $640\times640$ inputs. This measurement is separate from the RK3566 deployment result.
 
@@ -436,7 +436,7 @@ Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inf
 \subsection{Component Ablation}
 \label{sec:component-ablation}
 \begin{table}[!htbp]
-\caption{Component ablation of MCE and GIU.}
+\caption{Ablation results for MCE and GIU.}
 \label{tab:ablation}
 \centering
 \footnotesize
@@ -460,7 +460,7 @@ Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n basel
 \begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fig7.png}
-\caption{Feature visualization of YOLOv8n and \model. From left to right: ground-truth annotations (Label), YOLOv8n, and \model.}
+\caption{Feature visualizations of YOLOv8n and \model.}
 \label{fig:heatmaps}
 \end{figure}
 
@@ -475,7 +475,7 @@ To deploy \model on the RK3566 edge device, the trained model is exported to ONN
 Table~\ref{tab:rknn-deployment} reports the deployed models' overall detection accuracy and inference throughput. \model achieves 96.685\% mAP@50 and 64.020\% mAP@50:95, exceeding the deployed YOLOv8n baseline by 6.492 and 6.730 percentage points, respectively. Its overall precision and recall reach 97.599\% and 93.001\%. Relative to the PyTorch results in Table~\ref{tab:comparison}, the deployed \model shows reductions of 0.515 and 1.480 percentage points in the two mAP metrics. On the RK3566, YOLOv8n and \model achieve model-inference throughputs of 30 and 23 FPS, respectively. The latter is 2.3 times the 10 FPS design target derived in Section~\ref{sec:coverage}, meeting the model-inference rate required for the specified machine speed and camera field of view.
 
 \begin{table}[!htbp]
-\caption{INT8 RKNN deployment on the RK3566. Accuracy metrics are in percent. Bold and underlined values indicate the best and second-best results, respectively.}
+\caption{Accuracy and throughput of INT8 models deployed on the RK3566.}
 \label{tab:rknn-deployment}
 \centering
 \footnotesize
@@ -494,12 +494,12 @@ YOLOv8n & \underline{88.323} & \underline{81.316} & \underline{90.193} & \underl
 
 \subsection{Client Detection Interface and Operator Feedback}
 \label{sec:client-interface}
-Fig.~\ref{fig:client-detection} shows the client interface during detection and after a defect is found. The home page displays the detection state, device information, and current sensitivity setting. Upon defect detection, the client automatically switches to the defect-detail page, displaying the captured image, the localized defect, and its category for operator review. The confirmation buttons on the right side of the defect-detail page allow the operator to indicate whether the detected defect warrants machine stopping under the factory's quality requirements. These assessments link detection images and results to operator feedback, providing samples for review, annotation, and subsequent model refinement.
+Fig.~\ref{fig:client-detection} shows the detection home page (left), defect-review interface (center), and mobile notification interface (right). The home page displays the detection state, device information, and current sensitivity setting. Upon defect detection, the client automatically switches to the defect-detail page, displaying the captured image, the localized defect, and its category for operator review. The confirmation buttons on the right side of the defect-detail page allow the operator to indicate whether the detected defect warrants machine stopping under the factory's quality requirements. These assessments link detection images and results to operator feedback, providing samples for review, annotation, and subsequent model refinement.
 
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.98\textwidth]{detect.png}
-\caption{Client interface transition upon defect detection: the detection home page (left) switches to the defect-detail page (right), showing the defect image, localization result, category, and buttons for operator confirmation of whether the defect warrants machine stopping.}
+\caption{Client detection, defect review, and mobile notification interfaces.}
 \label{fig:client-detection}
 \end{figure*}
 
@@ -514,7 +514,7 @@ The cloud platform also supports on-demand over-the-air (OTA) updates of the det
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.98\textwidth]{iot_platform.png}
-\caption{IoT platform interfaces: A) defect-event statistics; B) device-specific defect records; C) digital-twin view of the client's runtime state; and D) digital-twin controls for remotely configuring client sensitivity and decision thresholds.}
+\caption{IoT platform for defect monitoring and digital-twin supervision.}
 \label{fig:iot-platform}
 \end{figure*}
 
@@ -528,14 +528,14 @@ Fig.~\ref{fig:waste-fabric} shows actual waste fabric with repeated horizontal d
 \begin{figure}[!tbp]
 \centering
 \includegraphics[width=\columnwidth]{fabric_with_defect.jpg}
-\caption{Actual waste fabric with repeated horizontal defects caused by a persistent yarn abnormality.}
+\caption{Waste fabric with recurring horizontal defects.}
 \label{fig:waste-fabric}
 \end{figure}
 
 Table~\ref{tab:production-inputs} summarizes the operating inputs used for the coverage calculation in Section~\ref{sec:coverage} and the following loss estimates.
 
 \begin{table}[!tbp]
-\caption{Operating inputs for frame coverage and delayed-intervention estimates.}
+\caption{Operating parameters for coverage and delayed-intervention estimates.}
 \label{tab:production-inputs}
 \centering
 \footnotesize
@@ -577,7 +577,7 @@ Under these operating assumptions, a five-minute discovery delay allows approxim
 The system is applied at our collaborating factory, Dongguan Minghai Textile Co., Ltd., Dongguan, Guangdong, China, which operates 48 circular knitting machines and reports an approximate monthly fabric output of 350 t. Table~\ref{tab:factory-benefits} summarizes the factory-provided estimates of average monthly fabric waste before and after introducing the detection system. Estimated monthly fabric waste decreases from approximately 2030 to 148 kg/month, a reduction of 1882 kg/month or 92.7\%. Using 350 t as the monthly production reference, the corresponding waste rate decreases from 0.580\% to approximately 0.042\%.
 
 \begin{table}[!tbp]
-\caption{Factory-provided estimates of average monthly fabric waste before and after introducing the detection system. Waste rates use an approximate monthly output of 350 t; loss estimates use a net material loss of CNY 20/kg.}
+\caption{Estimated monthly fabric waste and losses before and after deployment.}
 \label{tab:factory-benefits}
 \centering
 \footnotesize

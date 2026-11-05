@@ -3,6 +3,7 @@
 本目录是 **A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines** 的唯一维护入口，后续转投修订也在此进行。
 
 - 同名 `.tex` 与 `.pdf` 为正文和编译结果，保留以论文标题命名的文件名。
+- 图注和表题采用 JMS 常见的简短主题式写法，原则上一个短句；多子图仅保留必要的(a)–(d)对应。参数、测试口径、百分数和最优/次优标记规则放在正文，避免在图表标题重复说明。
 - `figures/fig1.png` 至 `fig7.png` 为原有正文插图，`a1.jpg` 至 `a7.jpg` 为作者照片；文件名保持稳定，正文图号由 LaTeX 自动生成。
 - `figures/serdes.png` 为硬件部分的 SerDes 与 PoC 链路示意图（单栏）。实验结果之后单设 `System Deployment and Operation`，集中介绍部署流程与23 FPS、客户端、云平台、规则配置与停机执行及延迟干预分析；其中 `detect.png` 为客户端页面跳转图（双栏），`iot_platform.png` 为 IoT 平台图（双栏），C)、D) 展示客户端状态与远程配置的数字孪生界面。
 - 数据集样本图使用 `figures/defect.png`，在 Dataset 小节双栏展示，标签为 `fig:dataset-examples`；四行依次为 row、col、hole 及多类瑕疵共存样本。
