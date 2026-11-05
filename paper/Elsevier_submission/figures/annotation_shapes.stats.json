@@ -1,0 +1,41 @@
+{
+  "label_root": "C:\\Users\\tankz\\Desktop\\pingwen_yolo\\yolo_dataset\\labels",
+  "annotation_sha256": "b9e5107597c1fcf027f00615176c70bcbae64c7d9b8590ad42de795a3ed077c2",
+  "images": 403,
+  "instances": 468,
+  "split_instances": {
+    "test": 91,
+    "train": 329,
+    "val": 48
+  },
+  "geometry": "All boxes centered at (0.5, 0.5), preserving normalized width and height.",
+  "classes": {
+    "row": {
+      "instances": 258,
+      "median_width_height_ratio": 5.649087920271537,
+      "box_area_percentiles_percent": {
+        "p10": 0.5870703156700001,
+        "p50": 1.37400863535,
+        "p90": 2.8818767654600013
+      }
+    },
+    "col": {
+      "instances": 100,
+      "median_width_height_ratio": 0.11348594652122075,
+      "box_area_percentiles_percent": {
+        "p10": 0.39779061143,
+        "p50": 2.58822036705,
+        "p90": 9.197339669540002
+      }
+    },
+    "hole": {
+      "instances": 110,
+      "median_width_height_ratio": 0.7137764877376378,
+      "box_area_percentiles_percent": {
+        "p10": 0.13181958008,
+        "p50": 0.27256236285,
+        "p90": 15.093931376900004
+      }
+    }
+  }
+}

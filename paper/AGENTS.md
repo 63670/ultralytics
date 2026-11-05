@@ -1,12 +1,13 @@
 # 论文维护入口
 
-- 后续 MCGI-YOLO 论文修改默认基于 `TIE_submission/A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex`；转投修订也在此维护。
+- 后续 MCGI-YOLO 论文修改默认基于 `Elsevier_submission/A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex`；转投修订也在此维护。
+- `TIE_submission/` 保留为迁移前归档；后续正文、图表、实验数据和编译默认只更新 `Elsevier_submission/`。
 - 图注和表题采用 JMS 常见的简短主题式写法，原则上一个短句；多子图仅保留必要的(a)–(d)对应。参数、测试口径、百分数和最优/次优标记规则放在正文，避免在图表标题重复说明。
-- 对应图片、参考文献和编译脚本位于 `TIE_submission/figures/`、`TIE_submission/references.bib` 和 `TIE_submission/build.ps1`。原有正文图片文件名 `fig1.png` 至 `fig7.png` 保持稳定；正文图号由 LaTeX 自动生成，不再等同于文件名。旧草稿目录已删除，不重新创建。
+- 对应图片、参考文献和编译脚本位于 `Elsevier_submission/figures/`、`Elsevier_submission/references.bib` 和 `Elsevier_submission/build.ps1`。模板采用 `els-cas-templates/` 提供的 `cas-dc` 双栏类；原有正文图片文件名 `fig1.png` 至 `fig7.png` 保持稳定；正文图号由 LaTeX 自动生成，不再等同于文件名。旧草稿目录已删除，不重新创建。
 - 数据集样本图使用 `figures/defect.png`，在 Dataset 小节双栏展示，标签为 `fig:dataset-examples`；四行依次为 row、col、hole 及多类瑕疵共存样本。
 - 真实废布照片使用 `figures/fabric_with_defect.jpg`，在延迟干预损失估算小节单栏展示，标签为 `fig:waste-fabric`，说明持续纱线异常造成重复横向瑕疵和布面报废。
 - 产线应用效果见 `sec:factory-benefits` 和 `tab:factory-benefits`：用户确认的明海纺织厂月均估计，48台圆机、约350 t/月，废布约2030→148 kg/月；正常布25 CNY/kg、废布回收5 CNY/kg，按差额20 CNY/kg净损失估算月损失40,600→2,960 CNY，减少92.7%，月差额37,640 CNY，年化推算451,680 CNY。用户已确认按全厂2030 kg/月的口径，不使用每台30–40 kg/月的概略范围；未提供具体统计月份，不写成特定月份的实测结果。
-- 标注框形态与尺度图为 `figures/annotation_shapes.png`（双栏，`fig:annotation-shapes`）；由 `paper/plot_annotation_shapes.py --labels <数据集labels目录> --output paper/TIE_submission/figures/annotation_shapes.png` 生成，全部框中心对齐并保留归一化宽高，附 `.stats.json` 记录统计和标注哈希。生产工况及延迟估算输入见 `tab:production-inputs`。
+- 标注框形态与尺度图为 `figures/annotation_shapes.png`（双栏，`fig:annotation-shapes`）；由 `paper/plot_annotation_shapes.py --labels <数据集labels目录> --output paper/Elsevier_submission/figures/annotation_shapes.png` 生成，全部框中心对齐并保留归一化宽高，附 `.stats.json` 记录统计和标注哈希。生产工况及延迟估算输入见 `tab:production-inputs`。
 - FPS–mAP 散点图为 `figures/fps_accuracy.png` 与矢量版 `.pdf`，运行 `python paper/plot_fps_accuracy.py` 从当前正文 `tab:comparison` 自动读取数据；使用 RTX 3090、FP32、batch=1、640×640 的纯推理 FPS，数据快照保存在同名 `.json`。正文使用矢量 PDF 在检测器对比部分双栏展示，标签为 `fig:fps-accuracy`。
 - 手动标注用散点底图运行 `python paper/plot_fps_accuracy.py --unlabeled`，另存 `figures/fps_accuracy_unlabeled.{png,pdf,svg,json}`，左图 mAP@50、右图 mAP@50:95；保留坐标轴、刻度数字、网格、颜色、点形和数据位置；仅去掉模型名称、引线、图标题及轴标题。此版本不自动替换正文已标注插图。
 - 硬件系统部分保留 `serdes.png`（单栏）。实验结果后单设 `System Deployment and Operation`，依次介绍部署与23 FPS、客户端、云平台与数字孪生、规则配置与停机执行、延迟干预分析；`detect.png`、`iot_platform.png`（均双栏）放在该节。平台图 C)、D) 分别说明客户端实时状态与远程配置的数字孪生功能。
@@ -20,12 +21,12 @@
 
 - 后续 JIOT 论文修改基于 `JIOT_draft/manuscript.tex`，使用 `templates/` 提供的标准 IEEEtran 模板；具体入口见 `JIOT_draft/AGENTS.md`。
 - `JIOT_draft/` 从 TIE 投稿版迁移，暂时保留 MCGI-YOLO 的方法、图片和实测结果。新模型及实验结果后续在该目录更新。
-- `TIE_submission/` 和历史 `JIOT_DMFR_draft/` 不随 JIOT 新稿修改。
+- `Elsevier_submission/` 和历史 `JIOT_DMFR_draft/` 不随 JIOT 新稿修改。
 
 ## VS Code 编译入口
 
-- 用户在 VS Code 中以 `TIE_submission/` 为工作区；其 `.vscode/settings.json` 覆盖 LaTeX Workshop 的编译配置。
-- 编辑器通过 `pdflatex -> bibtex -> pdflatex -> pdflatex` 编译，PDF、SyncTeX 和辅助文件统一输出到 `TIE_submission/build/`，预览 `build/<论文标题>.pdf`；`build.ps1` 另发布一份同名 PDF 到正文所在目录。
+- 用户在 VS Code 中以 `Elsevier_submission/` 为工作区；其 `.vscode/settings.json` 覆盖 LaTeX Workshop 的编译配置。
+- 编辑器通过 `pdflatex -> bibtex -> pdflatex -> pdflatex` 编译，PDF、SyncTeX 和辅助文件统一输出到 `Elsevier_submission/build/`，预览 `build/<论文标题>.pdf`；`build.ps1` 另发布一份同名 PDF 到正文所在目录。
 - `pdflatex` 必须显式传入 `-output-directory=%OUTDIR%`，BibTeX 必须读取 `%OUTDIR%/%DOCFILE%`；仅修改 `latex.outDir` 不会改变自定义工具的实际输出路径。
 - 日志若显示 `I can't write on file manuscript.pdf`，先核对实际输出路径和 PDF 占用，不要据此改动公式或删除参考文献。编辑器使用 `build/<论文标题>.log`；根目录旧日志可能仍保留此前错误。
 
@@ -50,9 +51,9 @@
 ```powershell
 scp -P 13022 paper/compose_detection_figure.py paper/redraw_detection_labels.py tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/scripts/
 ssh -p 13022 -o BatchMode=yes -o ConnectTimeout=10 tkz@8.138.122.96 'python3 /home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/scripts/redraw_detection_labels.py --source /home/tkz/code/github/ultralytics/runs/detection_comparison --output-dir /home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures --font-size 44 --model-font-size 48 --gap 12'
-scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.png paper/TIE_submission/figures/fig6.png
-scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.layout.json paper/TIE_submission/figures/fig6.layout.json
-scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.sources.json paper/TIE_submission/figures/fig6.sources.json
+scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.png paper/Elsevier_submission/figures/fig6.png
+scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.layout.json paper/Elsevier_submission/figures/fig6.layout.json
+scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_comparison/paper_figures/qualitative_large_labels.sources.json paper/Elsevier_submission/figures/fig6.sources.json
 ```
 
 ## 热力图生成（fig7.png）
@@ -63,7 +64,7 @@ scp -P 13022 tkz@8.138.122.96:/home/tkz/code/github/ultralytics/runs/detection_c
 
 ```powershell
 $paperPython = 'C:/Users/tankz/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'
-& $paperPython paper/compose_heatmap_figure.py --input C:/Users/tankz/Desktop/heat --output paper/TIE_submission/figures/fig7.png --label-font-size 64 --images VFDS66RK26040002_20260801_201333180.png VFDS66RK26040002_20260805_003052459.png VFDS66RK26040002_20260729_040549805.png
+& $paperPython paper/compose_heatmap_figure.py --input C:/Users/tankz/Desktop/heat --output paper/Elsevier_submission/figures/fig7.png --label-font-size 64 --images VFDS66RK26040002_20260801_201333180.png VFDS66RK26040002_20260805_003052459.png VFDS66RK26040002_20260729_040549805.png
 ```
 
 ## 出图后检查
@@ -73,5 +74,5 @@ $paperPython = 'C:/Users/tankz/.cache/codex-runtimes/codex-primary-runtime/depen
 - 查看两张图的标签、模型名及正文中的对应排版，再编译当前稿件并核对总页数：
 
 ```powershell
-& ./paper/TIE_submission/build.ps1 -TeXBin 'C:/Users/tankz/application/MiKTex/miktex/bin/x64'
+& ./paper/Elsevier_submission/build.ps1 -TeXBin 'C:/Users/tankz/application/MiKTex/miktex/bin/x64'
 ```

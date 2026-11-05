@@ -1,0 +1,154 @@
+{
+  "columns": [
+    "GT",
+    "yolov8n",
+    "RT-DETR-R18",
+    "Faster-R-CNN-R50",
+    "ours"
+  ],
+  "rows": [
+    "VFDS66RK26040002_20260801_195949765.jpg.png",
+    "VFDS66RK26040002_20260809_022619641.jpg.png",
+    "VFDS66RK26040002_20260727_193808156.jpg.png",
+    "VFDS66RK26040002_20260805_002859637.jpg.png",
+    "VFDS66RK26040002_20260727_200936881.jpg.png"
+  ],
+  "source_size": [
+    640,
+    640
+  ],
+  "model_font_size": 48,
+  "panel_letters": false,
+  "panel_size": [
+    640,
+    640
+  ],
+  "dpi": 300,
+  "sources": [
+    {
+      "column": "GT",
+      "file": "VFDS66RK26040002_20260801_195949765.jpg.png",
+      "sha256": "411d4517e8860aed7afed935d1f0b5590bdbb2ea5de2818f152cba6c98b32371"
+    },
+    {
+      "column": "yolov8n",
+      "file": "VFDS66RK26040002_20260801_195949765.jpg.png",
+      "sha256": "561c6caac41e843431d1a7208d59f21c93eb6c6b49cd2b875f1794223f01d6dc"
+    },
+    {
+      "column": "RT-DETR-R18",
+      "file": "VFDS66RK26040002_20260801_195949765.jpg.png",
+      "sha256": "b8937262c389ae3bf292477db70ac92a9dc37d164261e9042fe8c9b150b15717"
+    },
+    {
+      "column": "Faster-R-CNN-R50",
+      "file": "VFDS66RK26040002_20260801_195949765.jpg.png",
+      "sha256": "9aeb8c993ddb4de25a563f41577ab5e9d7bf550bb5142b9640dea34f16cc86e7"
+    },
+    {
+      "column": "ours",
+      "file": "VFDS66RK26040002_20260801_195949765.jpg.png",
+      "sha256": "6b8f12c2c9e4ac915156a77065c6f09d1867653baa0167bbb5c0b22587dadced"
+    },
+    {
+      "column": "GT",
+      "file": "VFDS66RK26040002_20260809_022619641.jpg.png",
+      "sha256": "dfc2c217352795d69d9bb9a9728085f1aa7721be854eb98403b1acb3230065dc"
+    },
+    {
+      "column": "yolov8n",
+      "file": "VFDS66RK26040002_20260809_022619641.jpg.png",
+      "sha256": "f44b367cfdf5dd0587a08c586da3d245613aaf92735fe615d917abb614fd1fd0"
+    },
+    {
+      "column": "RT-DETR-R18",
+      "file": "VFDS66RK26040002_20260809_022619641.jpg.png",
+      "sha256": "592738cc13a9ed45e6da3c1f5fd142a0b5512262e13733699ce46f57ef899f2d"
+    },
+    {
+      "column": "Faster-R-CNN-R50",
+      "file": "VFDS66RK26040002_20260809_022619641.jpg.png",
+      "sha256": "604fe7b17f1156538c7248584aea9aec55661cb70031428fe529319a0ae5f7b0"
+    },
+    {
+      "column": "ours",
+      "file": "VFDS66RK26040002_20260809_022619641.jpg.png",
+      "sha256": "9a665f025c772e0ae3535933e70ebd5457f0dbdd81b8b9dc2b0a62b5f8812b7e"
+    },
+    {
+      "column": "GT",
+      "file": "VFDS66RK26040002_20260727_193808156.jpg.png",
+      "sha256": "d5587488a5074d9ea101f366a7b2d8e491633d9313d050cedc4a63516119ac06"
+    },
+    {
+      "column": "yolov8n",
+      "file": "VFDS66RK26040002_20260727_193808156.jpg.png",
+      "sha256": "5c0799d5cdd34b0186bb4181dee70a5b8d67323ba741fe8cdf3f9b4e9196eab8"
+    },
+    {
+      "column": "RT-DETR-R18",
+      "file": "VFDS66RK26040002_20260727_193808156.jpg.png",
+      "sha256": "6925f49a427948242962aa97abfb0fd8b1358f872a4cec5dfeb16216da0c67be"
+    },
+    {
+      "column": "Faster-R-CNN-R50",
+      "file": "VFDS66RK26040002_20260727_193808156.jpg.png",
+      "sha256": "e6cac2fe56fbcca38146da10eceff2a614823fffc4cf8e5812228d14c0a30b0d"
+    },
+    {
+      "column": "ours",
+      "file": "VFDS66RK26040002_20260727_193808156.jpg.png",
+      "sha256": "7111c8f0b658a1c70b53f1e2b99970c3dbf23fcbe76f1a3bddaffc8a665f2935"
+    },
+    {
+      "column": "GT",
+      "file": "VFDS66RK26040002_20260805_002859637.jpg.png",
+      "sha256": "ce7c7305824b908e49d744dea1fc82af30180a1b9f15358eb38bdcbddd4753da"
+    },
+    {
+      "column": "yolov8n",
+      "file": "VFDS66RK26040002_20260805_002859637.jpg.png",
+      "sha256": "b20f1d2e3bf517452205748d21a3360f4525c6f0d42eee9fb84dffc3aa8a321e"
+    },
+    {
+      "column": "RT-DETR-R18",
+      "file": "VFDS66RK26040002_20260805_002859637.jpg.png",
+      "sha256": "2cc685f0a5a43243957977ccdfc0aed54242b7f55be81e6b12abb3e6ad79c4e0"
+    },
+    {
+      "column": "Faster-R-CNN-R50",
+      "file": "VFDS66RK26040002_20260805_002859637.jpg.png",
+      "sha256": "f0d4c3e0c53a53f290395a331e62c55315964ecd214670215b83865cb34b51d4"
+    },
+    {
+      "column": "ours",
+      "file": "VFDS66RK26040002_20260805_002859637.jpg.png",
+      "sha256": "82fbe1fd6a24f67d8dc0eae4fdd120f531f3e6080f49e83c4f7008b4e464c339"
+    },
+    {
+      "column": "GT",
+      "file": "VFDS66RK26040002_20260727_200936881.jpg.png",
+      "sha256": "ac811d910cd567c580e405015793b9992994edfb545e11dd28479cf49f2cbfde"
+    },
+    {
+      "column": "yolov8n",
+      "file": "VFDS66RK26040002_20260727_200936881.jpg.png",
+      "sha256": "0972c35b0d7430043127bd3dc2cb60f421182cef5d17731df6b7f84d4137cd64"
+    },
+    {
+      "column": "RT-DETR-R18",
+      "file": "VFDS66RK26040002_20260727_200936881.jpg.png",
+      "sha256": "657fe1d59ac896f8306af1fa57d5fbbf2a2d4b47cdc7c2027433306c77cb4675"
+    },
+    {
+      "column": "Faster-R-CNN-R50",
+      "file": "VFDS66RK26040002_20260727_200936881.jpg.png",
+      "sha256": "32b225ad47e3cb88b6bac7d8807bbec451a646baeba57ade7625b182e5448325"
+    },
+    {
+      "column": "ours",
+      "file": "VFDS66RK26040002_20260727_200936881.jpg.png",
+      "sha256": "f3acdd6c1336e639f7c02213e8c2bd7b8d30e23e4b0dfb9e987f59b8eff83de2"
+    }
+  ]
+}

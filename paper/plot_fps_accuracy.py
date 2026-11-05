@@ -14,7 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
-PAPER = Path(__file__).resolve().parent / "TIE_submission"
+PAPER = Path(__file__).resolve().parent / "Elsevier_submission"
 MANUSCRIPT = PAPER / "A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex"
 # Tableau categorical colors, extended with a dark indigo for the eleventh model.
 MODEL_COLORS = {

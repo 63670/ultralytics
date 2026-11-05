@@ -1,6 +1,6 @@
 # MCGI-YOLO 论文维护目录
 
-本目录是 **A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines** 的唯一维护入口，后续转投修订也在此进行。
+本目录保留为迁移前的 IEEE/TIE 归档。后续论文修改以 `../Elsevier_submission/` 中的 Elsevier CAS 双栏稿件为准。
 
 - 同名 `.tex` 与 `.pdf` 为正文和编译结果，保留以论文标题命名的文件名。
 - 图注和表题采用 JMS 常见的简短主题式写法，原则上一个短句；多子图仅保留必要的(a)–(d)对应。参数、测试口径、百分数和最优/次优标记规则放在正文，避免在图表标题重复说明。

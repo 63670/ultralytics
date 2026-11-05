@@ -1,0 +1,82 @@
+{
+  "manuscript": "C:\\Users\\tankz\\code\\github\\ultralytics\\paper\\TIE_submission\\A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex",
+  "manuscript_sha256": "782ff5223f35e97763e8728be511e0a2f2d548e745c4aa3c9579d9496e5adcf7",
+  "source_table": "tab:comparison",
+  "platform": "RTX 3090",
+  "precision": "FP32",
+  "batch_size": 1,
+  "input_size": [
+    640,
+    640
+  ],
+  "fps_scope": "model forward only",
+  "accuracy_unit": "percent",
+  "models": [
+    {
+      "model": "YOLOv9t",
+      "fps": 291.0,
+      "map50": 90.1,
+      "map50_95": 53.3
+    },
+    {
+      "model": "YOLOv10n",
+      "fps": 524.0,
+      "map50": 88.2,
+      "map50_95": 58.5
+    },
+    {
+      "model": "YOLO11n",
+      "fps": 463.0,
+      "map50": 93.3,
+      "map50_95": 60.8
+    },
+    {
+      "model": "YOLO12n",
+      "fps": 326.0,
+      "map50": 89.0,
+      "map50_95": 56.8
+    },
+    {
+      "model": "YOLO26n",
+      "fps": 425.0,
+      "map50": 93.8,
+      "map50_95": 61.1
+    },
+    {
+      "model": "RT-DETR-R18",
+      "fps": 146.0,
+      "map50": 95.2,
+      "map50_95": 67.7
+    },
+    {
+      "model": "DETR-R50",
+      "fps": 101.0,
+      "map50": 96.4,
+      "map50_95": 53.6
+    },
+    {
+      "model": "Deformable DETR-R50",
+      "fps": 49.0,
+      "map50": 96.8,
+      "map50_95": 64.3
+    },
+    {
+      "model": "Faster R-CNN-R50",
+      "fps": 66.0,
+      "map50": 96.1,
+      "map50_95": 64.7
+    },
+    {
+      "model": "YOLOv8n (Baseline)",
+      "fps": 554.0,
+      "map50": 90.5,
+      "map50_95": 58.4
+    },
+    {
+      "model": "MCGI-YOLO",
+      "fps": 486.0,
+      "map50": 97.2,
+      "map50_95": 65.5
+    }
+  ]
+}
