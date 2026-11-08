@@ -1,0 +1,82 @@
+{
+  "access_date": "2026-11-08",
+  "currency": "USD",
+  "note": "Public reference listings; not the cited studies procurement costs or a population-wide market average.",
+  "camera_benchmark": {
+    "sample": [
+      {
+        "model": "Rapixel 4096x2 monochrome GigE",
+        "price": 912,
+        "source": "rapixel4kPrice"
+      },
+      {
+        "model": "Hikrobot MV-CL042-91CM",
+        "price": 1919,
+        "source": "lumaspec4kPrice"
+      }
+    ],
+    "mean": 1415.5,
+    "rounded_estimate": 1400,
+    "limitation": "Resolution-class comparison; does not establish CCD equivalence or original model."
+  },
+  "desktop_benchmark": {
+    "sample": [
+      {
+        "model": "Dell ECS1250 Core Ultra 5 225, 8GB,512GB,Windows 11 Pro",
+        "price": 1129.99
+      },
+      {
+        "model": "Dell ECS1250 Core Ultra 7 265,16GB,512GB,Windows 11 Home",
+        "price": 1299.99
+      }
+    ],
+    "source": "dellDesktopPrices",
+    "mean": 1214.99,
+    "rounded_estimate": 1200,
+    "limitation": "General-purpose desktop reference; does not reconstruct the cited study computer or establish equivalent inference performance."
+  },
+  "sources": [
+    {
+      "key": "ritAcePrices",
+      "vendor": "Rochester Imaging Technology Corporation",
+      "title": "Basler ace series: Product specifications and list prices",
+      "url": "https://ritcam.com/manufacturers/basler/basler-area-scan/basler-ace-series/"
+    },
+    {
+      "key": "ritRacerPrices",
+      "vendor": "Rochester Imaging Technology Corporation",
+      "title": "Basler racer: Product specifications and list prices",
+      "url": "https://ritcam.com/manufacturers/basler/basler-racer/"
+    },
+    {
+      "key": "realsenseD435iPrice",
+      "vendor": "RealSense",
+      "title": "Depth camera {D435i}: Store listing",
+      "url": "https://store.realsenseai.com/buy-realsense-depth-camera-d435i.html"
+    },
+    {
+      "key": "rapixel4kPrice",
+      "vendor": "Rapixel",
+      "title": "4K 4096x2 {GigE} machine vision line scan camera: Store listing",
+      "url": "https://shop.rapixeltech.com/products/4k-7%CE%BCm-28khz-gpixel-cmosis-4096x2-gige-machine-vision-line-scan-camera"
+    },
+    {
+      "key": "lumaspec4kPrice",
+      "vendor": "LumaSpec Vision",
+      "title": "{CL} series Camera Link line scan cameras: Model prices",
+      "url": "https://lumaspecvision.com/pages/series/hik-cl-cl"
+    },
+    {
+      "key": "dellDesktopPrices",
+      "vendor": "Dell",
+      "title": "Dell Slim Desktop {ECS1250}: Configurations and prices",
+      "url": "https://www.dell.com/en-us/shop/desktops/spd/dellslimecs1250"
+    },
+    {
+      "key": "nvidiaJetsonPrices",
+      "vendor": "NVIDIA",
+      "title": "Jetson frequently asked questions: Product pricing",
+      "url": "https://developer.nvidia.com/embedded/faq"
+    }
+  ]
+}
