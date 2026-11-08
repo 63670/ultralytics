@@ -9,3 +9,4 @@
 - 原始数据为工厂提供的月均估计；净布损为正常布25元/kg减废布回收5元/kg，即20元/kg。
 - 编译使用 `build.ps1`，辅助文件位于 `build/`；检查最终 PDF 后再交付。
 - 每次改动后创建对应的本地 Git commit，不自动推送。
+- 硬件配置与价格比较分别放在 tab:camera-costs 和 tab:processor-costs，正文保留选型依据；工厂金额与节省额集中到 tab:factory-benefits，不在该小节正文逐项重复。估价及产品系列参考价格在表注中标明。
