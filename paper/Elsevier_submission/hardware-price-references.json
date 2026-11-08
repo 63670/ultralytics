@@ -78,5 +78,72 @@
       "title": "Jetson frequently asked questions: Product pricing",
       "url": "https://developer.nvidia.com/embedded/faq"
     }
-  ]
+  ],
+  "exchange_rate": {
+    "cny_per_usd": 6.6765,
+    "source": "https://www.investing.com/currencies/usd-cny-historical-data",
+    "quote_date": "2026-11-06",
+    "checked_on": "2026-11-08",
+    "manuscript_policy": "No conversion date in manuscript; divide original CNY amounts by rate and round only for display."
+  },
+  "our_hardware": {
+    "camera_assembly": {
+      "original_cny": 350,
+      "usd": 52.42,
+      "manuscript_rounded_usd": 52,
+      "includes": [
+        "serializer"
+      ],
+      "excludes": [
+        "deserializer"
+      ]
+    },
+    "rk3566_mainboard": {
+      "original_cny": 500,
+      "usd": 74.89,
+      "manuscript_rounded_usd": 75,
+      "includes": [
+        "deserializer"
+      ]
+    },
+    "source": "User-provided approximate hardware costs."
+  },
+  "factory_monetary_conversion": {
+    "normal_fabric_per_kg": {
+      "original_cny": 25,
+      "usd": 3.74
+    },
+    "waste_recovery_per_kg": {
+      "original_cny": 5,
+      "usd": 0.75
+    },
+    "net_loss_per_kg": {
+      "original_cny": 20,
+      "usd": 3.0
+    },
+    "monthly_loss_before": {
+      "original_cny": 40600,
+      "usd": 6081.03
+    },
+    "monthly_loss_after": {
+      "original_cny": 2960,
+      "usd": 443.35
+    },
+    "monthly_reduction": {
+      "original_cny": 37640,
+      "usd": 5637.68
+    },
+    "annualized_reduction": {
+      "original_cny": 451680,
+      "usd": 67652.21
+    },
+    "per_machine_before": {
+      "original_cny": 845.8333333333334,
+      "usd": 126.69
+    },
+    "per_machine_after": {
+      "original_cny": 61.666666666666664,
+      "usd": 9.24
+    }
+  }
 }
