@@ -10,5 +10,5 @@
 - 编译使用 `build.ps1`，辅助文件位于 `build/`；检查最终 PDF 后再交付。
 - 每次改动后创建对应的本地 Git commit，不自动推送。
 - 硬件配置与价格比较分别放在 tab:camera-costs 和 tab:processor-costs，正文保留选型依据；工厂金额与节省额集中到 tab:factory-benefits，不在该小节正文逐项重复。估价及产品系列参考价格在表注中标明。
-- Detection Method 先写 Defect Morphology and Design Motivation：典型样本图 fig:dataset-examples 与标注框形态图 fig:annotation-shapes 均在此双栏展示，用横向/竖向细长连续性引出MCE，用形态与尺度差异引出GIU；Dataset仅保留来源、数量、划分及回指，不重复设计动机。
+- Detection Method 先写 Defect Morphology and Design Motivation：典型样本图 fig:dataset-examples 与标注框形态图 fig:annotation-shapes 均在此双栏展示，本小节仅描述横向/竖向细长连续性、形态与尺度差异及检测需求，不提前提MCE或GIU；到MCGI-YOLO Architecture再简述两个模块各自解决的问题和插入位置；Dataset仅保留来源、数量、划分及回指，不重复设计动机。
 - 价格与汇率不在正文、表格或参考文献中引用商业网页；保留研究论文引用及必要的估价标记，价格来源仅保存在本地 hardware-price-references.json 供追溯。

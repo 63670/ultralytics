@@ -230,7 +230,7 @@ Fig.~\ref{fig:dataset-examples} presents typical defects encountered during circ
 \label{fig:dataset-examples}
 \end{figure*}
 
-Fig.~\ref{fig:annotation-shapes} summarizes the morphology and scale variation of the 468 annotated boxes. Each box is translated to the common center $(0.5,0.5)$ while retaining its width and height normalized by the image dimensions. Horizontal and vertical defects form distinct elongated distributions, motivating MCE to encode their extended spatial continuity within a compact computational budget. The variations in defect length, thickness, and hole size indicate that a fixed reconstruction rule may not suit all feature locations. This motivates GIU to adapt the balance between response replication and neighborhood smoothing when upsampling higher-level context before lateral feature fusion.
+Fig.~\ref{fig:annotation-shapes} summarizes the morphology and scale variation of the 468 annotated boxes. Each box is translated to the common center $(0.5,0.5)$ while retaining its width and height normalized by the image dimensions. Horizontal and vertical defects form distinct elongated distributions, whereas holes span a wide range of spatial extents. These distributions highlight two detection requirements: associating distant responses along elongated defects and preserving spatial structure across defects of different shapes and scales under the computational constraints of edge deployment.
 
 \begin{figure*}[width=\textwidth,pos=!tbp]
 \centering
@@ -240,7 +240,7 @@ Fig.~\ref{fig:annotation-shapes} summarizes the morphology and scale variation o
 \end{figure*}
 
 \subsection{MCGI-YOLO Architecture}
-Fig.~\ref{fig:network} shows \model based on YOLOv8n \cite{ultralytics2023}. Morphology-aware context encoding (MCE) is embedded in the P3 and P4 backbone C2f blocks to capture the continuity of horizontal and vertical elongated defects through spatially extended context. Gated interpolation upsampling (GIU) replaces the two top-down upsampling operations, adapting higher-level context reconstruction to different defect morphologies and scales before lateral feature fusion. The remaining backbone, bottom-up path, and detection head are retained \cite{lin2017fpn,liu2018panet}.
+Fig.~\ref{fig:network} shows \model based on YOLOv8n \cite{ultralytics2023}. To associate spatially separated responses along horizontal and vertical elongated defects, morphology-aware context encoding (MCE) is embedded in the P3 and P4 backbone C2f blocks. To accommodate differences in defect shape and scale during feature reconstruction, gated interpolation upsampling (GIU) replaces the two top-down upsampling operations from P5 to P4 and from P4 to P3, adapting higher-level context to local feature content before fusion with lateral features. The remaining backbone, bottom-up path, and detection head are retained \cite{lin2017fpn,liu2018panet}.
 
 \begin{figure*}[width=\textwidth,pos=!tbp]
 \centering
