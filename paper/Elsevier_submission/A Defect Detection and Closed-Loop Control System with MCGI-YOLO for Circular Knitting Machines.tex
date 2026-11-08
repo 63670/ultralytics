@@ -312,18 +312,24 @@ Each sensitivity preset combines a confidence threshold, three geometric thresho
 \begin{equation}
 r_i^{(s)}=
 \begin{cases}
-\mathbb{I}(w_i>W_s), & c_i=\mathrm{row}\\
-\mathbb{I}(h_i>H_s), & c_i=\mathrm{col}\\
-\mathbb{I}(w_i h_i>A_s), & c_i=\mathrm{hole}
+1, & c_i=\mathrm{row},\quad w_i>W_s\\
+1, & c_i=\mathrm{col},\quad h_i>H_s\\
+1, & c_i=\mathrm{hole},\quad w_i h_i>A_s\\
+0, & \text{otherwise}
 \end{cases}
 \label{eq:stop-rule}
 \end{equation}
-\noindent where $\mathbb{I}$ equals 1 when the condition is satisfied and 0 otherwise. Width measures the horizontal extent of a row defect, height measures the vertical extent of a column defect, and bounding-box area measures the extent of a hole. Let $\mathcal{P}$ denote the detections retained by NMS and $p_i$ the confidence of detection $i$. The set $\mathcal{D}_s=\{i\in\mathcal{P}\mid p_i\geq\tau_s\}$ contains the confidence-qualified detections in the current frame. The stopping decision is
+\noindent A value of $r_i^{(s)}=1$ indicates that the detection exceeds its class-specific size threshold; otherwise, $r_i^{(s)}=0$. Width measures the horizontal extent of a row defect, height measures the vertical extent of a column defect, and bounding-box area measures the extent of a hole. Let $\mathcal{P}$ denote the detections retained by NMS and $p_i$ the confidence of detection $i$. The set $\mathcal{D}_s=\{i\in\mathcal{P}\mid p_i\geq\tau_s\}$ contains the confidence-qualified detections in the current frame. The stopping decision is
 \begin{equation}
-S_s=\mathbb{I}\!\left(\sum_{i\in\mathcal{D}_s}r_i^{(s)}\geq1\;\lor\;|\mathcal{D}_s|\geq N_s\right)
+S_s=
+\begin{cases}
+1, & \displaystyle\sum_{i\in\mathcal{D}_s}r_i^{(s)}\geq1\\
+1, & |\mathcal{D}_s|\geq N_s\\
+0, & \text{otherwise}
+\end{cases}
 \label{eq:frame-stop-rule}
 \end{equation}
-\noindent A stop command is issued when either a confidence-qualified detection exceeds its class-specific size threshold or the total number of confidence-qualified detections reaches $N_s$. The count criterion includes defects below the geometric thresholds, allowing multiple small defects to trigger stopping. Counts are evaluated independently for each frame.
+\noindent Here, $S_s=1$ triggers a stop command, and $S_s=0$ continues inspection. A stop command is issued when either a confidence-qualified detection exceeds its class-specific size threshold or the total number of confidence-qualified detections reaches $N_s$. The count criterion includes defects below the geometric thresholds, allowing multiple small defects to trigger stopping. Counts are evaluated independently for each frame.
 
 \begin{table}[pos=!tbp]
 \caption{User-configurable machine-stop parameters.}
@@ -612,6 +618,7 @@ L_{\mathrm{sum}}=N\pi D
 \label{eq:cumulative-defect-length}
 \end{equation}
 
+\Needspace{5\baselineskip}
 Taking an approximate fabric take-down increment of $p=0.03$ m per revolution, the affected fabric length in the production direction is
 \begin{equation}
 L_{\mathrm{affected}}=Np
