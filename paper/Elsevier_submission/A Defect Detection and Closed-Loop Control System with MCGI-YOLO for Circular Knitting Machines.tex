@@ -555,6 +555,8 @@ Higher sensitivity lowers the confidence, size, and count thresholds, allowing s
 
 \subsection{Client Detection Interface and Operator Feedback}
 \label{sec:client-interface}
+An Android client application is developed in Kotlin and deployed on the RK3566 edge device, providing detection-state visualization, sensitivity configuration, defect review, and operator feedback.
+
 Fig.~\ref{fig:client-detection} shows the detection home page (left), defect-review interface (center), and mobile notification interface (right). The home page displays the detection state, device information, and current sensitivity setting. Upon defect detection, the client automatically switches to the defect-detail page, displaying the captured image, the localized defect, and its category for operator review. The confirmation buttons on the right side of the defect-detail page allow the operator to indicate whether the detected defect warrants machine stopping under the factory's quality requirements. These assessments link detection images and results to operator feedback, providing samples for review, annotation, and subsequent model refinement.
 
 \begin{figure*}[width=\textwidth,pos=!tbp]
@@ -568,9 +570,9 @@ Fig.~\ref{fig:client-detection} shows the detection home page (left), defect-rev
 \label{sec:network-client}
 The edge device reports defect events and runtime states to the cloud and receives remote configuration updates. Local detection and machine-stop commands are executed on the edge device, while the cloud provides centralized monitoring and management.
 
-The IoT platform in Fig.~\ref{fig:iot-platform} consolidates the uploaded information. Panel A) summarizes defect counts and defect events associated with machine stopping, while panel B) presents image-based defect records for individual devices. Panels C) and D) form the digital-twin interface for the edge client: the cloud displays the reported runtime state and provides controls that update the client's detection configuration. The state view includes the application version, camera status, CPU temperature, fabric type, and detection state. The control view allows remote adjustment of sensitivity and associated decision thresholds. Together, state synchronization and configuration feedback connect the physical client with its cloud-side representation, supporting remote supervision and control.
+The platform overview, seven-day trends in defect and machine-stop event counts, and image-based defect records are shown in Fig.~\ref{fig:iot-platform}(a)--(c), respectively. The runtime-state interface in Fig.~\ref{fig:iot-platform}(f) displays the application version, camera status, CPU temperature, fabric type, and detection state. The configuration interface in Fig.~\ref{fig:iot-platform}(d) supports remote adjustment of sensitivity and the associated confidence, geometric, and defect-count thresholds. Synchronizing runtime states and configuration updates connects the physical client to its cloud-side digital-twin representation for remote supervision and control.
 
-The cloud platform also supports on-demand over-the-air (OTA) updates of the detection model. Refined models can be distributed remotely to edge devices for subsequent local inference. Operator feedback, model refinement, and OTA redeployment thus form an iterative improvement workflow that incorporates production experience into model updates.
+The model-management interface in Fig.~\ref{fig:iot-platform}(e) accepts RKNN models and associated class-label files for on-demand over-the-air (OTA) model updates. Updated models can be distributed remotely to edge devices for subsequent local inference. Operator feedback, model refinement, and OTA redeployment thus form an iterative improvement workflow that incorporates production experience into model updates.
 
 \begin{figure*}[width=\textwidth,pos=!tbp]
 \centering
