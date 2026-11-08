@@ -102,7 +102,7 @@ Recent fabric detectors have focused on improving feature extraction and fusion 
 \label{sec:system-design}
 \subsection{System Overview}
 \label{sec:system-overview}
-We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. The closed-loop workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and triggers the edge device to activate the camera and LED illumination for image acquisition and defect detection. When the detections in a frame satisfy the configured stopping criteria, the edge device immediately sends a stop command to the machine controller to prevent further defect propagation, uploads the defect image and record to the cloud, and pushes an alert notification to the operator. After the operator inspects the reported defect, resolves the production fault, and restarts the machine, the rotation signal reactivates detection. This sequence forms a complete production–detection–control loop. Placing inspection on the knitting machine connects a detected fabric abnormality directly to interruption of the process that produces it. The system comprises power supply, image acquisition and transmission, processing, and network communication functions. The following subsections describe the hardware subsystems and their implementation. The stopping criteria are defined in Section~\ref{sec:stop-rules}; deployment, client and cloud interfaces, and rule configuration and execution are presented in Section~\ref{sec:system-operation}.
+We design and implement a dedicated defect detection and closed-loop control system for circular knitting machines, as shown in Fig.~\ref{fig:interactions}. The closed-loop workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and triggers the edge device to activate the camera and LED illumination for image acquisition and defect detection. When the detections in a frame satisfy the configured stopping criteria, the edge device immediately sends a stop command to the machine controller to prevent further defect propagation, uploads the defect image and record to the cloud, and pushes an alert notification to the operator. After the operator inspects the reported defect, resolves the production fault, and restarts the machine, the rotation signal reactivates detection. This sequence forms a complete production–detection–control loop. Placing inspection on the knitting machine connects a detected fabric abnormality directly to interruption of the process that produces it. The system comprises power supply, image acquisition and transmission, processing, and network communication functions. The following subsections describe the hardware subsystems and their implementation. Deployment, stopping criteria, client and cloud interfaces, and system operation are presented in Section~\ref{sec:system-operation}.
 
 \begin{figure*}[width=\textwidth,pos=!tbp]
 \centering
@@ -324,54 +324,6 @@ G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05L
 \end{equation}
 \noindent so the module starts from a predominantly nearest-neighbor reconstruction, consistent with the baseline top-down pathway.
 
-\subsection{User-Configurable Post-NMS Stopping Decision}
-\label{sec:stop-rules}
-Textile factories differ in their tolerance for fabric defects and the quality requirements of their products. We therefore introduce a user-configurable postprocessing stage after non-maximum suppression (NMS), translating detection results into machine-stop decisions. Three editable sensitivity presets, low, medium, and high, accommodate different factory acceptance criteria.
-
-Each sensitivity preset combines a confidence threshold, three geometric thresholds, and a defect-count threshold per frame, as listed in Table~\ref{tab:stop-rules}. Class-aware NMS suppresses redundant overlapping predictions within each category. The retained bounding boxes are mapped back to the original $1280\times1024$ camera image before their dimensions are evaluated. For sensitivity level $s$, let $\tau_s$ denote the confidence threshold, $W_s$ and $H_s$ the horizontal- and vertical-defect length thresholds in pixels, $A_s$ the hole-area threshold in square pixels, and $N_s$ the defect-count threshold. For detection $i$ with class $c_i$, bounding-box width $w_i$, and height $h_i$, the geometric qualification indicator is
-\begin{equation}
-r_i^{(s)}=
-\begin{cases}
-1, & c_i=\mathrm{row},\quad w_i>W_s\\
-1, & c_i=\mathrm{col},\quad h_i>H_s\\
-1, & c_i=\mathrm{hole},\quad w_i h_i>A_s\\
-0, & \text{otherwise}
-\end{cases}
-\label{eq:stop-rule}
-\end{equation}
-\noindent A value of $r_i^{(s)}=1$ indicates that the detection exceeds its class-specific size threshold; otherwise, $r_i^{(s)}=0$. Width measures the horizontal extent of a row defect, height measures the vertical extent of a column defect, and bounding-box area measures the extent of a hole. Let $\mathcal{P}$ denote the detections retained by NMS and $p_i$ the confidence of detection $i$. The set $\mathcal{D}_s=\{i\in\mathcal{P}\mid p_i\geq\tau_s\}$ contains the confidence-qualified detections in the current frame. The stopping decision is
-\begin{equation}
-S_s=
-\begin{cases}
-1, & \displaystyle\sum_{i\in\mathcal{D}_s}r_i^{(s)}\geq1\\
-1, & |\mathcal{D}_s|\geq N_s\\
-0, & \text{otherwise}
-\end{cases}
-\label{eq:frame-stop-rule}
-\end{equation}
-\noindent Here, $S_s=1$ triggers a stop command, and $S_s=0$ continues inspection. A stop command is issued when either a confidence-qualified detection exceeds its class-specific size threshold or the total number of confidence-qualified detections reaches $N_s$. The count criterion includes defects below the geometric thresholds, allowing multiple small defects to trigger stopping. Counts are evaluated independently for each frame.
-
-\begin{table}[pos=!tbp]
-\caption{User-configurable machine-stop parameters.}
-\label{tab:stop-rules}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.08}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrr@{}}
-\toprule
-Level & $\tau_s$ & \shortstack{$A_s$\\(pixels$^2$)} & \shortstack{$W_s$\\(pixels)} & \shortstack{$H_s$\\(pixels)} & $N_s$ \\
-\midrule
-Low & 0.50 & 6400 & 800 & 400 & 3 \\
-Medium & 0.40 & 2500 & 400 & 200 & 2 \\
-High & 0.30 & 1000 & 200 & 100 & 1 \\
-\bottomrule
-\end{tabular*}
-\renewcommand{\arraystretch}{1.0}
-\end{table}
-
-Higher sensitivity lowers the confidence, size, and count thresholds, allowing stopping for smaller defects or fewer detections within a frame. Lower sensitivity raises these thresholds to accommodate less stringent acceptance criteria. The editable presets convert detection outputs into factory-specific production decisions without retraining the detector.
-
 \section{Experiments and Results}
 \label{sec:results}
 \subsection{Experimental Setup}
@@ -527,7 +479,7 @@ Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n basel
 
 \section{System Deployment and Industrial Application}
 \label{sec:system-operation}
-The inspection workflow is implemented through the dedicated edge device, client interface, cloud platform, and configurable stopping rules. This section evaluates on-device performance and describes local intervention, remote supervision, operator feedback, and the resulting change in factory inspection practice.
+The inspection workflow is implemented through the dedicated edge device, client interface, cloud platform, and configurable stopping rules. This section evaluates on-device performance and describes configurable stopping decisions, local intervention, remote supervision, operator feedback, and the resulting change in factory inspection practice.
 
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
@@ -552,6 +504,54 @@ YOLOv8n & 88.323 & 81.316 & 90.193 & 57.290 & \textbf{30} \\
 \end{tabular*}
 \renewcommand{\arraystretch}{1.0}
 \end{table}
+
+\subsection{User-Configurable Post-NMS Stopping Decision}
+\label{sec:stop-rules}
+Textile factories differ in their tolerance for fabric defects and the quality requirements of their products. We therefore introduce a user-configurable postprocessing stage after non-maximum suppression (NMS), translating detection results into machine-stop decisions. Three editable sensitivity presets, low, medium, and high, accommodate different factory acceptance criteria.
+
+Each sensitivity preset combines a confidence threshold, three geometric thresholds, and a defect-count threshold per frame, as listed in Table~\ref{tab:stop-rules}. Class-aware NMS suppresses redundant overlapping predictions within each category. The retained bounding boxes are mapped back to the original $1280\times1024$ camera image before their dimensions are evaluated. For sensitivity level $s$, let $\tau_s$ denote the confidence threshold, $W_s$ and $H_s$ the horizontal- and vertical-defect length thresholds in pixels, $A_s$ the hole-area threshold in square pixels, and $N_s$ the defect-count threshold. For detection $i$ with class $c_i$, bounding-box width $w_i$, and height $h_i$, the geometric qualification indicator is
+\begin{equation}
+r_i^{(s)}=
+\begin{cases}
+1, & c_i=\mathrm{row},\quad w_i>W_s\\
+1, & c_i=\mathrm{col},\quad h_i>H_s\\
+1, & c_i=\mathrm{hole},\quad w_i h_i>A_s\\
+0, & \text{otherwise}
+\end{cases}
+\label{eq:stop-rule}
+\end{equation}
+\noindent A value of $r_i^{(s)}=1$ indicates that the detection exceeds its class-specific size threshold; otherwise, $r_i^{(s)}=0$. Width measures the horizontal extent of a row defect, height measures the vertical extent of a column defect, and bounding-box area measures the extent of a hole. Let $\mathcal{P}$ denote the detections retained by NMS and $p_i$ the confidence of detection $i$. The set $\mathcal{D}_s=\{i\in\mathcal{P}\mid p_i\geq\tau_s\}$ contains the confidence-qualified detections in the current frame. The stopping decision is
+\begin{equation}
+S_s=
+\begin{cases}
+1, & \displaystyle\sum_{i\in\mathcal{D}_s}r_i^{(s)}\geq1\\
+1, & |\mathcal{D}_s|\geq N_s\\
+0, & \text{otherwise}
+\end{cases}
+\label{eq:frame-stop-rule}
+\end{equation}
+\noindent Here, $S_s=1$ triggers a stop command, and $S_s=0$ continues inspection. A stop command is issued when either a confidence-qualified detection exceeds its class-specific size threshold or the total number of confidence-qualified detections reaches $N_s$. The count criterion includes defects below the geometric thresholds, allowing multiple small defects to trigger stopping. Counts are evaluated independently for each frame.
+
+\begin{table}[pos=!tbp]
+\caption{User-configurable machine-stop parameters.}
+\label{tab:stop-rules}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrr@{}}
+\toprule
+Level & $\tau_s$ & \shortstack{$A_s$\\(pixels$^2$)} & \shortstack{$W_s$\\(pixels)} & \shortstack{$H_s$\\(pixels)} & $N_s$ \\
+\midrule
+Low & 0.50 & 6400 & 800 & 400 & 3 \\
+Medium & 0.40 & 2500 & 400 & 200 & 2 \\
+High & 0.30 & 1000 & 200 & 100 & 1 \\
+\bottomrule
+\end{tabular*}
+\renewcommand{\arraystretch}{1.0}
+\end{table}
+
+Higher sensitivity lowers the confidence, size, and count thresholds, allowing stopping for smaller defects or fewer detections within a frame. Lower sensitivity raises these thresholds to accommodate less stringent acceptance criteria. The editable presets convert detection outputs into factory-specific production decisions without retraining the detector.
 
 \subsection{Client Detection Interface and Operator Feedback}
 \label{sec:client-interface}
@@ -588,7 +588,7 @@ Fig.~\ref{fig:waste-fabric} shows actual waste fabric with repeated horizontal d
 
 \begin{figure}[pos=!tbp]
 \centering
-\includegraphics[width=\columnwidth]{fabric_with_defect.jpg}
+\includegraphics[width=0.9\columnwidth]{fabric_with_defect.jpg}
 \caption{Waste fabric with recurring horizontal defects.}
 \label{fig:waste-fabric}
 \end{figure}
