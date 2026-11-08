@@ -219,6 +219,26 @@ Based on the design requirements of the subsystems described above, we develop t
 
 \section{Detection Method}
 \label{sec:method}
+\subsection{Defect Morphology and Design Motivation}
+\label{sec:defect-morphology}
+Fig.~\ref{fig:dataset-examples} presents typical defects encountered during circular knitting. Horizontal and vertical defects extend over long spatial ranges while remaining narrow in the perpendicular direction, and their visible lengths vary considerably. Holes range from small localized openings to large damaged regions, and different defect categories may coexist in the same image. These observations indicate that the detector must associate spatially separated responses along elongated defects while accommodating substantial differences in defect shape and scale.
+
+\begin{figure*}[width=\textwidth,pos=!tbp]
+\centering
+\includegraphics[width=\textwidth]{defect.png}
+\caption{Representative annotated fabric-defect samples.}
+\label{fig:dataset-examples}
+\end{figure*}
+
+Fig.~\ref{fig:annotation-shapes} summarizes the morphology and scale variation of the 468 annotated boxes. Each box is translated to the common center $(0.5,0.5)$ while retaining its width and height normalized by the image dimensions. Horizontal and vertical defects form distinct elongated distributions, motivating MCE to encode their extended spatial continuity within a compact computational budget. The variations in defect length, thickness, and hole size indicate that a fixed reconstruction rule may not suit all feature locations. This motivates GIU to adapt the balance between response replication and neighborhood smoothing when upsampling higher-level context before lateral feature fusion.
+
+\begin{figure*}[width=\textwidth,pos=!tbp]
+\centering
+\includegraphics[width=\textwidth]{annotation_shapes.png}
+\caption{Centered bounding-box distributions for all defects and each defect category.}
+\label{fig:annotation-shapes}
+\end{figure*}
+
 \subsection{MCGI-YOLO Architecture}
 Fig.~\ref{fig:network} shows \model based on YOLOv8n \cite{ultralytics2023}. Morphology-aware context encoding (MCE) is embedded in the P3 and P4 backbone C2f blocks to capture the continuity of horizontal and vertical elongated defects through spatially extended context. Gated interpolation upsampling (GIU) replaces the two top-down upsampling operations, adapting higher-level context reconstruction to different defect morphologies and scales before lateral feature fusion. The remaining backbone, bottom-up path, and detection head are retained \cite{lin2017fpn,liu2018panet}.
 
@@ -357,13 +377,7 @@ Higher sensitivity lowers the confidence, size, and count thresholds, allowing s
 \subsection{Experimental Setup}
 \label{sec:experimental-setup}
 \subsubsection{Dataset}
-The dataset was collected from a real circular-knitting production line and covers three defect categories: horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}). It comprises 403 images with 468 annotated defect instances, divided into training, validation, and test sets of 282, 40, and 81 images, respectively, as summarized in Table~\ref{tab:data}. Fig.~\ref{fig:dataset-examples} presents representative annotated samples, showing variations in the extent and appearance of elongated defects, hole size, and the co-occurrence of defect categories.
-\begin{figure*}[width=\textwidth,pos=!tbp]
-\centering
-\includegraphics[width=\textwidth]{defect.png}
-\caption{Representative annotated fabric-defect samples.}
-\label{fig:dataset-examples}
-\end{figure*}
+The dataset was collected from a real circular-knitting production line and covers three defect categories: horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}). It comprises 403 images with 468 annotated defect instances, divided into training, validation, and test sets of 282, 40, and 81 images, respectively, as summarized in Table~\ref{tab:data}. Typical samples and box-morphology distributions are discussed in Section~\ref{sec:defect-morphology}.
 
 \begin{table}[pos=!htbp]
 \caption{Dataset split and defect-instance counts.}
@@ -380,15 +394,6 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-Fig.~\ref{fig:annotation-shapes} visualizes the shape and scale variation of all 468 annotated boxes across the training, validation, and test sets. Each box is translated to the common center $(0.5,0.5)$ while retaining its width and height normalized by the image dimensions. Horizontal and vertical defects form distinct elongated patterns, whereas hole annotations span a wide range of spatial extents. These differences motivate morphology-aware context encoding and content-adaptive reconstruction in the feature pyramid, as implemented by MCE and GIU, respectively.
-
-\begin{figure*}[width=\textwidth,pos=!tbp]
-\centering
-\includegraphics[width=\textwidth]{annotation_shapes.png}
-\caption{Centered bounding-box distributions for all defects and each defect category.}
-\label{fig:annotation-shapes}
-\end{figure*}
 
 \subsubsection{Implementation Details}
 \label{sec:implementation}
