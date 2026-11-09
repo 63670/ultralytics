@@ -174,7 +174,7 @@ The camera is configured to transmit $1280\times1024$ RAW10 images at 30 frames/
 \begin{aligned}
 R_{\mathrm{img}} &= W H b f_{\mathrm{cam}} \\
 &=1280\times1024\times10\times30 \\
-&=393.216\ \mathrm{Mb/s}
+&=393.216\ \mathrm{Mb/s},
 \end{aligned}
 \label{eq:serdes-bandwidth}
 \end{equation}
@@ -205,10 +205,10 @@ The required frame rate is
 \begin{equation}
 f_{\min}=\frac{\pi D}{Tw}
 =\frac{\pi\times1.016}{2\times0.16}
-\approx9.97\ \mathrm{frames/s}
+\approx9.97\ \mathrm{frames/s},
 \label{eq:coverage-rate}
 \end{equation}
-\noindent We set the effective detection-throughput requirement to 10 frames/s. For this throughput target, we select the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) to balance processing capability, camera connectivity, and hardware cost (Table~\ref{tab:processor-costs}). It integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
+\noindent so we set the effective detection-throughput requirement to 10 frames/s. For this throughput target, we select the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) to balance processing capability, camera connectivity, and hardware cost (Table~\ref{tab:processor-costs}). It integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
 
 \begin{table}[pos=!htbp]
 \caption{Computing platforms and reference costs.}
@@ -304,18 +304,18 @@ MCE focuses on horizontal and vertical elongated defects produced by circular kn
 \emph{2) Morphology-Aware Context Aggregation:}
 The one-quarter-channel group $U$ feeds the two pooling paths. Here, $b$, $a$, $h$, and $w$ index the batch sample, channel, row, and column, respectively. Inspired by the pooling design of coordinate attention \cite{hou2021coordinate}, we average independently for each sample and channel:
 \begin{align}
-R_h(b,a,h,1) &= \frac{1}{W}\sum_{w=1}^{W}U(b,a,h,w) \label{eq:pac-row}\\
-R_w(b,a,1,w) &= \frac{1}{H}\sum_{h=1}^{H}U(b,a,h,w) \label{eq:pac-column}
+R_h(b,a,h,1) &= \frac{1}{W}\sum_{w=1}^{W}U(b,a,h,w), \label{eq:pac-row}\\
+R_w(b,a,1,w) &= \frac{1}{H}\sum_{h=1}^{H}U(b,a,h,w), \label{eq:pac-column}
 \end{align}
-\noindent Averaging over $W$ retains row positions, while averaging over $H$ retains column positions. The descriptors are refined by two depthwise convolutions:
+\noindent where averaging over $W$ retains row positions, while averaging over $H$ retains column positions. The descriptors are refined by two depthwise convolutions:
 \begin{equation}
 \begin{aligned}
-D_h&=\operatorname{DW}_{3\times1}(R_h)\\
-D_w&=\operatorname{DW}_{1\times3}(R_w)
+D_h&=\operatorname{DW}_{3\times1}(R_h),\\
+D_w&=\operatorname{DW}_{1\times3}(R_w),
 \end{aligned}
 \label{eq:pac-depthwise}
 \end{equation}
-\noindent The outputs $D_h$ and $D_w$ have sizes $B\times q\times H\times1$ and $B\times q\times1\times W$, respectively. Before addition, $D_h$ is broadcast along $W$ by repeating its column, while $D_w$ is broadcast along $H$ by repeating its row. The expanded features $\widetilde D_h$ and $\widetilde D_w$ both have size $B\times q\times H\times W$ and are added element-wise:
+\noindent where $D_h$ and $D_w$ have sizes $B\times q\times H\times1$ and $B\times q\times1\times W$, respectively. Before addition, $D_h$ is broadcast along $W$ by repeating its column, while $D_w$ is broadcast along $H$ by repeating its row. The expanded features $\widetilde D_h$ and $\widetilde D_w$ both have size $B\times q\times H\times W$ and are added element-wise:
 \begin{equation}
 T=\widetilde D_h+\widetilde D_w.
 \label{eq:pac-context}
@@ -326,8 +326,8 @@ Pooling provides long-range context, while the depthwise convolutions capture ne
 \emph{3) Residual Context Modulation:}
 The combined context $T$ is mapped by Hardsigmoid and centered to construct a scaled residual correction:
 \begin{align}
-G &= \operatorname{HS}(T) \label{eq:pac-map}\\
-U' &= U+\gamma\odot U\odot(2G-1) \label{eq:pac-modulation}
+G &= \operatorname{HS}(T), \label{eq:pac-map}\\
+U' &= U+\gamma\odot U\odot(2G-1), \label{eq:pac-modulation}
 \end{align}
 \noindent where $\operatorname{HS}$ is Hardsigmoid, $\odot$ denotes element-wise multiplication with broadcasting, and $\gamma\in\mathbb{R}^{1\times q\times1\times1}$ is a learnable channel-wise parameter. The context response $G\in[0,1]^{B\times q\times H\times W}$ is centered by $2G-1$ to provide signed modulation, with $\gamma$ controlling its channel-wise strength. The original $U$ is retained through the residual connection, and the corrected one-quarter-channel group $U'$ is concatenated with the unchanged three-quarter-channel group $V$. The corrected group has size $U'\in\mathbb{R}^{B\times q\times H\times W}$, and channel concatenation produces a $B\times C\times H\times W$ output before the original C2f fusion. Zero-initializing $\gamma$ makes the module an identity mapping at initialization.
 
@@ -337,28 +337,28 @@ Circular-knitting defects vary substantially in morphology and scale, from narro
 \emph{1) Two Fixed Interpolation Paths:}
 For $X\in\mathbb{R}^{B\times C\times H\times W}$, nearest-neighbor and bilinear upsampling produce
 \begin{align}
-N &= \operatorname{Nearest}_{2}(X) \label{eq:giu-paths}\\
-L &= \operatorname{Bilinear}_{2}(X) \label{eq:giu-bilinear}
+N &= \operatorname{Nearest}_{2}(X), \label{eq:giu-paths}\\
+L &= \operatorname{Bilinear}_{2}(X), \label{eq:giu-bilinear}
 \end{align}
 \noindent where $N,L\in\mathbb{R}^{B\times C\times2H\times2W}$. Both operations use fixed interpolation weights and introduce no learnable parameters.
 
 \emph{2) Shared Spatial Gate:}
 A $3\times3$ convolution followed by Hardsigmoid predicts a low-resolution spatial weight map, which is then upsampled by nearest-neighbor interpolation:
 \begin{align}
-g &= \operatorname{HS}(\operatorname{Conv}_{3\times3}(X)) \label{eq:giu-gate-lowres}\\
-G &= \operatorname{Nearest}_{2}(g) \label{eq:giu-gate}
+g &= \operatorname{HS}(\operatorname{Conv}_{3\times3}(X)), \label{eq:giu-gate-lowres}\\
+G &= \operatorname{Nearest}_{2}(g), \label{eq:giu-gate}
 \end{align}
 \noindent where $\operatorname{Conv}_{3\times3}$ denotes a biased convolution with $C$ input channels, one output channel, and padding of 1, and $g\in[0,1]^{B\times1\times H\times W}$ is the low-resolution weight map. The map $G\in[0,1]^{B\times1\times2H\times2W}$ assigns a content-adaptive interpolation weight to each spatial location and is broadcast across feature channels. Predicting this map at $H\times W$ limits the spatial cost of the learned convolution, while channel sharing requires only one output weight per location.
 
 \emph{3) Gated Reconstruction:}
 The output $Y\in\mathbb{R}^{B\times C\times2H\times2W}$ is a convex combination:
 \begin{equation}
-Y=(1-G)\odot N+G\odot L
+Y=(1-G)\odot N+G\odot L,
 \label{eq:giu-mixture}
 \end{equation}
-\noindent Small values of $G$ favor response replication, while larger values favor neighborhood smoothing. This spatially varying mixture allows the reconstruction behavior to adapt to local feature content associated with different defect morphologies and scales.
+\noindent where small values of $G$ favor response replication, while larger values favor neighborhood smoothing. This spatially varying mixture allows the reconstruction behavior to adapt to local feature content associated with different defect morphologies and scales.
 \begin{equation}
-G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05L
+G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05L,
 \label{eq:giu-initialization}
 \end{equation}
 \noindent so the module starts from a predominantly nearest-neighbor reconstruction, consistent with the baseline top-down pathway.
@@ -427,13 +427,13 @@ Data protocol
 \label{sec:evaluation}
 Intersection over union (IoU) measures the overlap between predicted and ground-truth bounding boxes as the ratio of their intersection area to their union area. Precision (P), recall (R), average precision (AP), and mean average precision (mAP) are defined as
 \begin{align}
-P &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}}
+P &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}},
 \label{eq:precision}\\
-R &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}
+R &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}},
 \label{eq:recall}\\
-\mathrm{AP} &= \int_0^1 P(R)\,\mathrm{d}R
+\mathrm{AP} &= \int_0^1 P(R)\,\mathrm{d}R,
 \label{eq:ap}\\
-\mathrm{mAP} &= \frac{1}{N_c}\sum_{c=1}^{N_c}\mathrm{AP}_c
+\mathrm{mAP} &= \frac{1}{N_c}\sum_{c=1}^{N_c}\mathrm{AP}_c,
 \label{eq:metrics}
 \end{align}
 \noindent where TP, FP, and FN denote true-positive, false-positive, and false-negative counts, respectively; $\mathrm{AP}_c$ is the AP of class $c$, and $N_c=3$. mAP@50 uses an IoU threshold of 0.5, while mAP@50:95 averages mAP over IoU thresholds from 0.50 to 0.95 in steps of 0.05. Reported P and R are averaged across classes, with YOLO-based detectors evaluated at the best mean-F1 operating point. All accuracy metrics are expressed as percentages. In comparison tables, bold and underlined values indicate the best and second-best results, respectively.
@@ -583,20 +583,20 @@ r_i^{(s)}=
 1, & c_i=\mathrm{col},\quad h_i>H_s\\
 1, & c_i=\mathrm{hole},\quad w_i h_i>A_s\\
 0, & \text{otherwise}
-\end{cases}
+\end{cases},
 \label{eq:stop-rule}
 \end{equation}
-\noindent A value of $r_i^{(s)}=1$ indicates that the detection exceeds its class-specific size threshold; otherwise, $r_i^{(s)}=0$. Width measures the horizontal extent of a row defect, height measures the vertical extent of a column defect, and bounding-box area measures the extent of a hole. Let $\mathcal{P}$ denote the detections retained by NMS and $p_i$ the confidence of detection $i$. The set $\mathcal{D}_s=\{i\in\mathcal{P}\mid p_i\geq\tau_s\}$ contains the confidence-qualified detections in the current frame. The stopping decision is
+\noindent where $r_i^{(s)}=1$ indicates that the detection exceeds its class-specific size threshold; otherwise, $r_i^{(s)}=0$. Width measures the horizontal extent of a row defect, height measures the vertical extent of a column defect, and bounding-box area measures the extent of a hole. Let $\mathcal{P}$ denote the detections retained by NMS and $p_i$ the confidence of detection $i$. The set $\mathcal{D}_s=\{i\in\mathcal{P}\mid p_i\geq\tau_s\}$ contains the confidence-qualified detections in the current frame. The stopping decision is
 \begin{equation}
 S_s=
 \begin{cases}
 1, & \displaystyle\sum_{i\in\mathcal{D}_s}r_i^{(s)}\geq1\\
 1, & |\mathcal{D}_s|\geq N_s\\
 0, & \text{otherwise}
-\end{cases}
+\end{cases},
 \label{eq:frame-stop-rule}
 \end{equation}
-\noindent Here, $S_s=1$ triggers a stop command, and $S_s=0$ continues inspection. A stop command is issued when either a confidence-qualified detection exceeds its class-specific size threshold or the total number of confidence-qualified detections reaches $N_s$. The count criterion includes defects below the geometric thresholds, allowing multiple small defects to trigger stopping. Counts are evaluated independently for each frame.
+\noindent where $S_s=1$ triggers a stop command, and $S_s=0$ continues inspection. A stop command is issued when either a confidence-qualified detection exceeds its class-specific size threshold or the total number of confidence-qualified detections reaches $N_s$. The count criterion includes defects below the geometric thresholds, allowing multiple small defects to trigger stopping. Counts are evaluated independently for each frame.
 
 Higher sensitivity lowers the confidence, size, and count thresholds, allowing stopping for smaller defects or fewer detections within a frame. Lower sensitivity raises these thresholds to accommodate less stringent acceptance criteria. The editable presets convert detection outputs into factory-specific production decisions without retraining the detector.
 
