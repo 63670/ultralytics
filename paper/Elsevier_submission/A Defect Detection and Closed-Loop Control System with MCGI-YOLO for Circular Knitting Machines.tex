@@ -115,7 +115,29 @@ We design and implement a dedicated defect detection and closed-loop control sys
 To accommodate different industrial supply voltages across countries and regions, we design a power adapter with a 100--500 V AC input range and a 24 V DC output rated at 3 A. The adapter first supplies this output to the device. The device then supplies the LED illumination. By adjusting the current delivered to the LEDs, the device controls the illumination brightness to suit the image-acquisition conditions. This arrangement integrates LED power delivery and brightness control into the device.
 
 \subsection{Image Acquisition and Transmission Subsystem}
-Table~\ref{tab:camera-costs} compares camera configurations and reference costs. The rapid rotation of circular knitting machines requires imaging that preserves defect geometry and fine spatial detail. We therefore select a SmartSens SC130GS global-shutter sensor (SmartSens Technology Co., Ltd., Shanghai, China) at $1280\times1024$ resolution, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm dimension aligned with the horizontal direction of fabric motion.
+The rapid rotation of circular knitting machines requires imaging that preserves defect geometry and fine spatial detail. We therefore select a SmartSens SC130GS global-shutter sensor (SmartSens Technology Co., Ltd., Shanghai, China) at $1280\times1024$ resolution, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm dimension aligned with the horizontal direction of fabric motion.
+
+Table~\ref{tab:production-inputs} summarizes the machine and field-of-view parameters used to determine the required image-coverage rate.
+
+\begin{table}[pos=!tbp]
+\caption{Machine and field-of-view parameters.}
+\label{tab:production-inputs}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}llr@{}}
+\toprule
+Parameter & Symbol & Value \\
+\midrule
+Design machine diameter & $D$ & 1.016 m (40 in) \\
+Rotation period & $T$ & 2 s/revolution \\
+Horizontal field-of-view width & $w$ & 0.16 m \\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+Table~\ref{tab:camera-costs} compares camera configurations and reference costs.
 
 \begin{table}[pos=!tbp]
 \caption{Camera configurations and reference costs.}
@@ -164,7 +186,7 @@ R_{\mathrm{img}} &= W H b f_{\mathrm{cam}} \\
 
 \subsection{Processor Subsystem}
 \label{sec:coverage}
-Table~\ref{tab:processor-costs} compares computing platforms and reference costs. For our embedded system, the processor is selected according to the detection rate required by fabric motion and the camera field of view. Taking a typical circular knitting machine as an example, with a machine diameter of 40 in ($D=1.016$ m) and a rotation period of $T=2$ s, the fabric travels approximately $\pi D=3.192$ m per revolution. With an effective field-of-view width of $w=0.16$ m along the direction of motion, the required frame rate is
+Table~\ref{tab:processor-costs} compares computing platforms and reference costs. For our embedded system, the processor is selected according to the detection rate required by fabric motion and the camera field of view. Using the machine and field-of-view parameters in Table~\ref{tab:production-inputs}, the required frame rate is
 \begin{equation}
 f_{\min}=\frac{\pi D}{Tw}
 =\frac{\pi\times1.016}{2\times0.16}
@@ -595,33 +617,11 @@ Fig.~\ref{fig:waste-fabric} shows actual waste fabric with repeated horizontal d
 \label{fig:waste-fabric}
 \end{figure}
 
-Table~\ref{tab:production-inputs} summarizes the operating inputs used for the coverage calculation in Section~\ref{sec:coverage} and the following loss estimates.
-
-\begin{table}[pos=!tbp]
-\caption{Operating parameters for coverage and delayed-intervention estimates.}
-\label{tab:production-inputs}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.08}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}llr@{}}
-\toprule
-Parameter & Symbol & Value \\
-\midrule
-Design machine diameter & $D$ & 1.016 m (40 in) \\
-Rotation period & $T$ & 2 s/revolution \\
-Horizontal field-of-view width & $w$ & 0.16 m \\
-Fabric take-down per revolution & $p$ & $\approx0.03$ m/revolution \\
-Assumed discovery delay & $\tau$ & 300 s (5 min) \\
-\bottomrule
-\end{tabular*}
-\end{table}
-
-Consider a hypothetical five-minute delay between defect onset and operator discovery. The machine completes $N=\tau/T=150$ revolutions during this interval. If the abnormality persists throughout each revolution and each horizontal defect extends approximately around the fabric circumference, the cumulative transverse defect length is
+Consider a three-minute delay ($\tau=180$ s) between defect onset and operator discovery. The machine completes $N=\tau/T=90$ revolutions during this interval. If the abnormality persists throughout each revolution and each horizontal defect extends approximately around the fabric circumference, the cumulative transverse defect length is
 \begin{equation}
 L_{\mathrm{sum}}=N\pi D
-=150\times\pi\times1.016
-\approx478.8\ \mathrm{m}.
+=90\times\pi\times1.016
+\approx287.3\ \mathrm{m}.
 \label{eq:cumulative-defect-length}
 \end{equation}
 
@@ -629,12 +629,12 @@ L_{\mathrm{sum}}=N\pi D
 Taking an approximate fabric take-down increment of $p=0.03$ m per revolution, the affected fabric length in the production direction is
 \begin{equation}
 L_{\mathrm{affected}}=Np
-=\frac{300}{2}\times0.03
-\approx4.5\ \mathrm{m}.
+=\frac{180}{2}\times0.03
+\approx2.7\ \mathrm{m}.
 \label{eq:affected-fabric-length}
 \end{equation}
 
-Under these operating assumptions, a five-minute discovery delay allows approximately 150 defective courses, with a cumulative transverse length of 479 m, to recur over a 4.5 m length of fabric in the production direction. These estimates connect intervention delay to the extent of affected production and illustrate the value of on-machine detection and timely stopping in limiting further defect propagation.
+Under these operating assumptions, a three-minute discovery delay allows approximately 90 defective courses, with a cumulative transverse length of 287.3 m, to recur over a 2.7 m length of fabric in the production direction. These estimates connect intervention delay to the extent of affected production and illustrate the value of on-machine detection and timely stopping in limiting further defect propagation.
 
 \subsection{Factory Application and Waste Reduction}
 \label{sec:factory-benefits}
