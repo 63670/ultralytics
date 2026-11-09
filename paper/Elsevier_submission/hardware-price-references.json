@@ -145,5 +145,47 @@
       "original_cny": 61.666666666666664,
       "usd": 9.24
     }
+  },
+  "inspection_equipment_scenario": {
+    "researched_on": "2026-11-09",
+    "status": "Illustrative procurement-cost scenario, not a verified equipment inventory or recorded purchase saving at Minghai.",
+    "minghai_original_inspection_machine_count": null,
+    "price_basis": {
+      "selection": "Lowest-priced option in the four quotations presented to the user; not a claim of the lowest market price.",
+      "product": "Automatic edge-guiding fabric inspection and winding machine",
+      "supplier": "Yiwu Mingde Trading Firm",
+      "original_cny_per_unit": 16840,
+      "usd_per_unit": 2522.28,
+      "source": "https://www.chinagoods.com/store/goodsdetail/1727861891600973826"
+    },
+    "reference_configuration": {
+      "company": "Xinjiang Xinjing Textile Co., Ltd.",
+      "report_year": 2024,
+      "source": "https://sthjt.xinjiang.gov.cn/xjepd/sthjt_hjyxpj/202410/6057c9257b374f249a4c89c82b52fc18/files/24.9.30-%E6%96%B0%E7%96%86%E6%96%B0%E6%99%AF%E7%BA%BA%E7%BB%87%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B850%E4%B8%87%E9%94%AD%E7%BA%BA%E7%BA%B110000%E5%8F%B0%E5%90%84%E7%B1%BB%E7%BB%87%E6%9C%BA%E5%8F%8A5%E4%B8%87%E5%90%A8%E5%B9%B4%E5%8D%B0%E6%9F%93%E9%A1%B9%E7%9B%AE-20241017102447820.pdf",
+      "locator": "Table 3.5.1-1, knitting subsection, report page 46",
+      "bib_key": "xinjing2024eia",
+      "circular_knitting_machines": 2000,
+      "opening_and_inspection_machines": 160,
+      "knitting_machines_per_inspection_machine": 12.5,
+      "interpretation": "A documented project configuration, not an industry-wide staffing or capacity standard."
+    },
+    "secondary_configuration": {
+      "company": "Jiangsu Yichuang Textile Technology Co., Ltd.",
+      "report_year": 2019,
+      "source": "https://www.sheyang.gov.cn/attach/0/cc109c13adc448278724e07902b6a445.pdf",
+      "locator": "Table 1-2, report page 1 (PDF page 5)",
+      "circular_knitting_machines": 67,
+      "knitted_fabric_inspection_machines": 6,
+      "multifunctional_inspection_machines": 2,
+      "purpose": "Documents variability; not used for the manuscript procurement calculation."
+    },
+    "calculation": {
+      "factory_knitting_machines": 48,
+      "reference_inspection_machines_rounded_up": 4,
+      "rule": "ceil(48 / (2000 / 160))",
+      "potential_one_time_procurement_cost_cny": 67360,
+      "potential_one_time_procurement_cost_usd": 10089.12,
+      "included_in_monthly_or_annual_fabric_loss_reduction": false
+    }
   }
 }
