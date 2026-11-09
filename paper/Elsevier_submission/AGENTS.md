@@ -9,7 +9,7 @@
 - 原始数据为工厂提供的月均估计；净布损为正常布25元/kg减废布回收5元/kg，即20元/kg。
 - 编译使用 `build.ps1`，辅助文件位于 `build/`；检查最终 PDF 后再交付。
 - 每次改动后创建对应的本地 Git commit，不自动推送。
-- 硬件配置与价格比较分别放在 tab:camera-costs 和 tab:processor-costs，正文保留选型依据；工厂前后对比见 tab:factory-benefits，废布率与正常布/废布回收单价放表下注，月度和年化损失减少额放正文，其余金额保留表中。估价及产品系列参考价格在表注中标明。
+- 硬件配置与价格比较分别放在 tab:camera-costs 和 tab:processor-costs，正文保留选型依据；工厂前后对比见 tab:factory-benefits，正常布/废布回收单价放表下注，废布率、月度和年化损失减少额放正文，其余金额保留表中。估价及产品系列参考价格在表注中标明。
 - Detection Method 先写 Defect Morphology and Design Motivation：典型样本图 fig:dataset-examples 与标注框形态图 fig:annotation-shapes 均在此双栏展示，本小节仅描述横向/竖向细长连续性、形态与尺度差异及检测需求，不提前提MCE或GIU；到MCGI-YOLO Architecture再简述两个模块各自解决的问题和插入位置；Dataset仅保留来源、数量、划分及回指，不重复设计动机。
 - 价格与汇率不在正文、表格或参考文献中引用商业网页；保留研究论文引用及必要的估价标记，价格来源仅保存在本地 hardware-price-references.json 供追溯。
 - 用户可配置停机决策（sec:stop-rules）置于 System Deployment and Industrial Application，在部署性能之后、客户端界面之前；保留规则公式与预设表，不再放入 Detection Method。
