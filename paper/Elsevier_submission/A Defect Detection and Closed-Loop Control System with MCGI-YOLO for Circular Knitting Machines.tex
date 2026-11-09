@@ -122,12 +122,12 @@ We design and implement a dedicated defect detection and closed-loop control sys
 To accommodate different industrial supply voltages across countries and regions, we design a power adapter with a 100--500 V AC input range and a 24 V DC output rated at 3 A. The adapter first supplies this output to the device. The device then supplies the LED illumination. By adjusting the current delivered to the LEDs, the device controls the illumination brightness to suit the image-acquisition conditions. This arrangement integrates LED power delivery and brightness control into the device.
 
 \subsection{Image Acquisition and Transmission Subsystem}
-The rapid rotation of circular knitting machines requires imaging that preserves defect geometry and fine spatial detail. We therefore select a SmartSens SC130GS global-shutter sensor (SmartSens Technology Co., Ltd., Shanghai, China) at $1280\times1024$ resolution, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm dimension aligned with the horizontal direction of fabric motion.
+The rapid rotation of circular knitting machines requires imaging that preserves defect geometry and fine spatial detail. We therefore select a SmartSens SC130GS global-shutter sensor (SmartSens Technology Co., Ltd., Shanghai, China) at $1280\times1024$ resolution, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm horizontal width $w$ aligned with the direction of fabric motion.
 
-Table~\ref{tab:production-inputs} summarizes the machine and field-of-view parameters used to determine the required image-coverage rate.
+Table~\ref{tab:production-inputs} summarizes the machine parameters used to determine the required image-coverage rate.
 
 \begin{table}[pos=!htbp]
-\caption{Machine and field-of-view parameters.}
+\caption{Machine operating parameters.}
 \label{tab:production-inputs}
 \centering
 \footnotesize
@@ -139,7 +139,6 @@ Parameter & Symbol & Value \\
 \midrule
 Design machine diameter & $D$ & 1.016 m (40 in) \\
 Rotation period & $T$ & 2 s/revolution \\
-Horizontal field-of-view width & $w$ & 0.16 m \\
 \bottomrule
 \end{tabular*}
 \end{table}
@@ -193,7 +192,7 @@ R_{\mathrm{img}} &= W H b f_{\mathrm{cam}} \\
 
 \subsection{Processor Subsystem}
 \label{sec:coverage}
-Table~\ref{tab:processor-costs} compares computing platforms and reference costs. For our embedded system, the processor is selected according to the detection rate required by fabric motion and the camera field of view. Using the machine and field-of-view parameters in Table~\ref{tab:production-inputs}, the required frame rate is
+Table~\ref{tab:processor-costs} compares computing platforms and reference costs. For our embedded system, the processor is selected according to the detection rate required by fabric motion and the camera field of view. Using the machine parameters in Table~\ref{tab:production-inputs} and the horizontal field-of-view width defined above, the required frame rate is
 \begin{equation}
 f_{\min}=\frac{\pi D}{Tw}
 =\frac{\pi\times1.016}{2\times0.16}
