@@ -14,4 +14,4 @@
 - 价格与汇率不在正文、表格或参考文献中引用商业网页；保留研究论文引用及必要的估价标记，价格来源仅保存在本地 hardware-price-references.json 供追溯。
 - 用户可配置停机决策（sec:stop-rules）置于 System Deployment and Industrial Application，在部署性能之后、客户端界面之前；保留规则公式与预设表，不再放入 Detection Method。
 - 排版时将对比表、FPS散点图和检测对比图放在 Comparison With Other Detectors，模块图放在首次介绍MCE的段落后，停机预设表靠近首次引用；用 FloatBarrier 限制硬件、方法、实验及客户端图表漂移到后续章节，单栏图表优先使用 pos=!htbp。
-- 图像采集小节先以工况要求引出参数表，再介绍相机选型、视场、SerDes链路和带宽，最后结合多机部署成本引出相机价格对比表；避免连续两句独立的“Table summarizes/compares”以及两张表直接相邻。
+- 图像采集小节先介绍高速成像需求、相机型号与视场，接相机成本对比表，再介绍SerDes链路与带宽；圆机直径和旋转周期参数表放在Processor Subsystem的帧率计算之前，不在相机小节提前引入。图表引用融入选型论述，避免独立的“Table summarizes/compares”堆叠。

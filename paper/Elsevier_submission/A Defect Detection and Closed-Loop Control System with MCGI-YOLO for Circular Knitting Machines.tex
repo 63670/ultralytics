@@ -122,46 +122,7 @@ We design and implement a dedicated defect detection and closed-loop control sys
 To accommodate different industrial supply voltages across countries and regions, we design a power adapter with a 100--500 V AC input range and a 24 V DC output rated at 3 A. The adapter first supplies this output to the device. The device then supplies the LED illumination. By adjusting the current delivered to the LEDs, the device controls the illumination brightness to suit the image-acquisition conditions. This arrangement integrates LED power delivery and brightness control into the device.
 
 \subsection{Image Acquisition and Transmission Subsystem}
-The circular-knitting operating conditions in Table~\ref{tab:production-inputs} define the motion requirements for image acquisition. Rapid fabric motion requires imaging that preserves defect geometry and fine spatial detail.
-
-\begin{table}[pos=!htbp]
-\caption{Machine operating parameters.}
-\label{tab:production-inputs}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.08}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}llr@{}}
-\toprule
-Parameter & Symbol & Value \\
-\midrule
-Design machine diameter & $D$ & 1.016 m (40 in) \\
-Rotation period & $T$ & 2 s/revolution \\
-\bottomrule
-\end{tabular*}
-\end{table}
-
-We therefore select a SmartSens SC130GS global-shutter sensor (SmartSens Technology Co., Ltd., Shanghai, China) at $1280\times1024$ resolution, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm horizontal width $w$ aligned with the direction of fabric motion.
-
-Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment. Specifically, the THCV241A serializer and THCV242A deserializer (THine Electronics, Inc., Tokyo, Japan) bridge the camera-side and processor-side MIPI CSI-2 interfaces. As illustrated in Fig.~\ref{fig:serdes}, the serializer converts the camera output into a serial stream, which is transmitted over the coaxial cable and recovered by the deserializer for the RK3566. Power over Coax (PoC) supplies the camera side through the same cable, combining image transmission and power delivery in a single connection. The link supports a maximum serial line rate of 4.0 Gb/s per lane, corresponding to a rated effective rate of 3.2 Gb/s \cite{thineTHCV241A,thineTHCV242A}.
-
-\begin{figure}[pos=!htbp]
-\centering
-\includegraphics[width=\columnwidth]{serdes.png}
-\caption{SerDes image-transmission link with coaxial power delivery.}
-\label{fig:serdes}
-\end{figure}
-
-The camera is configured to transmit $1280\times1024$ RAW10 images at 30 frames/s. With $b=10$ bits per pixel, the active-image payload rate is
-\begin{equation}
-\begin{aligned}
-R_{\mathrm{img}} &= W H b f_{\mathrm{cam}} \\
-&=1280\times1024\times10\times30 \\
-&=393.216\ \mathrm{Mb/s}
-\end{aligned}
-\label{eq:serdes-bandwidth}
-\end{equation}
-\noindent where $W$ and $H$ denote the image width and height, and $f_{\mathrm{cam}}$ is the camera acquisition rate. This corresponds to only 12.3\% of the rated single-lane effective capacity, providing a stable image input for the detection system.
+The rapid rotation of circular knitting machines requires imaging that preserves defect geometry and fine spatial detail. We therefore select a SmartSens SC130GS global-shutter sensor (SmartSens Technology Co., Ltd., Shanghai, China) at $1280\times1024$ resolution, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm horizontal width $w$ aligned with the direction of fabric motion.
 
 Cost is also a practical constraint when equipping multiple knitting machines; Table~\ref{tab:camera-costs} compares the selected camera assembly with camera configurations used in previous fabric-inspection systems.
 
@@ -190,16 +151,55 @@ $\dagger$The original study does not report the camera model; the reference pric
 \end{minipage}
 \end{table}
 
+Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment. Specifically, the THCV241A serializer and THCV242A deserializer (THine Electronics, Inc., Tokyo, Japan) bridge the camera-side and processor-side MIPI CSI-2 interfaces. As illustrated in Fig.~\ref{fig:serdes}, the serializer converts the camera output into a serial stream, which is transmitted over the coaxial cable and recovered by the deserializer for the RK3566. Power over Coax (PoC) supplies the camera side through the same cable, combining image transmission and power delivery in a single connection. The link supports a maximum serial line rate of 4.0 Gb/s per lane, corresponding to a rated effective rate of 3.2 Gb/s \cite{thineTHCV241A,thineTHCV242A}.
+
+\begin{figure}[pos=!htbp]
+\centering
+\includegraphics[width=\columnwidth]{serdes.png}
+\caption{SerDes image-transmission link with coaxial power delivery.}
+\label{fig:serdes}
+\end{figure}
+
+The camera is configured to transmit $1280\times1024$ RAW10 images at 30 frames/s. With $b=10$ bits per pixel, the active-image payload rate is
+\begin{equation}
+\begin{aligned}
+R_{\mathrm{img}} &= W H b f_{\mathrm{cam}} \\
+&=1280\times1024\times10\times30 \\
+&=393.216\ \mathrm{Mb/s}
+\end{aligned}
+\label{eq:serdes-bandwidth}
+\end{equation}
+\noindent where $W$ and $H$ denote the image width and height, and $f_{\mathrm{cam}}$ is the camera acquisition rate. This corresponds to only 12.3\% of the rated single-lane effective capacity, providing a stable image input for the detection system.
+
 \subsection{Processor Subsystem}
 \label{sec:coverage}
-Table~\ref{tab:processor-costs} compares computing platforms and reference costs. For our embedded system, the processor is selected according to the detection rate required by fabric motion and the camera field of view. Using the machine parameters in Table~\ref{tab:production-inputs} and the horizontal field-of-view width defined above, the required frame rate is
+For our embedded system, the processor is selected according to the detection rate required by fabric motion and the camera field of view. The calculation combines the circular-knitting operating conditions in Table~\ref{tab:production-inputs} with the horizontal field-of-view width specified above.
+
+\begin{table}[pos=!htbp]
+\caption{Machine operating parameters.}
+\label{tab:production-inputs}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}llr@{}}
+\toprule
+Parameter & Symbol & Value \\
+\midrule
+Design machine diameter & $D$ & 1.016 m (40 in) \\
+Rotation period & $T$ & 2 s/revolution \\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+The required frame rate is
 \begin{equation}
 f_{\min}=\frac{\pi D}{Tw}
 =\frac{\pi\times1.016}{2\times0.16}
 \approx9.97\ \mathrm{frames/s}
 \label{eq:coverage-rate}
 \end{equation}
-\noindent We set the effective detection-throughput requirement to 10 frames/s. For this throughput target, we select the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) to balance processing capability, camera connectivity, and hardware cost. It integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
+\noindent We set the effective detection-throughput requirement to 10 frames/s. For this throughput target, we select the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) to balance processing capability, camera connectivity, and hardware cost (Table~\ref{tab:processor-costs}). It integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
 
 \begin{table}[pos=!htbp]
 \caption{Computing platforms and reference costs.}
