@@ -13,5 +13,6 @@
 - Detection Method 先写 Defect Morphology and Design Motivation：典型样本图 fig:dataset-examples 与标注框形态图 fig:annotation-shapes 均在此双栏展示，本小节仅描述横向/竖向细长连续性、形态与尺度差异及检测需求，不提前提MCE或GIU；到MCGI-YOLO Architecture再简述两个模块各自解决的问题和插入位置；Dataset仅保留来源、数量、划分及回指，不重复设计动机。
 - 价格与汇率不在正文、表格或参考文献中引用商业网页；保留研究论文引用及必要的估价标记，价格来源仅保存在本地 hardware-price-references.json 供追溯。
 - 用户可配置停机决策（sec:stop-rules）置于 System Deployment and Industrial Application，在部署性能之后、客户端界面之前；保留规则公式与预设表，不再放入 Detection Method。
-- 排版时将对比表、检测对比图和FPS散点图放在 Comparison With Other Detectors；检测对比图先于FPS散点图，Comparison与Component Ablation之间不加FloatBarrier，以减少大图等待造成的空栏。模块图放在首次介绍MCE的段落后，停机预设表靠近首次引用；主要章节及客户端图表使用FloatBarrier控制漂移，单栏图表优先使用pos=!htbp。硬件小节标题及圆机参数表前使用Needspace预留空间。
+- 图表在相关段落内尽早声明；系统总览图、硬件图放在首次引用句后，对比表、检测对比图和FPS散点图在Comparison With Other Detectors起始处依次声明。避免在章节前密集添加FloatBarrier或大块Needspace造成空栏，仅在文末清空浮动队列；单栏图表优先使用pos=!htbp，形态图、架构图与模块图使用pos=!tb以图文共同排版。
 - 图像采集小节先介绍高速成像需求、相机型号与视场，接相机成本对比表，再介绍SerDes链路与带宽；圆机直径和旋转周期参数表放在Processor Subsystem的帧率计算之前，不在相机小节提前引入。图表引用融入选型论述，避免独立的“Table summarizes/compares”堆叠。
+- CAS的跨栏环境设置fps@figure/table后调用内核@dblfloat，而内核默认@dbflt使用[tp]；稿件导言区的兼容定义让跨栏定位遵循pos参数，不改模板源文件。flushend[nospread]用于平衡参考文献末页双栏。经用户授权的排版编译必须逐页检查实际PDF，不能仅凭源码判断空白已消除。
