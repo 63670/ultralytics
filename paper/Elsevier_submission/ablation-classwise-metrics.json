@@ -1,0 +1,136 @@
+{
+  "source": "Ultralytics test-evaluation logs pasted by the user on 2026-11-11; metrics retain the precision printed in those logs.",
+  "dataset": {
+    "split": "test",
+    "images": 81,
+    "instances": 91,
+    "data_yaml": "/home/tkz/datasets/pingwen_yolo/data.yaml"
+  },
+  "metric_scale": "Fraction in log; multiplied by 100 for manuscript percentages.",
+  "variants": [
+    {
+      "name": "YOLOv8n",
+      "log_model_name": "Model",
+      "reported_results_directory": "/home/tkz/code/github/ultralytics/runs/detect/yolov8n14/test",
+      "classes": {
+        "row": {
+          "images": 59,
+          "instances": 60,
+          "AP@50": "0.982",
+          "AP@50:95": "0.627"
+        },
+        "col": {
+          "images": 12,
+          "instances": 12,
+          "AP@50": "0.828",
+          "AP@50:95": "0.527"
+        },
+        "hole": {
+          "images": 18,
+          "instances": 19,
+          "AP@50": "0.904",
+          "AP@50:95": "0.597"
+        }
+      },
+      "overall_log_metrics": {
+        "images": 81,
+        "instances": 91,
+        "mAP@50": "0.905",
+        "mAP@50:95": "0.584"
+      }
+    },
+    {
+      "name": "YOLOv8n+MCE",
+      "log_model_name": "YOLOv8n-fabric-axis-residual",
+      "reported_results_directory": null,
+      "classes": {
+        "row": {
+          "images": 59,
+          "instances": 60,
+          "AP@50": "0.994",
+          "AP@50:95": "0.653"
+        },
+        "col": {
+          "images": 12,
+          "instances": 12,
+          "AP@50": "0.932",
+          "AP@50:95": "0.647"
+        },
+        "hole": {
+          "images": 18,
+          "instances": 19,
+          "AP@50": "0.891",
+          "AP@50:95": "0.609"
+        }
+      },
+      "overall_log_metrics": {
+        "images": 81,
+        "instances": 91,
+        "mAP@50": "0.939",
+        "mAP@50:95": "0.636"
+      }
+    },
+    {
+      "name": "YOLOv8n+GIU",
+      "log_model_name": "YOLOv8n-fabric-interp",
+      "reported_results_directory": "/home/tkz/code/github/ultralytics/runs/detect/ablation-axis-gate/gate-only/1/test",
+      "classes": {
+        "row": {
+          "images": 59,
+          "instances": 60,
+          "AP@50": "0.99",
+          "AP@50:95": "0.645"
+        },
+        "col": {
+          "images": 12,
+          "instances": 12,
+          "AP@50": "0.966",
+          "AP@50:95": "0.619"
+        },
+        "hole": {
+          "images": 18,
+          "instances": 19,
+          "AP@50": "0.878",
+          "AP@50:95": "0.626"
+        }
+      },
+      "overall_log_metrics": {
+        "images": 81,
+        "instances": 91,
+        "mAP@50": "0.944",
+        "mAP@50:95": "0.63"
+      }
+    },
+    {
+      "name": "MCGI-YOLO",
+      "log_model_name": "YOLOv8n-fabric-axis-interp",
+      "reported_results_directory": "/home/tkz/code/github/ultralytics/runs/detect/axis-interp/1/test",
+      "classes": {
+        "row": {
+          "images": 59,
+          "instances": 60,
+          "AP@50": "0.987",
+          "AP@50:95": "0.644"
+        },
+        "col": {
+          "images": 12,
+          "instances": 12,
+          "AP@50": "0.995",
+          "AP@50:95": "0.669"
+        },
+        "hole": {
+          "images": 18,
+          "instances": 19,
+          "AP@50": "0.935",
+          "AP@50:95": "0.652"
+        }
+      },
+      "overall_log_metrics": {
+        "images": 81,
+        "instances": 91,
+        "mAP@50": "0.972",
+        "mAP@50:95": "0.655"
+      }
+    }
+  ]
+}

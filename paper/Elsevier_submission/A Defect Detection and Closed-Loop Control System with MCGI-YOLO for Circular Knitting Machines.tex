@@ -511,7 +511,29 @@ YOLOv8n & -- & -- & 3.01 & 8.10 & 90.5 & 58.4 \\
 \end{tabular*}
 \end{table}
 
-Table~\ref{tab:ablation} defines four configurations: the original YOLOv8n baseline, MCE alone, GIU alone, and their combination. The MCE-only model retains nearest-neighbor upsampling, while the GIU-only model retains the original backbone C2f blocks. On the test set, MCE alone achieves 93.9\% mAP@50 and 63.6\% mAP@50:95, improving over the baseline by 3.4 and 5.2 percentage points, respectively. GIU alone achieves 94.4\% and 63.0\%, corresponding to gains of 3.9 and 4.6 points. Combining the two modules yields 97.2\% mAP@50 and 65.5\% mAP@50:95, exceeding the best single-module result for each metric by 2.8 and 1.9 points. These results support the complementary benefits of morphology-aware context encoding and adaptive feature reconstruction. Feature visualizations in Fig.~\ref{fig:heatmaps} complement the numerical analysis by comparing responses at corresponding feature stages on the same images.
+\begin{table*}[pos=!tbp]
+\caption{Class-wise ablation results.}
+\label{tab:ablation-classwise}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrr@{}}
+\toprule
+Variant & \multicolumn{2}{c}{Row (\%)} & \multicolumn{2}{c}{Col (\%)} & \multicolumn{2}{c}{Hole (\%)} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+& AP@50 & AP@50:95 & AP@50 & AP@50:95 & AP@50 & AP@50:95 \\
+\midrule
+YOLOv8n & 98.2 & 62.7 & 82.8 & 52.7 & \underline{90.4} & 59.7 \\
+YOLOv8n + MCE & \textbf{99.4} & \textbf{65.3} & 93.2 & \underline{64.7} & 89.1 & 60.9 \\
+YOLOv8n + GIU & \underline{99.0} & \underline{64.5} & \underline{96.6} & 61.9 & 87.8 & \underline{62.6} \\
+\model & 98.7 & 64.4 & \textbf{99.5} & \textbf{66.9} & \textbf{93.5} & \textbf{65.2} \\
+\bottomrule
+\end{tabular*}
+\end{table*}
+
+Tables~\ref{tab:ablation} and~\ref{tab:ablation-classwise} compare four configurations on the same 81 test images containing 91 defects under a common evaluation protocol. MCE alone retains nearest-neighbor upsampling, while GIU alone retains the original backbone C2f blocks. MCE increases Row and Col AP@50:95 by 2.6 and 12.0 percentage points, respectively, consistent with using extended directional context to associate spatially separated elongated-defect responses. GIU improves AP@50:95 for Row, Col, and Hole by 1.8, 9.2, and 2.9 points, respectively, consistent with its content-adaptive reconstruction for shape and scale variation. However, Hole AP@50 decreases from 90.4\% to 89.1\% with MCE and 87.8\% with GIU alone.
+
+Combining the modules achieves the highest Col and Hole AP@50 (99.5\% and 93.5\%) and AP@50:95 (66.9\% and 65.2\%). The latter exceed the best single-module results by 2.2 and 2.6 points, respectively. This pattern suggests that MCE supplies more coherent contextual features and GIU adapts their reconstruction before fusion with local features, benefiting both elongated Col defects and localized holes. The interaction is class-dependent: Row AP@50:95 is 64.4\%, below the MCE-only result of 65.3\%. Fig.~\ref{fig:heatmaps} provides corresponding feature visualizations.
 
 
 
