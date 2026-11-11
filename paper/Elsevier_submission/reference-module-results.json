@@ -1,0 +1,144 @@
+{
+  "source": "Actual evaluation logs supplied by user and earlier read-only server evaluation; no new training or evaluation was run for this edit.",
+  "seed": 1,
+  "dataset": {
+    "split": "test",
+    "images": 81,
+    "instances": 91,
+    "class_instances": {
+      "row": 60,
+      "col": 12,
+      "hole": 19
+    }
+  },
+  "AP_scale": "Fractions as reported; percentages rounded independently to one decimal.",
+  "complexity": "Reported fused-model parameters and GFLOPs.",
+  "design": {
+    "context": "CA/MCE, nearest-neighbor neck fixed; same backbone P3/P4 insertion sites.",
+    "upsampling": "Bilinear/CARAFE/GIU; original C2f backbone fixed, two top-down sites.",
+    "nearest": "Existing baseline, no new experiment or duplicate row."
+  },
+  "note": "Original component-ablation tables remain unchanged. Their MCE row is the user-supplied seed-4 run; this reference comparison uses the verified seed-1 MCE checkpoint. No multi-seed average is asserted.",
+  "variants": [
+    {
+      "name": "CA",
+      "params": 3008777,
+      "flops": "8.1",
+      "overall": [
+        "0.934",
+        "0.563"
+      ],
+      "row": [
+        "0.975",
+        "0.569"
+      ],
+      "col": [
+        "0.873",
+        "0.507"
+      ],
+      "hole": [
+        "0.952",
+        "0.614"
+      ],
+      "source": "Current user-supplied test log",
+      "path": "/home/tkz/code/github/ultralytics/runs/detect/mcgi-reference/ca/1/test",
+      "seed": 1
+    },
+    {
+      "name": "MCE",
+      "params": 3006449,
+      "flops": "8.1",
+      "overall": [
+        "0.8846633631656639",
+        "0.5630142709527556"
+      ],
+      "row": [
+        "0.9836885245901639",
+        "0.6056333303573369"
+      ],
+      "col": [
+        "0.812109557109557",
+        "0.5380524475524475"
+      ],
+      "hole": [
+        "0.8581920077972709",
+        "0.5453570349484823"
+      ],
+      "source": "Actual seed-1 evaluation retrieved read-only earlier in this conversation from targeted-mcgi/mce_nearest/1/metrics.json; fused complexity reused from the identical seed-independent MCE architecture summary",
+      "path": "/home/tkz/code/github/ultralytics/runs/detect/ablation-axis-gate/axis-only/1/test",
+      "seed": 1
+    },
+    {
+      "name": "Bilinear",
+      "params": 3006233,
+      "flops": "8.1",
+      "overall": [
+        "0.923",
+        "0.591"
+      ],
+      "row": [
+        "0.973",
+        "0.616"
+      ],
+      "col": [
+        "0.896",
+        "0.586"
+      ],
+      "hole": [
+        "0.899",
+        "0.572"
+      ],
+      "source": "Current user-supplied test log",
+      "path": "/home/tkz/code/github/ultralytics/runs/detect/mcgi-reference/bilinear/1/test",
+      "seed": 1
+    },
+    {
+      "name": "CARAFE",
+      "params": 3146337,
+      "flops": "8.4",
+      "overall": [
+        "0.943",
+        "0.617"
+      ],
+      "row": [
+        "0.994",
+        "0.611"
+      ],
+      "col": [
+        "0.972",
+        "0.654"
+      ],
+      "hole": [
+        "0.864",
+        "0.586"
+      ],
+      "source": "Current user-supplied test log",
+      "path": "/home/tkz/code/github/ultralytics/runs/detect/mcgi-reference/carafe/1/test",
+      "seed": 1
+    },
+    {
+      "name": "GIU",
+      "params": 3009691,
+      "flops": "8.1",
+      "overall": [
+        "0.944",
+        "0.63"
+      ],
+      "row": [
+        "0.99",
+        "0.645"
+      ],
+      "col": [
+        "0.966",
+        "0.619"
+      ],
+      "hole": [
+        "0.878",
+        "0.626"
+      ],
+      "source": "Previously user-supplied seed-1 GIU log, also recorded in ablation-classwise-metrics.json",
+      "path": "/home/tkz/code/github/ultralytics/runs/detect/ablation-axis-gate/gate-only/1/test",
+      "seed": 1
+    }
+  ]
+}

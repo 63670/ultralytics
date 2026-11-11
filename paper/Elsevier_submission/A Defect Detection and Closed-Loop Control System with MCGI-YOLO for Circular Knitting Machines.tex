@@ -388,7 +388,7 @@ Test & 81 & 91 & 60 & 12 & 19 \\
 
 \subsubsection{Implementation Details}
 \label{sec:implementation}
-Table~\ref{tab:implementation} summarizes the training and deployment settings. \model and its component-ablation variants share the same \texttt{yolov8n.pt} initialization as the YOLOv8n baseline, and all component comparisons use a common training protocol with matched random seeds. Other comparison models use available pretrained checkpoints from their respective implementations.
+Table~\ref{tab:implementation} summarizes the training and deployment settings. \model and its component-ablation variants share the same \texttt{yolov8n.pt} initialization as the YOLOv8n baseline, and all component comparisons use a common training protocol. Other comparison models use available pretrained checkpoints from their respective implementations.
 
 \begin{table}[pos=!htbp]
 \caption{Training and edge-deployment settings.}
@@ -536,6 +536,34 @@ Tables~\ref{tab:ablation} and~\ref{tab:ablation-classwise} compare four configur
 Combining the modules achieves the highest Col and Hole AP@50 (99.5\% and 93.5\%) and AP@50:95 (66.9\% and 65.2\%). The latter exceed the best single-module results by 2.2 and 2.6 points, respectively. This pattern suggests that MCE supplies more coherent contextual features and GIU adapts their reconstruction before fusion with local features, benefiting both elongated Col defects and localized holes. The interaction is class-dependent: Row AP@50:95 is 64.4\%, below the MCE-only result of 65.3\%. Fig.~\ref{fig:heatmaps} provides corresponding feature visualizations.
 
 
+
+\begin{table*}[pos=!tbp]
+\caption{Comparisons with reference modules.}
+\label{tab:reference-modules}
+\centering
+\fontsize{7}{8.5}\selectfont
+\setlength{\tabcolsep}{2pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrrrrr@{}}
+\toprule
+\multirow{2}{*}{Module} & \multirow{2}{*}{\shortstack{Params\\(M)}} & \multirow{2}{*}{\shortstack{FLOPs\\(G)}} & \multicolumn{2}{c}{Overall (\%)} & \multicolumn{2}{c}{Row (\%)} & \multicolumn{2}{c}{Col (\%)} & \multicolumn{2}{c}{Hole (\%)} \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
+& & & mAP@50 & mAP@50:95 & AP@50 & AP@50:95 & AP@50 & AP@50:95 & AP@50 & AP@50:95 \\
+\midrule
+\multicolumn{11}{l}{Context encoding: nearest-neighbor upsampling fixed} \\
+CA~\cite{hou2021coordinate} & 3.0088 & \textbf{8.1} & \textbf{93.4} & \textbf{56.3} & 97.5 & 56.9 & \textbf{87.3} & 50.7 & \textbf{95.2} & \textbf{61.4} \\
+MCE & \textbf{3.0064} & \textbf{8.1} & 88.5 & \textbf{56.3} & \textbf{98.4} & \textbf{60.6} & 81.2 & \textbf{53.8} & 85.8 & 54.5 \\
+\midrule
+\multicolumn{11}{l}{Upsampling: original C2f backbone fixed} \\
+Bilinear & \textbf{3.0062} & \textbf{8.1} & 92.3 & 59.1 & 97.3 & \underline{61.6} & 89.6 & 58.6 & \textbf{89.9} & 57.2 \\
+CARAFE~\cite{wang2019carafe} & 3.1463 & 8.4 & \underline{94.3} & \underline{61.7} & \textbf{99.4} & 61.1 & \textbf{97.2} & \textbf{65.4} & 86.4 & \underline{58.6} \\
+GIU & \underline{3.0097} & \textbf{8.1} & \textbf{94.4} & \textbf{63.0} & \underline{99.0} & \textbf{64.5} & \underline{96.6} & \underline{61.9} & \underline{87.8} & \textbf{62.6} \\
+\bottomrule
+\end{tabular*}
+\end{table*}
+
+Table~\ref{tab:reference-modules} adds reference comparisons using seed 1 and the same test set and evaluation protocol. CA and MCE occupy the same P3/P4 C2f insertion sites with nearest-neighbor upsampling fixed; Bilinear, CARAFE, and GIU replace both top-down upsampling operations with the original backbone retained. Complexity values are taken from the fused-model evaluation summaries. Both CA and MCE report 56.3\% mAP@50:95. MCE achieves higher Row and Col AP@50:95 (60.6\% and 53.8\%, versus 56.9\% and 50.7\%), consistent with its directional-continuity prior. CA has higher overall mAP@50 (93.4\% versus 88.5\%) and Hole AP@50:95 (61.4\% versus 54.5\%).
+
+GIU achieves 63.0\% mAP@50:95, exceeding Bilinear and CARAFE by 3.9 and 1.3 percentage points, respectively. Its Row and Hole AP@50:95 exceed CARAFE by 3.4 and 4.0 points, while CARAFE performs better on Col (65.4\% versus 61.9\%). GIU uses 3.0097 M parameters and 8.1 G reported FLOPs, compared with CARAFE's 3.1463 M and 8.4 G. These results support content-adaptive interpolation for heterogeneous defect morphologies with a small learned-parameter overhead.
 
 \begin{figure}[pos=!htbp]
 \centering
