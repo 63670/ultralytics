@@ -139,13 +139,14 @@ def evaluate(weight, output, seed, variant, data, signature, common):
             raise ValueError(f"Cached evaluation does not match: {result_file}")
         return
     detector = YOLO(str(weight))
+    structural_complexity = complexity(detector.model)
     metrics = detector.val(data=str(data), device=OPTIONS.device, project=str(result_file.parent), name="evaluation", exist_ok=True, **EVAL)
     classes = {str(metrics.names[int(c)]): dict(zip(("P","R","AP50","AP50_95"), map(float,metrics.class_result(i)))) for i,c in enumerate(metrics.ap_class_index)}
     if set(classes) != {"row","col","hole"}: raise ValueError(f"Unexpected classes: {classes.keys()}")
     record = dict(variant=variant, seed=seed, checkpoint=str(weight), checkpoint_sha256=checkpoint_hash,
                   dataset_sha256=signature, eval_protocol=EVAL, train_protocol=common,
                   overall=dict(zip(("P","R","mAP50","mAP50_95"),map(float,metrics.mean_results()))), classes=classes,
-                  complexity=complexity(detector.model))
+                  complexity=structural_complexity)
     save(result_file, record)
 
 
@@ -178,7 +179,15 @@ def run(options):
 
 
 def summarize(output):
-    records=[json.loads(p.read_text()) for p in sorted(output.glob("*/*/metrics.json"))]
+    records=[]
+    for p in sorted(output.glob("*/*/metrics.json")):
+        record=json.loads(p.read_text())
+        original=YOLO(record["checkpoint"]).model
+        original_params=sum(v.numel() for v in original.parameters())
+        if record["complexity"]["params"] != original_params:
+            record["complexity"]["params"] = original_params
+            save(p,record)
+        records.append(record)
     if not records: return
     signatures={r["dataset_sha256"] for r in records}
     if len(signatures)!=1: raise ValueError("Mixed dataset signatures")
