@@ -10,7 +10,7 @@ import threading
 import time
 
 ROOT=Path(__file__).resolve().parents[1]
-OUTPUT=ROOT/"runs/detect/targeted-mcgi"
+OUTPUT=ROOT/"runs/detect/targeted-mcgi-isolated"
 SCRIPT=ROOT/"tools/run_mcgi_targeted.py"
 LOCK=threading.Lock()
 STOP=threading.Event()
@@ -53,7 +53,7 @@ if __name__=="__main__":
     with (OUTPUT/"logs/references.log").open("w") as log:
         subprocess.run([sys.executable,str(SCRIPT),"--variant","references","--seeds","0","1","2","--device","0"],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,check=True)
     for seed in (0,1,2):
-        for variant in ("ca_giu","mce_bilinear","mce_carafe"):
+        for variant in ("ca","bilinear","carafe"):
             job={"variant":variant,"seed":seed,"state":"pending"}
             STATE["jobs"].append(job);TASKS.put(job)
     status()

@@ -3,16 +3,17 @@
 ## Fixed design
 
 - Seeds are fixed in advance to 0, 1, 2. No hyperparameter sweep is performed.
-- CA versus MCE: GIU is fixed at both top-down upsampling sites. Replace MCE by Coordinate Attention at the final hidden C2f branch in backbone P3/P4, before concatenation. All original C2f bottlenecks and parameter paths are retained. CA uses its original full-hidden-channel operation, reduction 32; MCE retains its published partial=0.25 design.
-- Upsampling comparison: the MCE backbone is fixed. Replace both top-down upsampling sites (layers 10 and 13) by Nearest, Bilinear (align_corners=False), CARAFE, or GIU.
-- Reuse MCE+Nearest checkpoints in `runs/detect/ablation-axis-gate/axis-only/<seed>/weights/best.pt` and MCE+GIU in `runs/detect/axis-interp/<seed>/weights/best.pt`.
-- Train only CA+GIU, MCE+Bilinear and MCE+CARAFE (three configurations, nine runs). The baseline seeds 0/2 were not found, so this design avoids retraining baseline configurations.
+- CA versus MCE: original nearest-neighbor upsampling is fixed. Replace MCE by Coordinate Attention at the final hidden C2f branch in backbone P3/P4, before concatenation. All original C2f bottlenecks and parameter paths are retained. CA uses its original full-hidden-channel operation, reduction 32; MCE retains its published partial=0.25 design.
+- GIU versus Bilinear/CARAFE: the original YOLOv8n C2f backbone is fixed. Replace both top-down upsampling sites (layers 10 and 13). Nearest is already represented by the original YOLOv8n baseline; do not train an additional Nearest run or duplicate its row in the new targeted comparison.
+- Reuse MCE-only checkpoints in `runs/detect/ablation-axis-gate/axis-only/<seed>/weights/best.pt` and GIU-only checkpoints in `runs/detect/ablation-axis-gate/gate-only/<seed>/weights/best.pt`.
+- Train only CA-only, Bilinear-only and CARAFE-only (three configurations, nine runs). The new comparison tables use the same seeds for CA/MCE and Bilinear/CARAFE/GIU. Original single-run baseline and component tables remain unchanged.
+- The first, superseded combination-design queue was stopped at the user's clarification. Partial outputs remain under `runs/detect/targeted-mcgi/`; they are not used as isolated-module evidence.
 
 CA follows the [author implementation](https://github.com/houqb/CoordAttention/blob/main/coordatt.py). CARAFE matches [MMCV CARAFEPack](https://mmcv.readthedocs.io/en/latest/_modules/mmcv/ops/carafe.html): compression 64, encoder 3x3, reassembly 5x5, group 1, scale 2; Xavier compressor initialization and encoder std=0.001. A pure-PyTorch equivalent avoids an additional compiled MMCV dependency. Historical CAFR/ContentAwareUpsample weights are not relabeled as CARAFE.
 
 ## Protocol and reuse
 
-The runner reads the effective training protocol from `axis-interp/1/weights/best.pt` and verifies all reused checkpoints against their saved `args.yaml`. `optimizer=auto` sets warmup_bias_lr=0 internally; this documented framework normalization is allowed. The original input file may retain 0.1. New runs use the effective checkpoint value, the same explicit `yolov8n.pt`, and the same data split. Pretraining is never inferred from a boolean `True` with a YAML entry point.
+The runner reads the effective training protocol from `ablation-axis-gate/gate-only/1/weights/best.pt` and verifies all reused checkpoints against their saved `args.yaml`. `optimizer=auto` sets warmup_bias_lr=0 internally; this documented framework normalization is allowed. The original input file may retain 0.1. New runs use the effective checkpoint value, the same explicit `yolov8n.pt`, and the same data split. Pretraining is never inferred from a boolean `True` with a YAML entry point.
 
 Evaluation always uses the current test split, imgsz=640, batch=16, conf=0.001, IoU=0.7, max_det=16, FP32, rect=True. Reused checkpoints are re-evaluated rather than copying rounded log lines. Results include overall mAP@50/mAP@50:95 and Row/Col/Hole AP@50/AP@50:95. Dataset files, initial checkpoint, and evaluated checkpoints are hashed. Previously printed paper results remain unchanged.
 
@@ -31,10 +32,10 @@ Individual commands, if the queue is not running:
 
 ```bash
 python tools/run_mcgi_targeted.py --variant references --device 0 --seeds 0 1 2
-python tools/run_mcgi_targeted.py --variant ca_giu --device 0 --seeds 0 1 2
-python tools/run_mcgi_targeted.py --variant mce_bilinear --device 1 --seeds 0 1 2
-python tools/run_mcgi_targeted.py --variant mce_carafe --device 1 --seeds 0 1 2
+python tools/run_mcgi_targeted.py --variant ca --device 0 --seeds 0 1 2
+python tools/run_mcgi_targeted.py --variant bilinear --device 1 --seeds 0 1 2
+python tools/run_mcgi_targeted.py --variant carafe --device 1 --seeds 0 1 2
 python tools/run_mcgi_targeted.py --variant summarize
 ```
 
-Outputs are under `runs/detect/targeted-mcgi/`: per-run `metrics.json`, `per_seed.csv`, `summary.json`, protocol snapshots, logs and `queue.json`. Means and sample standard deviations use the same three seeds. Checkpoint selection uses validation performance, not test AP. Do not write comparative accuracy claims into the manuscript before the corresponding measured results exist.
+Outputs are under `runs/detect/targeted-mcgi-isolated/`: per-run `metrics.json`, `per_seed.csv`, `summary.json`, protocol snapshots, logs and `queue.json`. Means and sample standard deviations use the same three seeds. Checkpoint selection uses validation performance, not test AP. Do not write comparative accuracy claims into the manuscript before the corresponding measured results exist.

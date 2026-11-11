@@ -21,11 +21,11 @@ from ultralytics.nn.modules.comparisons import CoordinateAttention, CARAFEUpsamp
 from ultralytics.utils import YAML
 
 CONFIGS = {
-    "ca_giu": "yolov8n-fabric-ca-interp.yaml",
-    "mce_bilinear": "yolov8n-fabric-axis-bilinear.yaml",
-    "mce_carafe": "yolov8n-fabric-axis-carafe-reference.yaml",
+    "ca": "yolov8n-fabric-coordinate-attention.yaml",
+    "bilinear": "yolov8n-fabric-bilinear.yaml",
+    "carafe": "yolov8n-fabric-carafe-reference.yaml",
 }
-REFERENCE = {"mce_nearest": "ablation-axis-gate/axis-only", "mce_giu": "axis-interp"}
+REFERENCE = {"mce": "ablation-axis-gate/axis-only", "giu": "ablation-axis-gate/gate-only"}
 PROTOCOL_KEYS = "epochs patience batch imgsz workers optimizer lr0 lrf momentum weight_decay warmup_epochs warmup_momentum warmup_bias_lr box cls dfl nbs hsv_h hsv_s hsv_v degrees translate scale shear perspective flipud fliplr bgr mosaic mixup cutmix copy_paste copy_paste_mode close_mosaic amp deterministic cos_lr fraction freeze multi_scale rect single_cls classes agnostic_nms max_det".split()
 EVAL = dict(split="test", imgsz=640, batch=16, workers=8, conf=0.001, iou=0.7, max_det=16, half=False, augment=False, rect=True, plots=False)
 
@@ -69,7 +69,7 @@ def dataset_digest(data):
 
 
 def protocol(args, seeds):
-    source = ROOT / "runs/detect/axis-interp/1/args.yaml"
+    source = ROOT / "runs/detect/ablation-axis-gate/gate-only/1/args.yaml"
     base = YAML.load(source)
     effective = torch.load(source.parent / "weights/best.pt", map_location="cpu", weights_only=False)["train_args"]
     common = {k: effective[k] for k in PROTOCOL_KEYS if k in effective}
@@ -155,7 +155,7 @@ def run(options):
     output = options.output.resolve()
     save(output/("protocol-" + options.variant + "-" + "-".join(map(str,options.seeds)) + ".json"),dict(train=common,evaluation=EVAL,data=str(data),dataset_sha256=signature,
                                    dataset_files=counts,seeds=options.seeds,pretrained_sha256=digest(ROOT/"yolov8n.pt"),
-                                   comparison_design="CA vs MCE: GIU fixed; upsampling: MCE backbone fixed."))
+                                   comparison_design="CA vs MCE: original nearest neck fixed; Bilinear/CARAFE vs GIU: original C2f backbone fixed. Nearest is the existing baseline and is not repeated here."))
     variants = REFERENCE if options.variant=="references" else {options.variant: CONFIGS[options.variant]}
     for variant in variants:
         for seed in options.seeds:
@@ -212,7 +212,7 @@ if __name__=="__main__":
     parser.add_argument("--variant",choices=[*CONFIGS,"references","summarize"],required=True)
     parser.add_argument("--device",default="0")
     parser.add_argument("--seeds",type=int,nargs="+",default=[0,1,2])
-    parser.add_argument("--output",type=Path,default=ROOT/"runs/detect/targeted-mcgi")
+    parser.add_argument("--output",type=Path,default=ROOT/"runs/detect/targeted-mcgi-isolated")
     OPTIONS=parser.parse_args()
     torch.set_num_threads(2)
     if OPTIONS.variant=="summarize": summarize(OPTIONS.output)

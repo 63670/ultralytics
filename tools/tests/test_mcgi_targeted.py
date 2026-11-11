@@ -17,15 +17,16 @@ class TargetedComparisons(unittest.TestCase):
     def setUpClass(cls): torch.set_num_threads(2)
 
     def test_configs_change_only_the_selected_sites(self):
-        base=YAML.load(CFG/"yolov8n-fabric-axis-interp.yaml")
-        for filename,section,sites in [
-            ("yolov8n-fabric-ca-interp.yaml","backbone",[4,6]),
-            ("yolov8n-fabric-axis-bilinear.yaml","head",[0,3]),
-            ("yolov8n-fabric-axis-carafe-reference.yaml","head",[0,3]),
+        for filename,reference,section,sites in [
+            ("yolov8n-fabric-coordinate-attention.yaml","yolov8n-fabric-axis-residual.yaml","backbone",[4,6]),
+            ("yolov8n-fabric-bilinear.yaml","yolov8n-fabric-baseline.yaml","head",[0,3]),
+            ("yolov8n-fabric-carafe-reference.yaml","yolov8n-fabric-baseline.yaml","head",[0,3]),
         ]:
+            base=YAML.load(CFG/reference)
             other=YAML.load(CFG/filename)
             for key in ("nc","scales"): self.assertEqual(other[key],base[key])
             for key in ("backbone","head"):
+                self.assertEqual(len(base[key]),len(other[key]))
                 for i,(a,b) in enumerate(zip(base[key],other[key])):
                     self.assertEqual(a==b,not(key==section and i in sites))
 
@@ -53,7 +54,7 @@ class TargetedComparisons(unittest.TestCase):
         self.assertTrue(torch.isfinite(x.grad).all())
 
     def test_all_detectors_forward_backward_and_fuse(self):
-        for name in ["ca-interp","axis-bilinear","axis-carafe-reference"]:
+        for name in ["coordinate-attention","bilinear","carafe-reference"]:
             model=DetectionModel(str(CFG/f"yolov8n-fabric-{name}.yaml"),verbose=False).eval()
             x=torch.randn(1,3,128,160)
             prediction=model(x)[0]
