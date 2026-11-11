@@ -148,8 +148,13 @@
   },
   "inspection_equipment_scenario": {
     "researched_on": "2026-11-09",
-    "status": "Illustrative procurement-cost scenario, not a verified equipment inventory or recorded purchase saving at Minghai.",
+    "status": "Illustrative reference equipment budget, not evidence that on-machine detection removes the need for four inspection machines or yields a procurement saving at Minghai.",
     "minghai_original_inspection_machine_count": null,
+    "verified_purchase_cancellations": null,
+    "procurement_avoidance_conditions": [
+      "Confirmed cancellation of planned equipment purchases attributable to deployment.",
+      "Continued fulfillment of finished-fabric inspection, grading, and customer acceptance requirements."
+    ],
     "price_basis": {
       "selection": "Lowest-priced option in the four quotations presented to the user; not a claim of the lowest market price.",
       "product": "Automatic edge-guiding fabric inspection and winding machine",
@@ -183,8 +188,8 @@
       "factory_knitting_machines": 48,
       "reference_inspection_machines_rounded_up": 4,
       "rule": "ceil(48 / (2000 / 160))",
-      "potential_one_time_procurement_cost_cny": 67360,
-      "potential_one_time_procurement_cost_usd": 10089.12,
+      "reference_procurement_budget_cny": 67360,
+      "reference_procurement_budget_usd": 10089.12,
       "included_in_monthly_or_annual_fabric_loss_reduction": false
     }
   }
