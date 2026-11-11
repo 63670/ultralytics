@@ -77,6 +77,7 @@ from .block import (
     SobelResidual,
     TorchVision,
 )
+from .comparisons import CARAFEUpsample, C2fCoordinateAttention, CoordinateAttention
 from .conv import (
     CBAM,
     ChannelAttention,
@@ -128,6 +129,9 @@ from .transformer import (
 )
 
 __all__ = (
+    "CARAFEUpsample",
+    "C2fCoordinateAttention",
+    "CoordinateAttention",
     "AIFI",
     "C1",
     "C2",
