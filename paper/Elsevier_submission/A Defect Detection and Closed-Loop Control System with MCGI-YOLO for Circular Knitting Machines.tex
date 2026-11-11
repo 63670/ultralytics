@@ -125,7 +125,7 @@ We design and implement a dedicated defect detection and closed-loop control sys
 \label{fig:interactions}
 \end{figure*}
 
-The closed-loop workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and triggers the edge device to activate the camera and LED illumination for image acquisition and defect detection. When the detections in a frame satisfy the configured stopping criteria, the edge device immediately sends a stop command to the machine controller to prevent further defect propagation, uploads the defect image and record to the cloud, and pushes an alert notification to the operator. After the operator inspects the reported defect, resolves the production fault, and restarts the machine, the rotation signal reactivates detection. This sequence forms a complete production–detection–control loop. Placing inspection on the knitting machine connects a detected fabric abnormality directly to interruption of the process that produces it. The system comprises power supply, image acquisition and transmission, processing, and network communication functions. The following subsections describe the hardware subsystems and their implementation. Deployment, stopping criteria, client and cloud interfaces, and system operation are presented in Section~\ref{sec:system-operation}.
+The closed-loop workflow begins when the operator starts the machine. The Hall sensor detects machine rotation and triggers the edge device to activate the camera and LED illumination for image acquisition and defect detection. When the detections in a frame satisfy the configured stopping criteria, the edge device immediately sends a stop command to the machine controller to prevent further defect propagation, uploads the defect image and record to the cloud, and pushes an alert notification to the operator. After the operator inspects the reported defect, resolves the production fault, and restarts the machine, the rotation signal reactivates detection. This sequence forms a complete production–detection–control loop. Placing inspection on the knitting machine enables local stop-command execution when a detected fabric abnormality satisfies the stopping criteria. The system comprises power supply, image acquisition and transmission, processing, and network communication functions. The following subsections describe the hardware subsystems and their implementation. Deployment, stopping criteria, client and cloud interfaces, and system operation are presented in Section~\ref{sec:system-operation}.
 
 \subsection{Power Supply Subsystem}
 To accommodate different industrial supply voltages across countries and regions, we design a power adapter with a 100--500 V AC input range and a 24 V DC output rated at 3 A. The adapter first supplies this output to the device. The device then supplies the LED illumination. By adjusting the current delivered to the LEDs, the device controls the illumination brightness to suit the image-acquisition conditions. This arrangement integrates LED power delivery and brightness control into the device.
@@ -546,7 +546,7 @@ Combining the modules achieves the highest Col and Hole AP@50 (99.5\% and 93.5\%
 
 \section{System Deployment and Industrial Application}
 \label{sec:system-operation}
-The inspection workflow is implemented through the dedicated edge device, client interface, cloud platform, and configurable stopping rules. This section evaluates on-device performance and describes configurable stopping decisions, local intervention, remote supervision, operator feedback, and the resulting change in factory inspection practice.
+The inspection workflow is implemented through the dedicated edge device, client interface, cloud platform, and configurable stopping rules. This section evaluates on-device inference and closed-loop response, and describes configurable stopping decisions, local intervention, remote supervision, operator feedback, and the resulting change in factory inspection practice.
 
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
@@ -571,6 +571,20 @@ YOLOv8n & 88.323 & 81.316 & 90.193 & 57.290 & \textbf{30} \\
 \end{tabular*}
 \renewcommand{\arraystretch}{1.0}
 \end{table}
+
+\subsubsection{Closed-Loop Response Time}
+\label{sec:closed-loop-response}
+For a frame that triggers stopping, timing starts at preprocessing entry and ends when the machine is stationary, excluding image acquisition and SerDes transmission. The total response time is
+\begin{equation}
+\begin{aligned}
+T_{\mathrm{total}}={}&T_{\mathrm{pre}}+T_{\mathrm{infer}}+T_{\mathrm{post}}\\
+&+T_{\mathrm{cmd}}+T_{\mathrm{stop}},
+\end{aligned}
+\label{eq:closed-loop-response}
+\end{equation}
+\noindent where $T_{\mathrm{pre}}=25$ ms, $T_{\mathrm{infer}}=43.5$ ms, $T_{\mathrm{post}}=7$ ms, and $T_{\mathrm{cmd}}=36$ ms denote the measured preprocessing, inference, postprocessing with stopping decision, and command-execution times, respectively. Successive stage boundaries are model input readiness, model output availability, stopping-decision completion, and stop-signal issuance.
+
+The software stages total 111.5 ms before the stop signal is issued. Including the typical machine-braking interval $T_{\mathrm{stop}}=1.5$--$1.8$ s gives an estimated total response of 1.61--1.91 s. Thus, the local stop command is issued in approximately 0.11 s, while the reported 23 FPS characterizes model inference only.
 
 \subsection{User-Configurable Post-NMS Stopping Decision}
 \label{sec:stop-rules}

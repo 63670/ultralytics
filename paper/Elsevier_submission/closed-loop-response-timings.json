@@ -1,0 +1,59 @@
+{
+  "source": "User-provided timings on 2026-11-11.",
+  "platform": "RK3566",
+  "detector": "MCGI-YOLO",
+  "scope": "From preprocessing entry of a stop-triggering frame to machine stationary; image acquisition and SerDes transmission precede this interval.",
+  "stages": [
+    {
+      "symbol": "T_pre",
+      "start": "Preprocessing entry",
+      "end": "Model input ready",
+      "time_ms": 25,
+      "evidence": "User-reported measurement"
+    },
+    {
+      "symbol": "T_infer",
+      "start": "Model input ready",
+      "end": "Model outputs available",
+      "time_ms": 43.5,
+      "evidence": "User-reported measurement"
+    },
+    {
+      "symbol": "T_post",
+      "start": "Model outputs available",
+      "end": "Stopping decision ready",
+      "time_ms": 7,
+      "evidence": "User-reported measurement"
+    },
+    {
+      "symbol": "T_cmd",
+      "start": "Stopping decision ready",
+      "end": "Stop signal issued",
+      "time_ms": 36,
+      "evidence": "User-reported measurement"
+    },
+    {
+      "symbol": "T_stop",
+      "start": "Stop signal issued",
+      "end": "Machine stationary",
+      "time_ms_range": [
+        1500,
+        1800
+      ],
+      "evidence": "User-provided typical machine-braking interval"
+    }
+  ],
+  "derived": {
+    "software_total_ms": 111.5,
+    "closed_loop_estimated_ms_range": [
+      1611.5,
+      1911.5
+    ],
+    "closed_loop_display_seconds_range": [
+      1.61,
+      1.91
+    ]
+  },
+  "inference_fps_rounded": 23,
+  "note": "No timing repetitions, distributions, or directly measured complete-response results were supplied; none are asserted in the manuscript."
+}
