@@ -182,7 +182,7 @@ R_{\mathrm{img}} &= W H b f_{\mathrm{cam}} \\
 
 \subsection{Processor Subsystem}
 \label{sec:coverage}
-For our embedded system, the processor is selected according to the detection rate required by fabric motion and the camera field of view. The calculation combines the circular-knitting operating conditions in Table~\ref{tab:production-inputs} with the horizontal field-of-view width specified above.
+We derive the processor-throughput target from the production conditions in Table~\ref{tab:production-inputs} and the camera field of view before selecting the hardware.
 
 \begin{table}[pos=!htbp]
 \caption{Machine operating parameters.}
@@ -201,14 +201,14 @@ Rotation period & $T$ & 2 s/revolution \\
 \end{tabular*}
 \end{table}
 
-The required frame rate is
+With fabric moving at $\pi D/T$ and a horizontal field-of-view width of $w=0.16$ m, the minimum coverage rate is
 \begin{equation}
 f_{\min}=\frac{\pi D}{Tw}
 =\frac{\pi\times1.016}{2\times0.16}
 \approx9.97\ \mathrm{frames/s},
 \label{eq:coverage-rate}
 \end{equation}
-\noindent so we set the effective detection-throughput requirement to 10 frames/s. For this throughput target, we select the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) to balance processing capability, camera connectivity, and hardware cost (Table~\ref{tab:processor-costs}). It integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
+\noindent establishing 10 frames/s as the throughput target for hardware selection. We select the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) based on this target, camera connectivity, and hardware cost (Table~\ref{tab:processor-costs}). It integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
 
 \begin{table}[pos=!htbp]
 \caption{Computing platforms and reference costs.}
@@ -635,25 +635,25 @@ Fig.~\ref{fig:client-detection} shows the detection home page (left), defect-rev
 \label{fig:client-detection}
 \end{figure*}
 
-\subsection{Cloud Platform and Digital Twin}
+\subsection{Cloud Monitoring and Remote Management}
 \label{sec:network-client}
 The edge device reports defect events and runtime states to the cloud and receives remote configuration updates. Local detection and machine-stop commands are executed on the edge device, while the cloud provides centralized monitoring and management.
 
-The system landing page, defect trends, and defect records are shown in Fig.~\ref{fig:iot-platform}(a)--(c), respectively. The runtime-state interface in Fig.~\ref{fig:iot-platform}(f) displays the application version, camera status, CPU temperature, fabric type, and detection state. The configuration interface in Fig.~\ref{fig:iot-platform}(d) supports remote adjustment of sensitivity and the associated confidence, geometric, and defect-count thresholds. Synchronizing runtime states and configuration updates connects the physical client to its cloud-side digital-twin representation for remote supervision and control.
+The system landing page, defect trends, and defect records are shown in Fig.~\ref{fig:iot-platform}(a)--(c), respectively. The runtime-state interface in Fig.~\ref{fig:iot-platform}(f) displays the application version, camera status, CPU temperature, fabric type, and detection state. The configuration interface in Fig.~\ref{fig:iot-platform}(d) supports remote adjustment of sensitivity and the associated confidence, geometric, and defect-count thresholds.
 
 The model-management interface in Fig.~\ref{fig:iot-platform}(e) accepts RKNN models and associated class-label files for on-demand over-the-air (OTA) model updates. Updated models can be distributed remotely to edge devices for subsequent local inference. Operator feedback, model refinement, and OTA redeployment thus form an iterative improvement workflow that incorporates production experience into model updates.
 
 \begin{figure*}[width=\textwidth,pos=!tbp]
 \centering
 \includegraphics[width=0.98\textwidth]{iot_platform.png}
-\caption{IoT platform for defect monitoring and digital-twin supervision.}
+\caption{IoT platform for monitoring and remote management.}
 \label{fig:iot-platform}
 \end{figure*}
 
 \subsection{Rule Configuration and Stop Execution}
 The client applies the post-NMS stopping decision defined in Section~\ref{sec:stop-rules} to each processed frame. Operators can select a sensitivity preset and edit the confidence, geometric, and count thresholds locally. The same parameters can be updated remotely through the interface in Fig.~\ref{fig:iot-platform}(D). When the stopping condition is met, the edge device issues a local machine-stop command and uploads the defect event for cloud recording and operator notification.
 
-\subsection{Illustrative Analysis of Delayed Intervention}
+\subsection{Illustrative Analysis of Defect Propagation Before Intervention}
 \label{sec:delayed-intervention}
 Fig.~\ref{fig:waste-fabric} shows actual waste fabric with repeated horizontal defects caused by a yarn abnormality. When the abnormality persists at an active feeder, a new defective course can be generated on each machine revolution, following the course-formation mechanism of circular weft knitting \cite{cottonworksKnitMachinery}. Without timely detection and intervention, these horizontal defects recur as the fabric is knitted and taken down, extending the affected region along the production direction and causing the affected fabric to be discarded.
 
@@ -664,7 +664,7 @@ Fig.~\ref{fig:waste-fabric} shows actual waste fabric with repeated horizontal d
 \label{fig:waste-fabric}
 \end{figure}
 
-Consider a three-minute delay ($\tau=180$ s) between defect onset and operator discovery. The machine completes $N=\tau/T=90$ revolutions during this interval. If the abnormality persists throughout each revolution and each horizontal defect extends approximately around the fabric circumference, the cumulative transverse defect length is
+Consider a three-minute delay ($\tau=180$ s) between defect onset and operator discovery. The machine completes $N=\tau/T=90$ revolutions during this interval. Assuming that each revolution produces a horizontal defect extending approximately around the fabric circumference, the sum of these transverse defect lengths is
 \begin{equation}
 L_{\mathrm{sum}}=N\pi D
 =90\times\pi\times1.016
@@ -673,7 +673,7 @@ L_{\mathrm{sum}}=N\pi D
 \end{equation}
 
 \Needspace{5\baselineskip}
-Taking an approximate fabric take-down increment of $p=0.03$ m per revolution, the affected fabric length in the production direction is
+The corresponding affected fabric length in the production direction is determined by the take-down increment, taken as $p=0.03$ m per revolution:
 \begin{equation}
 L_{\mathrm{affected}}=Np
 =\frac{180}{2}\times0.03
@@ -681,7 +681,7 @@ L_{\mathrm{affected}}=Np
 \label{eq:affected-fabric-length}
 \end{equation}
 
-Under these operating assumptions, a three-minute discovery delay allows approximately 90 defective courses, with a cumulative transverse length of 287.3 m, to recur over a 2.7 m length of fabric in the production direction. These estimates connect intervention delay to the extent of affected production and illustrate the value of on-machine detection and timely stopping in limiting further defect propagation.
+These estimates describe approximately 2.7 m of affected fabric in the production direction, containing 90 repeated horizontal defects with a summed transverse length of 287.3 m. The latter measures accumulated defect extent across revolutions, rather than the length of discarded fabric.
 
 \subsection{Factory Application and Waste Reduction}
 \label{sec:factory-benefits}

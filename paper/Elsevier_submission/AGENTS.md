@@ -17,3 +17,5 @@
 - 图像采集小节先介绍高速成像需求、相机型号与视场，接相机成本对比表，再介绍SerDes链路与带宽；圆机直径和旋转周期参数表放在Processor Subsystem的帧率计算之前，不在相机小节提前引入。图表引用融入选型论述，避免独立的“Table summarizes/compares”堆叠。
 - CAS的跨栏环境设置fps@figure/table后调用内核@dblfloat，而内核默认@dbflt使用[tp]；稿件导言区的兼容定义让跨栏定位遵循pos参数，不改模板源文件。flushend[nospread]用于平衡参考文献末页双栏。经用户授权的排版编译必须逐页检查实际PDF，不能仅凭源码判断空白已消除。
 - 公式后接where、so或其它解释续写时，式末用逗号，接续文字顶格；独立完结式用句号，后续另起段落保留首行缩进。成组独立编号公式中间式用逗号；连续等号分行只在最后一行加标点。
+- 处理器选型先由生产工况及视场推导最低覆盖帧率，10 frames/s为硬件设计输入，再选择RK3566；部署实测速率仅用于后续验证，不反推选型依据。
+- 云端小节使用 Cloud Monitoring and Remote Management，描述状态监控、远程配置和OTA，不称为数字孪生；延迟估算标题使用 Illustrative Analysis of Defect Propagation Before Intervention，明确287.3 m为90圈横向瑕疵长度累计，2.7 m为生产方向受影响布长，不将前者写成报废布长。
