@@ -1,46 +1,31 @@
 {
   "latex-workshop.latex.outDir": "%DIR%/build",
   "latex-workshop.latex.auxDir": "%OUTDIR%",
-  "latex-workshop.latex.recipe.default": "pdf->bib->pdf->pdf",
+  "latex-workshop.latex.recipe.default": "first",
   "latex-workshop.latex.recipes": [
     {
-      "name": "pdf->bib->pdf->pdf",
+      "name": "build and publish PDF",
       "tools": [
-        "pdflatex-build",
-        "bibtex-build",
-        "pdflatex-build",
-        "pdflatex-build"
+        "build-and-publish"
       ]
     }
   ],
   "latex-workshop.latex.tools": [
     {
-      "name": "pdflatex-build",
-      "command": "pdflatex",
+      "name": "build-and-publish",
+      "command": "powershell.exe",
       "args": [
-        "-synctex=1",
-        "-interaction=nonstopmode",
-        "-halt-on-error",
-        "-file-line-error",
-        "-no-shell-escape",
-        "-output-directory=%OUTDIR%",
-        "%DOC%"
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "%DIR%/build.ps1",
+        "-TeXBin",
+        "C:/Users/tankz/application/MiKTex/miktex/bin/x64"
       ],
-      "cwd": "%DIR%",
-      "env": {
-        "TEXINPUTS": "%OUTDIR%;%DIR%;"
-      }
-    },
-    {
-      "name": "bibtex-build",
-      "command": "bibtex",
-      "args": [
-        "%OUTDIR%/%DOCFILE%"
-      ],
-      "cwd": "%DIR%",
-      "env": {
-        "TEXINPUTS": "%OUTDIR%;%DIR%;"
-      }
+      "cwd": "%DIR%"
     }
   ]
 }

@@ -23,3 +23,4 @@
 - 本系统统一使用 rotation-activated detection：霍尔传感器仅检测织机运行状态并激活检测流程，不负责逐帧触发相机采集或曝光；启动后相机连续采集、边缘端持续推理，满足规则后下发停机命令。摘要、引言、贡献点、系统总览及结论保持一致；相关工作中其他系统的encoder-based synchronization不据此改写。
 - 参考模块对比见tab:reference-modules及reference-module-results.json，当前仅报告真实seed 1结果，不写成多种子均值。CA/MCE共用Nearest，Bilinear/CARAFE/GIU共用原始C2f骨干，Nearest不另列新对照。MCE使用此前核实seed 1的88.5/56.3，原组件表seed 4的93.9/63.6保持不变；新表复杂度使用fused日志口径。不得混用不同种子并声称严格配对，未获明确指令不自行启动训练。
 - 总体消融、分类别AP和复杂度合并为单张双栏组件表；tab:ablation与tab:ablation-classwise指向同一张表。变体名已表明MCE/GIU组合，不再重复勾选列；合并表及参考模块宽表均使用8 pt字号。
+- VS Code统一调用build.ps1，先在build/编译并生成SyncTeX，再原子更新.tex同目录PDF；预览和日志使用build/。同稿互斥锁跳过重复编译；根目录PDF被阅读器占用时保留旧PDF并使用build/最新稿，不强制关闭应用或删除文件。
