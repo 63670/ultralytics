@@ -42,7 +42,10 @@
       ],
       "source": "Current user-supplied test log",
       "path": "/home/tkz/code/github/ultralytics/runs/detect/mcgi-reference/ca/1/test",
-      "seed": 1
+      "seed": 1,
+      "P": "0.925",
+      "R": "0.898",
+      "PR_source": "User-supplied overall test-evaluation log."
     },
     {
       "name": "MCE",
@@ -66,7 +69,10 @@
       ],
       "source": "Actual seed-1 evaluation retrieved read-only earlier in this conversation from targeted-mcgi/mce_nearest/1/metrics.json; fused complexity reused from the identical seed-independent MCE architecture summary",
       "path": "/home/tkz/code/github/ultralytics/runs/detect/ablation-axis-gate/axis-only/1/test",
-      "seed": 1
+      "seed": 1,
+      "P": "0.9031203967436862",
+      "R": "0.8576023391812866",
+      "PR_source": "Read-only retrieval of overall.P and overall.R from /home/tkz/code/github/ultralytics/runs/detect/targeted-mcgi/mce_nearest/1/metrics.json; same seed-1 checkpoint and mAP values already used in this table."
     },
     {
       "name": "Bilinear",
@@ -90,7 +96,10 @@
       ],
       "source": "Current user-supplied test log",
       "path": "/home/tkz/code/github/ultralytics/runs/detect/mcgi-reference/bilinear/1/test",
-      "seed": 1
+      "seed": 1,
+      "P": "0.956",
+      "R": "0.871",
+      "PR_source": "User-supplied overall test-evaluation log."
     },
     {
       "name": "CARAFE",
@@ -114,7 +123,10 @@
       ],
       "source": "Current user-supplied test log",
       "path": "/home/tkz/code/github/ultralytics/runs/detect/mcgi-reference/carafe/1/test",
-      "seed": 1
+      "seed": 1,
+      "P": "0.912",
+      "R": "0.890",
+      "PR_source": "User-supplied overall test-evaluation log."
     },
     {
       "name": "GIU",
@@ -138,7 +150,10 @@
       ],
       "source": "Previously user-supplied seed-1 GIU log, also recorded in ablation-classwise-metrics.json",
       "path": "/home/tkz/code/github/ultralytics/runs/detect/ablation-axis-gate/gate-only/1/test",
-      "seed": 1
+      "seed": 1,
+      "P": "0.957",
+      "R": "0.909",
+      "PR_source": "Previously user-supplied seed-1 GIU overall test-evaluation log at runs/detect/ablation-axis-gate/gate-only/1/test."
     }
   ],
   "baseline": {
@@ -163,6 +178,9 @@
     ],
     "source": "Existing user-supplied evaluation log, also recorded in ablation-classwise-metrics.json and the component ablation table.",
     "path": "/home/tkz/code/github/ultralytics/runs/detect/yolov8n14/test",
-    "seed": null
+    "seed": null,
+    "P": "0.894",
+    "R": "0.811",
+    "PR_source": "User-supplied YOLOv8n test-evaluation log at runs/detect/yolov8n14/test; same baseline as the component-ablation table."
   }
 }

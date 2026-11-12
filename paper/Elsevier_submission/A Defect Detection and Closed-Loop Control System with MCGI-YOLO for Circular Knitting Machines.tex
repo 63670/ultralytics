@@ -512,27 +512,25 @@ Combining the modules achieves the highest Col and Hole AP@50 (99.5\% and 93.5\%
 \centering
 \fontsize{8}{9.5}\selectfont
 \setlength{\tabcolsep}{3pt}
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrrrrr@{}}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrr@{}}
 \toprule
-\multirow{2}{*}{Variant} & \multirow{2}{*}{\shortstack{Params\\(M)}} & \multirow{2}{*}{\shortstack{FLOPs\\(G)}} & \multicolumn{2}{c}{Overall (\%)} & \multicolumn{2}{c}{Row (\%)} & \multicolumn{2}{c}{Col (\%)} & \multicolumn{2}{c}{Hole (\%)} \\
-\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
-& & & mAP@50 & mAP@50:95 & AP@50 & AP@50:95 & AP@50 & AP@50:95 & AP@50 & AP@50:95 \\
+Variant & Params (M) & FLOPs (G) & P (\%) & R (\%) & mAP@50 (\%) & mAP@50:95 (\%) \\
 \midrule
-YOLOv8n & \textbf{3.0062} & \textbf{8.1} & \underline{90.5} & \textbf{58.4} & \underline{98.2} & \textbf{62.7} & \underline{82.8} & \underline{52.7} & \underline{90.4} & \underline{59.7} \\
-CA~\cite{hou2021coordinate} & 3.0088 & \textbf{8.1} & \textbf{93.4} & \underline{56.3} & 97.5 & 56.9 & \textbf{87.3} & 50.7 & \textbf{95.2} & \textbf{61.4} \\
-MCE & \underline{3.0064} & \textbf{8.1} & 88.5 & \underline{56.3} & \textbf{98.4} & \underline{60.6} & 81.2 & \textbf{53.8} & 85.8 & 54.5 \\
+YOLOv8n & \textbf{3.0062} & \textbf{8.1} & 89.4 & 81.1 & \underline{90.5} & \textbf{58.4} \\
+CA~\cite{hou2021coordinate} & 3.0088 & \textbf{8.1} & \textbf{92.5} & \textbf{89.8} & \textbf{93.4} & \underline{56.3} \\
+MCE & \underline{3.0064} & \textbf{8.1} & \underline{90.3} & \underline{85.8} & 88.5 & \underline{56.3} \\
 \midrule
-YOLOv8n & \textbf{3.0062} & \textbf{8.1} & 90.5 & 58.4 & 98.2 & \underline{62.7} & 82.8 & 52.7 & \textbf{90.4} & \underline{59.7} \\
-Bilinear & \textbf{3.0062} & \textbf{8.1} & 92.3 & 59.1 & 97.3 & 61.6 & 89.6 & 58.6 & \underline{89.9} & 57.2 \\
-CARAFE~\cite{wang2019carafe} & 3.1463 & \underline{8.4} & \underline{94.3} & \underline{61.7} & \textbf{99.4} & 61.1 & \textbf{97.2} & \textbf{65.4} & 86.4 & 58.6 \\
-GIU & \underline{3.0097} & \textbf{8.1} & \textbf{94.4} & \textbf{63.0} & \underline{99.0} & \textbf{64.5} & \underline{96.6} & \underline{61.9} & 87.8 & \textbf{62.6} \\
+YOLOv8n & \textbf{3.0062} & \textbf{8.1} & 89.4 & 81.1 & 90.5 & 58.4 \\
+Bilinear & \textbf{3.0062} & \textbf{8.1} & \underline{95.6} & 87.1 & 92.3 & 59.1 \\
+CARAFE~\cite{wang2019carafe} & 3.1463 & \underline{8.4} & 91.2 & \underline{89.0} & \underline{94.3} & \underline{61.7} \\
+GIU & \underline{3.0097} & \textbf{8.1} & \textbf{95.7} & \textbf{90.9} & \textbf{94.4} & \textbf{63.0} \\
 \bottomrule
 \end{tabular*}
 \end{table*}
 
-Table~\ref{tab:reference-modules} reuses the YOLOv8n baseline from Table~\ref{tab:ablation} in both groups and adds reference-module results obtained using seed 1 under the same test-set evaluation protocol. CA and MCE occupy the same P3/P4 C2f insertion sites with nearest-neighbor upsampling fixed; Bilinear, CARAFE, and GIU replace both top-down upsampling operations with the original backbone retained. Complexity values are taken from the fused-model evaluation summaries. Both CA and MCE report 56.3\% mAP@50:95. MCE achieves higher Row and Col AP@50:95 (60.6\% and 53.8\%, versus 56.9\% and 50.7\%), consistent with its directional-continuity prior. CA has higher overall mAP@50 (93.4\% versus 88.5\%) and Hole AP@50:95 (61.4\% versus 54.5\%).
+Table~\ref{tab:reference-modules} reuses the YOLOv8n baseline from Table~\ref{tab:ablation} in both groups and adds reference-module results obtained using seed 1 under the same test-set evaluation protocol. CA and MCE occupy the same P3/P4 C2f insertion sites with nearest-neighbor upsampling fixed; Bilinear, CARAFE, and GIU replace both top-down upsampling operations with the original backbone retained. Complexity values are taken from the fused-model evaluation summaries. Both CA and MCE report 56.3\% mAP@50:95. CA achieves higher mAP@50 (93.4\% versus 88.5\%), precision (92.5\% versus 90.3\%), and recall (89.8\% versus 85.8\%).
 
-GIU achieves 63.0\% mAP@50:95, exceeding Bilinear and CARAFE by 3.9 and 1.3 percentage points, respectively. Its Row and Hole AP@50:95 exceed CARAFE by 3.4 and 4.0 points, while CARAFE performs better on Col (65.4\% versus 61.9\%). GIU uses 3.0097 M parameters and 8.1 G reported FLOPs, compared with CARAFE's 3.1463 M and 8.4 G. These results support content-adaptive interpolation for heterogeneous defect morphologies with a small learned-parameter overhead.
+GIU achieves 63.0\% mAP@50:95, exceeding Bilinear and CARAFE by 3.9 and 1.3 percentage points, respectively. It also attains the highest precision (95.7\%) and recall (90.9\%) among the compared upsampling variants. GIU uses 3.0097 M parameters and 8.1 G reported FLOPs, compared with CARAFE's 3.1463 M and 8.4 G. These results support content-adaptive interpolation for heterogeneous defect morphologies with a small learned-parameter overhead.
 
 \begin{figure}[pos=!htbp]
 \centering
