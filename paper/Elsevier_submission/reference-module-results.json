@@ -1,6 +1,6 @@
 {
   "source": "Actual evaluation logs supplied by user and earlier read-only server evaluation; no new training or evaluation was run for this edit.",
-  "seed": 1,
+  "seed": null,
   "dataset": {
     "split": "test",
     "images": 81,
@@ -18,7 +18,7 @@
     "upsampling": "Bilinear/CARAFE/GIU; original C2f backbone fixed, two top-down sites.",
     "nearest": "Existing YOLOv8n baseline repeated at the start of both table groups; no new training or evaluation."
   },
-  "note": "Original component-ablation tables remain unchanged. Their MCE row is the user-supplied seed-4 run; this reference comparison uses the verified seed-1 MCE checkpoint. No multi-seed average is asserted. The YOLOv8n baseline is reused in both groups; its seed was not specified in the supplied log and is not asserted to be 1.",
+  "note": "MCE reuses the verified seed-4 component-ablation result (P=0.936, R=0.878, mAP@50=0.939, mAP@50:95=0.636). CA, Bilinear, CARAFE, and GIU use the recorded seed-1 results. The repeated YOLOv8n baseline is reused from the supplied component-ablation log, whose seed was not stated. These results are not asserted to be paired by seed or multi-seed averages.",
   "variants": [
     {
       "name": "CA",
@@ -52,27 +52,27 @@
       "params": 3006449,
       "flops": "8.1",
       "overall": [
-        "0.8846633631656639",
-        "0.5630142709527556"
+        "0.939",
+        "0.636"
       ],
       "row": [
-        "0.9836885245901639",
-        "0.6056333303573369"
+        "0.994",
+        "0.653"
       ],
       "col": [
-        "0.812109557109557",
-        "0.5380524475524475"
+        "0.932",
+        "0.647"
       ],
       "hole": [
-        "0.8581920077972709",
-        "0.5453570349484823"
+        "0.891",
+        "0.609"
       ],
-      "source": "Actual seed-1 evaluation retrieved read-only earlier in this conversation from targeted-mcgi/mce_nearest/1/metrics.json; fused complexity reused from the identical seed-independent MCE architecture summary",
-      "path": "/home/tkz/code/github/ultralytics/runs/detect/ablation-axis-gate/axis-only/1/test",
-      "seed": 1,
-      "P": "0.9031203967436862",
-      "R": "0.8576023391812866",
-      "PR_source": "Read-only retrieval of overall.P and overall.R from /home/tkz/code/github/ultralytics/runs/detect/targeted-mcgi/mce_nearest/1/metrics.json; same seed-1 checkpoint and mAP values already used in this table."
+      "source": "User-supplied MCE-only evaluation used in the component ablation table; verified read-only against the existing seed-4 test_metrics.log and args.yaml on the server.",
+      "path": "/home/tkz/code/github/ultralytics/runs/detect/ablation-axis-gate/axis-only/4/test",
+      "seed": 4,
+      "P": "0.936",
+      "R": "0.878",
+      "PR_source": "Overall P=0.936 and R=0.878 from the same user-supplied MCE-only log, verified at /home/tkz/code/github/ultralytics/runs/detect/ablation-axis-gate/axis-only/4/test_metrics.log."
     },
     {
       "name": "Bilinear",
