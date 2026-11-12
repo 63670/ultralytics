@@ -250,9 +250,9 @@ Based on the design requirements of the subsystems described above, we develop t
 
 \section{Detection Algorithm}
 \label{sec:method}
-\subsection{Defect Morphology and Design Motivation}
+\subsection{Defect Morphology Analysis}
 \label{sec:defect-morphology}
-Fig.~\ref{fig:dataset-examples} presents typical defects encountered during circular knitting. Horizontal and vertical defects extend over long spatial ranges while remaining narrow in the perpendicular direction, and their visible lengths vary considerably. Holes range from small localized openings to large damaged regions, and different defect categories may coexist in the same image. These observations indicate that the detector must associate spatially separated responses along elongated defects while accommodating substantial differences in defect shape and scale.
+Fig.~\ref{fig:dataset-examples} shows typical defects encountered during circular knitting, and Fig.~\ref{fig:annotation-shapes} summarizes the morphology and scale distribution of the 468 annotated bounding boxes. Horizontal and vertical defects extend along their respective directions with considerable variation in visible length, whereas holes range from small localized openings to large damaged regions. Different defect categories may also coexist within the same image. In Fig.~\ref{fig:annotation-shapes}, each box is translated to the common center $(0.5,0.5)$ while retaining its width and height normalized by the image dimensions. Horizontal and vertical defects form distinct elongated distributions, whereas holes exhibit a wide range of sizes. These observations indicate that the detector must associate spatially separated responses along elongated defects and preserve spatial structure across defects of different shapes and scales, under the computational constraints of edge deployment.
 
 \begin{figure*}[width=\textwidth,pos=!tb]
 \centering
@@ -260,8 +260,6 @@ Fig.~\ref{fig:dataset-examples} presents typical defects encountered during circ
 \caption{Representative annotated fabric-defect samples.}
 \label{fig:dataset-examples}
 \end{figure*}
-
-Fig.~\ref{fig:annotation-shapes} summarizes the morphology and scale variation of the 468 annotated boxes. Each box is translated to the common center $(0.5,0.5)$ while retaining its width and height normalized by the image dimensions. Horizontal and vertical defects form distinct elongated distributions, whereas holes span a wide range of spatial extents. These distributions highlight two detection requirements: associating distant responses along elongated defects and preserving spatial structure across defects of different shapes and scales under the computational constraints of edge deployment.
 
 \begin{figure*}[width=\textwidth,pos=!tb]
 \centering
