@@ -428,12 +428,7 @@ R &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}},
 \end{align}
 \noindent where TP, FP, and FN denote true-positive, false-positive, and false-negative counts, respectively; $\mathrm{AP}_c$ is the AP of class $c$, and $N_c=3$. mAP@50 uses an IoU threshold of 0.5, while mAP@50:95 averages mAP over IoU thresholds from 0.50 to 0.95 in steps of 0.05. Reported P and R are averaged across classes, with YOLO-based detectors evaluated at the best mean-F1 operating point. All accuracy metrics are expressed as percentages. In comparison tables, bold and underlined values indicate the best and second-best results, respectively.
 
-Model parameters and FLOPs are measured at $640\times640$ input resolution using each model's respective framework. Inference throughput in frames per second (FPS) is calculated as
-\begin{equation}
-\mathrm{FPS}=\frac{1000}{\overline{t}_{\mathrm{infer}}},
-\label{eq:fps}
-\end{equation}
-\noindent where $\overline{t}_{\mathrm{infer}}$ is the mean model-inference time per image in milliseconds, excluding preprocessing and postprocessing. For FPS comparison, all models are evaluated on an RTX 3090 with FP32 precision, batch size 1, and $640\times640$ inputs. This measurement is separate from the RK3566 deployment result.
+Model parameters and FLOPs are measured at $640\times640$ input resolution using each model's respective framework. For FPS comparison, all models are evaluated on an RTX 3090 with FP32 precision, batch size 1, and $640\times640$ inputs. This measurement is separate from the RK3566 deployment result.
 
 \subsection{Comparison With Other Detectors}
 Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inference throughput.
