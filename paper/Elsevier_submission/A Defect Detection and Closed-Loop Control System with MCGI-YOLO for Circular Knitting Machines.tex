@@ -180,8 +180,6 @@ R_{\mathrm{img}} &= W H b f_{\mathrm{cam}} \\
 
 \subsection{Processor Subsystem}
 \label{sec:coverage}
-We derive the processor-throughput target from the production conditions in Table~\ref{tab:production-inputs} and the camera field of view before selecting the hardware.
-
 \begin{table}[pos=!htbp]
 \caption{Machine operating parameters.}
 \label{tab:production-inputs}
@@ -199,7 +197,7 @@ Rotation period & $T$ & 2 s/revolution \\
 \end{tabular*}
 \end{table}
 
-With fabric moving at $\pi D/T$ and a horizontal field-of-view width of $w=0.16$ m, the minimum coverage rate is
+Before selecting the processor, we first determine the processor-throughput target based on the production conditions listed in Table~\ref{tab:production-inputs} and the camera's field of view. With fabric moving at $\pi D/T$ and a horizontal field-of-view width of $w=0.16$ m, the minimum coverage rate is
 \begin{equation}
 f_{\min}=\frac{\pi D}{Tw}
 =\frac{\pi\times1.016}{2\times0.16}
