@@ -534,7 +534,7 @@ GIU achieves 63.0\% mAP@50:95, exceeding Bilinear and CARAFE by 3.9 and 1.3 perc
 
 \section{System Deployment and Industrial Application}
 \label{sec:system-operation}
-The inspection workflow is implemented through the dedicated edge device, client interface, cloud platform, and configurable stopping rules. This section evaluates on-device inference and closed-loop response, and describes configurable stopping decisions, local intervention, remote supervision, operator feedback, and the resulting change in factory inspection practice.
+The inspection workflow is implemented through the dedicated edge device, cloud platform, and configurable stopping rules. This section evaluates on-device inference and closed-loop response, and describes configurable stopping decisions, remote supervision, and the resulting change in factory inspection practice.
 
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
@@ -624,26 +624,13 @@ S_s=
 
 Higher sensitivity lowers the confidence, size, and count thresholds, allowing stopping for smaller defects or fewer detections within a frame. Lower sensitivity raises these thresholds to accommodate less stringent acceptance criteria. The editable presets convert detection outputs into factory-specific production decisions without retraining the detector.
 
-\subsection{Client Detection Interface and Operator Feedback}
-\label{sec:client-interface}
-An Android client application is developed in Kotlin and deployed on the RK3566 edge device, providing detection-state visualization, sensitivity configuration, defect review, and operator feedback.
-
-Fig.~\ref{fig:client-detection} shows the detection home page (left), defect-review interface (center), and mobile notification interface (right). The home page displays the detection state, device information, and current sensitivity setting. Upon defect detection, the client automatically switches to the defect-detail page, displaying the captured image, the localized defect, and its category for operator review. The confirmation buttons on the right side of the defect-detail page allow the operator to indicate whether the detected defect warrants machine stopping under the factory's quality requirements. These assessments link detection images and results to operator feedback, providing samples for review, annotation, and subsequent model refinement.
-
-\begin{figure*}[width=\textwidth,pos=!tbp]
-\centering
-\includegraphics[width=0.98\textwidth]{detect.png}
-\caption{Client detection, defect review, and mobile notification interfaces.}
-\label{fig:client-detection}
-\end{figure*}
-
 \subsection{Cloud Monitoring and Remote Management}
 \label{sec:network-client}
 The edge device reports defect events and runtime states to the cloud and receives remote configuration updates. Local detection and machine-stop commands are executed on the edge device, while the cloud provides centralized monitoring and management.
 
 The system landing page, defect trends, and defect records are shown in Fig.~\ref{fig:iot-platform}(a)--(c), respectively. The runtime-state interface in Fig.~\ref{fig:iot-platform}(f) displays the application version, camera status, CPU temperature, fabric type, and detection state. The configuration interface in Fig.~\ref{fig:iot-platform}(d) supports remote adjustment of sensitivity and the associated confidence, geometric, and defect-count thresholds.
 
-The model-management interface in Fig.~\ref{fig:iot-platform}(e) accepts RKNN models and associated class-label files for on-demand over-the-air (OTA) model updates. Updated models can be distributed remotely to edge devices for subsequent local inference. Operator feedback, model refinement, and OTA redeployment thus form an iterative improvement workflow that incorporates production experience into model updates.
+The model-management interface in Fig.~\ref{fig:iot-platform}(e) accepts RKNN models and associated class-label files for on-demand over-the-air (OTA) model updates. Updated models can be distributed remotely to edge devices for subsequent local inference. Model refinement and OTA redeployment support iterative detector updates using production data.
 
 \begin{figure*}[width=\textwidth,pos=!tbp]
 \centering

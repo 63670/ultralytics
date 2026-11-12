@@ -25,3 +25,4 @@
 - 总体消融、分类别AP和复杂度合并为单张双栏组件表；tab:ablation与tab:ablation-classwise指向同一张表。变体名已表明MCE/GIU组合，不再重复勾选列；合并表及参考模块宽表均使用8 pt字号。
 - VS Code统一调用build.ps1，先在build/编译并生成SyncTeX，再原子更新.tex同目录PDF；预览和日志使用build/。同稿互斥锁跳过重复编译；根目录PDF被阅读器占用时保留旧PDF并使用build/最新稿，不强制关闭应用或删除文件。
 - 热力图已按用户要求从正文移除，不再引用fig:heatmaps，也不自动恢复fig7.png的插图环境；原始图片和生成脚本保留供后续需要时使用，后续图号由LaTeX自动顺延。
+- 已按用户要求移除原6.3 Client Detection Interface and Operator Feedback及客户端图fig:client-detection（detect.png）；不自动恢复，保留原图文件。部署节概述和云端文字已清理对应客户端反馈引入，后续章节与图号由LaTeX自动顺延。
