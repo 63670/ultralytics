@@ -16,9 +16,9 @@
   "design": {
     "context": "CA/MCE, nearest-neighbor neck fixed; same backbone P3/P4 insertion sites.",
     "upsampling": "Bilinear/CARAFE/GIU; original C2f backbone fixed, two top-down sites.",
-    "nearest": "Existing baseline, no new experiment or duplicate row."
+    "nearest": "Existing YOLOv8n baseline repeated at the start of both table groups; no new training or evaluation."
   },
-  "note": "Original component-ablation tables remain unchanged. Their MCE row is the user-supplied seed-4 run; this reference comparison uses the verified seed-1 MCE checkpoint. No multi-seed average is asserted.",
+  "note": "Original component-ablation tables remain unchanged. Their MCE row is the user-supplied seed-4 run; this reference comparison uses the verified seed-1 MCE checkpoint. No multi-seed average is asserted. The YOLOv8n baseline is reused in both groups; its seed was not specified in the supplied log and is not asserted to be 1.",
   "variants": [
     {
       "name": "CA",
@@ -140,5 +140,29 @@
       "path": "/home/tkz/code/github/ultralytics/runs/detect/ablation-axis-gate/gate-only/1/test",
       "seed": 1
     }
-  ]
+  ],
+  "baseline": {
+    "name": "YOLOv8n",
+    "params": 3006233,
+    "flops": "8.1",
+    "overall": [
+      "0.905",
+      "0.584"
+    ],
+    "row": [
+      "0.982",
+      "0.627"
+    ],
+    "col": [
+      "0.828",
+      "0.527"
+    ],
+    "hole": [
+      "0.904",
+      "0.597"
+    ],
+    "source": "Existing user-supplied evaluation log, also recorded in ablation-classwise-metrics.json and the component ablation table.",
+    "path": "/home/tkz/code/github/ultralytics/runs/detect/yolov8n14/test",
+    "seed": null
+  }
 }
