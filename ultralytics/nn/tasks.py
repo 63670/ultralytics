@@ -40,6 +40,8 @@ from ultralytics.nn.modules import (
     C2fPartialAxis,
     C2fAxisResidual,
     C2fCoordinateAttention,
+    C2fECA,
+    C2fCBAM,
     C2fAxisBounded,
     C2fSobel,
     C2fSobelBottleneck,
@@ -47,6 +49,7 @@ from ultralytics.nn.modules import (
     C2fWWTE,
     C2fWWTEGated,
     CARAFEUpsample,
+    DySampleUpsample,
     ContentAwareUpsample,
     ContentAwareUpsampleLite,
     GatedInterpolationUpsample,
@@ -2051,6 +2054,8 @@ def parse_model(d, ch, verbose=True):
             C2fPartialAxis,
             C2fAxisResidual,
             C2fCoordinateAttention,
+            C2fECA,
+            C2fCBAM,
             C2fAxisBounded,
             C2fSobel,
             C2fSobelBottleneck,
@@ -2088,6 +2093,8 @@ def parse_model(d, ch, verbose=True):
             C2fPartialAxis,
             C2fAxisResidual,
             C2fCoordinateAttention,
+            C2fECA,
+            C2fCBAM,
             C2fAxisBounded,
             C2fSobel,
             C2fSobelBottleneck,
@@ -2158,7 +2165,7 @@ def parse_model(d, ch, verbose=True):
             c2 = make_divisible(min(args[0], max_channels) * width, 8)
             args = [ch[f[0]], c2, n, ch[f[1]], *args[1:]]
             n = 1
-        elif m in {CARAFEUpsample, ContentAwareUpsample, ContentAwareUpsampleLite, GatedInterpolationUpsample, PhaseAwareUpsample}:
+        elif m in {CARAFEUpsample, DySampleUpsample, ContentAwareUpsample, ContentAwareUpsampleLite, GatedInterpolationUpsample, PhaseAwareUpsample}:
             c2 = ch[f]
             args = [c2, *args]
         elif m in frozenset({HGStem, HGBlock}):

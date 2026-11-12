@@ -17,7 +17,9 @@ import torch
 from torch import nn
 from ultralytics import YOLO
 from ultralytics.nn.modules import C2fAxisResidual, GatedInterpolationUpsample
-from ultralytics.nn.modules.comparisons import CoordinateAttention, CARAFEUpsample
+from ultralytics.nn.modules.comparisons import (
+    CARAFEUpsample, CBAMReference, CoordinateAttention, DySampleUpsample, EfficientChannelAttention,
+)
 from ultralytics.utils import YAML
 
 CONFIGS = {
@@ -94,20 +96,29 @@ def protocol(args, seeds):
 
 
 def complexity(network):
-    """Count Conv2d MACs at actual 640 input plus explicitly defined comparison-operator arithmetic.
+    """Count Conv/Linear MACs at actual 640 input plus defined comparison-operator arithmetic.
 
-    FLOPs = 2*conv MACs + pooling/gating/interpolation/reassembly arithmetic in comparison modules.
+    FLOPs = 2*Conv/Linear MACs + pooling/gating/interpolation/reassembly arithmetic in comparison modules.
     Generic nonlinear activations, backbone pooling and memory copies are excluded for every variant.
     """
     params_unfused = sum(p.numel() for p in network.parameters())
     model = copy.deepcopy(network).cpu().float().eval().fuse(verbose=False)
+    params_fused = sum(p.numel() for p in model.parameters())
     for layer in model.modules():
         if isinstance(layer, CoordinateAttention) and isinstance(layer.bn, nn.BatchNorm2d):
             layer.reduce = torch.nn.utils.fuse_conv_bn_eval(layer.reduce, layer.bn)
             layer.bn = nn.Identity()
+        elif isinstance(layer, CBAMReference) and isinstance(layer.spatial_bn, nn.BatchNorm2d):
+            layer.spatial = torch.nn.utils.fuse_conv_bn_eval(layer.spatial, layer.spatial_bn)
+            layer.spatial_bn = nn.Identity()
     core, extra, hooks = [0], [0], []
     def conv(m, xs, out):
-        core[0] += 2 * out.numel() * (m.in_channels // m.groups) * m.kernel_size[0] * m.kernel_size[1]
+        kernel = 1
+        for size in m.kernel_size:
+            kernel *= size
+        core[0] += 2 * out.numel() * (m.in_channels // m.groups) * kernel
+    def linear(m, xs, out):
+        core[0] += 2 * out.numel() * m.in_features
     def custom(m, xs, out):
         x = xs[0]; b,c,h,w = x.shape
         if isinstance(m, nn.Upsample) and m.mode == "bilinear":
@@ -120,13 +131,22 @@ def complexity(network):
             extra[0] += 8 * b * m.active * h * w  # two means, broadcast sum, centered residual modulation
         elif isinstance(m, CARAFEUpsample):
             extra[0] += (2 * m.up_kernel**2 - 1) * out.numel()
+        elif isinstance(m, EfficientChannelAttention):
+            extra[0] += 2 * x.numel()  # spatial mean and channel multiplication
+        elif isinstance(m, CBAMReference):
+            extra[0] += 4 * x.numel() + b*c  # two means, two feature multiplications, descriptor addition
+        elif isinstance(m, DySampleUpsample):
+            offset_elements = b * 2 * m.groups * m.scale_factor**2 * h * w
+            extra[0] += (7 if m.dyscope else 6) * offset_elements + 7 * out.numel()
     for m in model.modules():
-        if isinstance(m, nn.Conv2d): hooks.append(m.register_forward_hook(conv))
-        if isinstance(m, (nn.Upsample, GatedInterpolationUpsample, CoordinateAttention, C2fAxisResidual, CARAFEUpsample)):
+        if isinstance(m, (nn.Conv1d, nn.Conv2d)): hooks.append(m.register_forward_hook(conv))
+        if isinstance(m, nn.Linear): hooks.append(m.register_forward_hook(linear))
+        if isinstance(m, (nn.Upsample, GatedInterpolationUpsample, CoordinateAttention, C2fAxisResidual,
+                          CARAFEUpsample, EfficientChannelAttention, CBAMReference, DySampleUpsample)):
             hooks.append(m.register_forward_hook(custom))
     with torch.inference_mode(): model(torch.zeros(1,3,640,640))
     for h in hooks: h.remove()
-    return dict(params=params_unfused, params_fused=sum(p.numel() for p in model.parameters()), gflops=(core[0]+extra[0])/1e9,
+    return dict(params=params_unfused, params_fused=params_fused, gflops=(core[0]+extra[0])/1e9,
                 conv_gflops=core[0]/1e9, comparison_arithmetic_gflops=extra[0]/1e9)
 
 

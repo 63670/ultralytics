@@ -91,7 +91,7 @@ for argument in "${train_args[@]}"; do
     pretrained=*)
       pretrained_arg="${argument#pretrained=}"
       ;;
-    data=*|imgsz=*|batch=*|device=*|workers=*|max_det=*)
+    data=*|imgsz=*|batch=*|device=*|workers=*|max_det=*|conf=*|iou=*|half=*)
       # Keep test settings consistent with any explicit shared training settings.
       eval_args+=("${argument}")
       ;;
@@ -157,6 +157,9 @@ run_one() {
     "device=${device}" \
     workers=8 \
     max_det=16 \
+    conf=0.001 \
+    iou=0.7 \
+    half=False \
     "${eval_args[@]}" \
     "project=${run_dir}" \
     name=test \

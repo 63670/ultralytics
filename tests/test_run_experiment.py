@@ -125,6 +125,8 @@ class TestRunExperiment(unittest.TestCase):
             self.assertIn(f"model={bash_path(run_dir / 'weights' / 'best.pt')}", val)
             self.assertIn(f"project={bash_path(run_dir)}", val)
             self.assertIn("split=test", val)
+            for argument in ("conf=0.001", "iou=0.7", "half=False"):
+                self.assertIn(argument, val)
             self.assertTrue((run_dir / "test").is_dir())
             self.assertTrue((run_dir / "test_metrics.log").is_file())
             self.assertEqual([path.name for path in (run_dir / "weights").iterdir()], ["best.pt"])
@@ -146,11 +148,13 @@ class TestRunExperiment(unittest.TestCase):
         result = self.run_script(
             "--seed", "7", "--device", "0", "yolov10n.pt", "model",
             "batch=8", "imgsz=320", "data=other.yaml", "workers=2", "max_det=20", "device=cpu",
+            "conf=0.005", "iou=0.5", "half=True",
         )
         self.assert_success(result)
         train, val = self.calls()
         self.assertIn("seed=7", train)
-        for argument in ["batch=8", "imgsz=320", "data=other.yaml", "workers=2", "max_det=20", "device=cpu"]:
+        for argument in ["batch=8", "imgsz=320", "data=other.yaml", "workers=2", "max_det=20", "device=cpu",
+                         "conf=0.005", "iou=0.5", "half=True"]:
             self.assertIn(argument, train)
             self.assertIn(argument, val)
         self.assertTrue((self.runs / "model" / "7" / "weights" / "best.pt").is_file())
