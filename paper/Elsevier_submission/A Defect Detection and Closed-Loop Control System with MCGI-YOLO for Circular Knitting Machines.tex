@@ -180,7 +180,16 @@ R_{\mathrm{img}} &= W H b f_{\mathrm{cam}} \\
 
 \subsection{Processor Subsystem}
 \label{sec:coverage}
-\begin{table}[pos=!htbp]
+Before selecting the processor, we first determine the processor-throughput target based on the production conditions listed in Table~\ref{tab:production-inputs} and the camera's field of view. With fabric moving at $\pi D/T$ and a horizontal field-of-view width of $w=0.16$ m, the minimum coverage rate is
+\begin{equation}
+f_{\min}=\frac{\pi D}{Tw}
+=\frac{\pi\times1.016}{2\times0.16}
+\approx9.97\ \mathrm{frames/s},
+\label{eq:coverage-rate}
+\end{equation}
+\noindent establishing 10 frames/s as the throughput target for hardware selection. Rockchip's official RKNN Model Zoo reports a model-inference throughput of 35.1 FPS for INT8 YOLOv8n with $640\times640$ inputs in its RK3566/RK3568 benchmark, measured at the maximum NPU frequency \cite{rockchipmodelzoo}. This reference throughput is more than three times the 10 FPS requirement, providing an initial performance margin for task-specific algorithm improvements. We therefore select YOLOv8n as the baseline detector and the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) as the processor, considering this margin, camera connectivity, and hardware cost (Table~\ref{tab:processor-costs}). The RK3566 integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
+
+\begin{table}[pos=!hbp]
 \caption{Machine operating parameters.}
 \label{tab:production-inputs}
 \centering
@@ -195,18 +204,7 @@ Design machine diameter & $D$ & 1.016 m (40 in) \\
 Rotation period & $T$ & 2 s/revolution \\
 \bottomrule
 \end{tabular*}
-\end{table}
-
-Before selecting the processor, we first determine the processor-throughput target based on the production conditions listed in Table~\ref{tab:production-inputs} and the camera's field of view. With fabric moving at $\pi D/T$ and a horizontal field-of-view width of $w=0.16$ m, the minimum coverage rate is
-\begin{equation}
-f_{\min}=\frac{\pi D}{Tw}
-=\frac{\pi\times1.016}{2\times0.16}
-\approx9.97\ \mathrm{frames/s},
-\label{eq:coverage-rate}
-\end{equation}
-\noindent establishing 10 frames/s as the throughput target for hardware selection. Rockchip's official RKNN Model Zoo reports a model-inference throughput of 35.1 FPS for INT8 YOLOv8n with $640\times640$ inputs in its RK3566/RK3568 benchmark, measured at the maximum NPU frequency \cite{rockchipmodelzoo}. This reference throughput is more than three times the 10 FPS requirement, providing an initial performance margin for task-specific algorithm improvements. We therefore select YOLOv8n as the baseline detector and the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) as the processor, considering this margin, camera connectivity, and hardware cost (Table~\ref{tab:processor-costs}). The RK3566 integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
-
-\begin{table}[pos=!htbp]
+\par\medskip
 \caption{Computing platforms and reference costs.}
 \label{tab:processor-costs}
 \centering
