@@ -269,7 +269,7 @@ Fig.~\ref{fig:dataset-examples} shows typical defects encountered during circula
 \end{figure*}
 
 \subsection{MCGI-YOLO Architecture}
-Fig.~\ref{fig:network} shows \model based on YOLOv8n \cite{ultralytics2023}. To associate spatially separated responses along horizontal and vertical elongated defects, morphology-aware context encoding (MCE) is embedded in the P3 and P4 backbone C2f blocks. To accommodate differences in defect shape and scale during feature reconstruction, gated interpolation upsampling (GIU) replaces the two top-down upsampling operations from P5 to P4 and from P4 to P3, adapting higher-level context to local feature content before fusion with lateral features. The remaining backbone, bottom-up path, and detection head are retained \cite{lin2017fpn,liu2018panet}.
+Based on the fabric defect morphology analysis in Section~\ref{sec:defect-morphology} and the processor-throughput requirements established in Section~\ref{sec:coverage}, we develop \model on the YOLOv8n architecture \cite{ultralytics2023}, as shown in Fig.~\ref{fig:network}. To associate spatially separated responses along horizontal and vertical elongated defects, morphology-aware context encoding (MCE) is embedded in the P3 and P4 backbone C2f blocks. To accommodate differences in defect shape and scale during feature reconstruction, gated interpolation upsampling (GIU) replaces the two top-down upsampling operations from P5 to P4 and from P4 to P3, adapting higher-level context to local feature content before fusion with lateral features. The remaining backbone, bottom-up path, and detection head are retained \cite{lin2017fpn,liu2018panet}.
 
 \begin{figure*}[width=\textwidth,pos=!tb]
 \centering
