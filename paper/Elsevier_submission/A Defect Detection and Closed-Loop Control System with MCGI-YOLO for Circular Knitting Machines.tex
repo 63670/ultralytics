@@ -232,8 +232,6 @@ The edge device connects to the cloud through a 4G module with a SIM-card slot a
 
 \subsection{Hardware Implementation}
 \label{sec:hardware-implementation}
-Based on the design requirements of the subsystems described above, we develop the corresponding hardware shown in Fig.~\ref{fig:hardware}.
-
 \begin{figure*}[width=\textwidth,pos=!tbp]
 \centering
 \includegraphics[width=1.0\textwidth]{fig2.png}
@@ -241,7 +239,7 @@ Based on the design requirements of the subsystems described above, we develop t
 \label{fig:hardware}
 \end{figure*}
 
-The camera assembly (a) combines the image sensor and LED illumination. We design a camera-side interface board (b) that integrates the serializer and coaxial connector, and a mainboard (c) built around the RK3566. The mainboard integrates flash storage, the camera deserializer and coaxial connector, a 4G module with SIM-card and antenna interface, input/output interface, and power-management circuitry. This board-level integration brings image reception, local inference, network communication, machine control, and illumination control into a dedicated edge device. Fig.~\ref{fig:system} shows the system installed on a circular knitting machine in a real production line.
+Based on the design requirements of the subsystems described above, we develop the corresponding hardware shown in Fig.~\ref{fig:hardware}. The camera assembly (a) combines the image sensor and LED illumination. We design a camera-side interface board (b) that integrates the serializer and coaxial connector, and a mainboard (c) built around the RK3566. The mainboard integrates flash storage, the camera deserializer and coaxial connector, a 4G module with SIM-card and antenna interface, input/output interface, and power-management circuitry. This board-level integration brings image reception, local inference, network communication, machine control, and illumination control into a dedicated edge device. Fig.~\ref{fig:system} shows the system installed on a circular knitting machine in a real production line.
 
 \begin{figure*}[width=\textwidth,pos=!tbp]
 \centering
