@@ -506,19 +506,36 @@ Although either module alone reduces Hole AP@50 relative to the baseline, their 
 
 
 
-\begin{table*}[pos=!tbp]
-\caption{Comparisons with reference modules.}
-\label{tab:reference-modules}
+To evaluate MCE's adaptation to elongated defects against a related context encoding mechanism, we compare it with CA, which also uses horizontal and vertical pooling (Table~\ref{tab:context-comparison}). Both modules occupy the same P3/P4 C2f insertion sites while retaining nearest-neighbor upsampling. All module comparisons use the same test set and evaluation protocol, with complexity taken from the fused-model summaries. The YOLOv8n baseline and MCE results are reused from Table~\ref{tab:ablation}. MCE achieves 93.9\% mAP@50 and 63.6\% mAP@50:95, exceeding CA by 0.5 and 7.3 percentage points, respectively. Its precision is higher (93.6\% versus 92.5\%), while CA has higher recall (89.8\% versus 87.8\%).
+
+\begin{table}[pos=!htbp]
+\caption{Comparison of context encoding modules.}
+\label{tab:context-comparison}
 \centering
 \fontsize{8}{9.5}\selectfont
-\setlength{\tabcolsep}{3pt}
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrr@{}}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrrr@{}}
 \toprule
-Variant & Params (M) & FLOPs (G) & P (\%) & R (\%) & mAP@50 (\%) & mAP@50:95 (\%) \\
+Variant & \shortstack{Params\\(M)} & \shortstack{FLOPs\\(G)} & \shortstack{P\\(\%)} & \shortstack{R\\(\%)} & \shortstack{mAP@50\\(\%)} & \shortstack{mAP@50:95\\(\%)} \\
 \midrule
 YOLOv8n & \textbf{3.0062} & \textbf{8.1} & 89.4 & 81.1 & 90.5 & \underline{58.4} \\
 CA~\cite{hou2021coordinate} & 3.0088 & \textbf{8.1} & \underline{92.5} & \textbf{89.8} & \underline{93.4} & 56.3 \\
 MCE & \underline{3.0064} & \textbf{8.1} & \textbf{93.6} & \underline{87.8} & \textbf{93.9} & \textbf{63.6} \\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+To evaluate GIU's balance between detection accuracy and computational cost, we compare it with the baseline nearest-neighbor operator, Bilinear interpolation, and CARAFE learned feature reassembly (Table~\ref{tab:upsampling-comparison}). Each operator replaces both top-down upsampling stages while the original C2f backbone is retained. GIU achieves 63.0\% mAP@50:95, exceeding Bilinear and CARAFE by 3.9 and 1.3 percentage points, respectively. It also attains the highest precision (95.7\%) and recall (90.9\%) among the compared upsampling variants. GIU uses 3.0097 M parameters and 8.1 G reported FLOPs, compared with CARAFE's 3.1463 M and 8.4 G. These results support content-adaptive interpolation for heterogeneous defect morphologies with a small learned-parameter overhead.
+
+\begin{table}[pos=!htbp]
+\caption{Comparison of upsampling operators.}
+\label{tab:upsampling-comparison}
+\centering
+\fontsize{8}{9.5}\selectfont
+\setlength{\tabcolsep}{2pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrrr@{}}
+\toprule
+Variant & \shortstack{Params\\(M)} & \shortstack{FLOPs\\(G)} & \shortstack{P\\(\%)} & \shortstack{R\\(\%)} & \shortstack{mAP@50\\(\%)} & \shortstack{mAP@50:95\\(\%)} \\
 \midrule
 YOLOv8n & \textbf{3.0062} & \textbf{8.1} & 89.4 & 81.1 & 90.5 & 58.4 \\
 Bilinear & \textbf{3.0062} & \textbf{8.1} & \underline{95.6} & 87.1 & 92.3 & 59.1 \\
@@ -526,11 +543,7 @@ CARAFE~\cite{wang2019carafe} & 3.1463 & \underline{8.4} & 91.2 & \underline{89.0
 GIU & \underline{3.0097} & \textbf{8.1} & \textbf{95.7} & \textbf{90.9} & \textbf{94.4} & \textbf{63.0} \\
 \bottomrule
 \end{tabular*}
-\end{table*}
-
-To assess the design choices in MCE and GIU, we compare them with alternatives for context encoding and upsampling (Table~\ref{tab:reference-modules}). CA also uses horizontal and vertical pooling, providing a relevant reference for evaluating MCE's adaptation to elongated defects. Bilinear and CARAFE represent fixed interpolation and learned feature reassembly, respectively, allowing us to assess GIU's balance between detection accuracy and computational cost. CA and MCE occupy the same P3/P4 C2f insertion sites with nearest-neighbor upsampling fixed; Bilinear, CARAFE, and GIU replace both top-down upsampling operations with the original backbone retained. The comparisons use the same test set and evaluation protocol, reusing the YOLOv8n baseline and MCE results from Table~\ref{tab:ablation}. Complexity values are taken from the fused-model evaluation summaries. MCE achieves 93.9\% mAP@50 and 63.6\% mAP@50:95, exceeding CA by 0.5 and 7.3 percentage points, respectively. Its precision is higher (93.6\% versus 92.5\%), while CA has higher recall (89.8\% versus 87.8\%).
-
-GIU achieves 63.0\% mAP@50:95, exceeding Bilinear and CARAFE by 3.9 and 1.3 percentage points, respectively. It also attains the highest precision (95.7\%) and recall (90.9\%) among the compared upsampling variants. GIU uses 3.0097 M parameters and 8.1 G reported FLOPs, compared with CARAFE's 3.1463 M and 8.4 G. These results support content-adaptive interpolation for heterogeneous defect morphologies with a small learned-parameter overhead.
+\end{table}
 
 \section{System Deployment and Industrial Application}
 \label{sec:system-operation}

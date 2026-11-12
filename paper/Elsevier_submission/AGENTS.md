@@ -21,8 +21,8 @@
 - 云端小节使用 Cloud Monitoring and Remote Management，描述状态监控、远程配置和OTA，不称为数字孪生；延迟估算标题使用 Illustrative Analysis of Defect Propagation Before Intervention，明确287.3 m为90圈横向瑕疵长度累计，2.7 m为生产方向受影响布长，不将前者写成报废布长。
 - Section 6.1内的Closed-Loop Response Time区分纯模型FPS与闭环响应；软件阶段用户实测为预处理25 ms、推理43.5 ms、后处理及停机决策7 ms、命令执行36 ms，合计111.5 ms。机器制动1.5–1.8 s为用户给出的典型范围，完整响应1.61–1.91 s为基于阶段值计算的估计，不写成直接实测的完整延迟。计时从图像进入预处理开始，采集及SerDes传输不纳入；各阶段使用首尾衔接的边界，停机信号发出是命令执行结束与机械制动开始的共同边界。正文仅保留公式、阶段耗时与总时间的简洁说明，不另设响应时间表。
 - 本系统统一使用 rotation-activated detection：霍尔传感器仅检测织机运行状态并激活检测流程，不负责逐帧触发相机采集或曝光；启动后相机连续采集、边缘端持续推理，满足规则后下发停机命令。摘要、引言、贡献点、系统总览及结论保持一致；相关工作中其他系统的encoder-based synchronization不据此改写。
-- 参考模块对比见tab:reference-modules及reference-module-results.json：MCE必须复用组件消融表的真实seed 4结果，P=93.6%、R=87.8%、mAP@50=93.9%、mAP@50:95=63.6%；已只读核对服务器axis-only/4/test_metrics.log和args.yaml。不得再误用另一轮seed 1的88.5/56.3。CA、Bilinear、CARAFE、GIU为已有seed 1结果，YOLOv8n基线在两组重复展示但原日志未注明seed；不声称全部同seed或多种子均值。CA/MCE共用Nearest，Bilinear/CARAFE/GIU共用原始C2f骨干，复杂度使用fused日志口径；未经明确指令不启动训练。
-- 总体消融、分类别AP和复杂度合并为单张双栏组件表；tab:ablation与tab:ablation-classwise指向同一张表。变体名已表明MCE/GIU组合，不再重复勾选列；合并表及参考模块宽表均使用8 pt字号。
+- 参考模块对比按功能拆为tab:context-comparison与tab:upsampling-comparison两张单栏表，来源为reference-module-results.json：MCE必须复用组件消融表的真实seed 4结果，P=93.6%、R=87.8%、mAP@50=93.9%、mAP@50:95=63.6%；已只读核对服务器axis-only/4/test_metrics.log和args.yaml。不得再误用另一轮seed 1的88.5/56.3。CA、Bilinear、CARAFE、GIU为已有seed 1结果，YOLOv8n基线在两组重复展示但原日志未注明seed；不声称全部同seed或多种子均值。CA/MCE共用Nearest，Bilinear/CARAFE/GIU共用原始C2f骨干，复杂度使用fused日志口径；未经明确指令不启动训练。
+- 总体消融、分类别AP和复杂度合并为单张双栏组件表；tab:ablation与tab:ablation-classwise指向同一张表。变体名已表明MCE/GIU组合，不再重复勾选列；组件合并表使用双栏8 pt；上下文编码和上采样参考对比各为单栏8 pt，表头单位换行以保证可读性。
 - VS Code统一调用build.ps1，先在build/编译并生成SyncTeX，再原子更新.tex同目录PDF；预览和日志使用build/。同稿互斥锁跳过重复编译；根目录PDF被阅读器占用时保留旧PDF并使用build/最新稿，不强制关闭应用或删除文件。
 - 热力图已按用户要求从正文移除，不再引用fig:heatmaps，也不自动恢复fig7.png的插图环境；原始图片和生成脚本保留供后续需要时使用，后续图号由LaTeX自动顺延。
 - 已按用户要求移除原6.3 Client Detection Interface and Operator Feedback及客户端图fig:client-detection（detect.png）；不自动恢复，保留原图文件。部署节概述和云端文字已清理对应客户端反馈引入，后续章节与图号由LaTeX自动顺延。
