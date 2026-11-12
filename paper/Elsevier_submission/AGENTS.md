@@ -24,3 +24,4 @@
 - 参考模块对比见tab:reference-modules及reference-module-results.json：MCE必须复用组件消融表的真实seed 4结果，P=93.6%、R=87.8%、mAP@50=93.9%、mAP@50:95=63.6%；已只读核对服务器axis-only/4/test_metrics.log和args.yaml。不得再误用另一轮seed 1的88.5/56.3。CA、Bilinear、CARAFE、GIU为已有seed 1结果，YOLOv8n基线在两组重复展示但原日志未注明seed；不声称全部同seed或多种子均值。CA/MCE共用Nearest，Bilinear/CARAFE/GIU共用原始C2f骨干，复杂度使用fused日志口径；未经明确指令不启动训练。
 - 总体消融、分类别AP和复杂度合并为单张双栏组件表；tab:ablation与tab:ablation-classwise指向同一张表。变体名已表明MCE/GIU组合，不再重复勾选列；合并表及参考模块宽表均使用8 pt字号。
 - VS Code统一调用build.ps1，先在build/编译并生成SyncTeX，再原子更新.tex同目录PDF；预览和日志使用build/。同稿互斥锁跳过重复编译；根目录PDF被阅读器占用时保留旧PDF并使用build/最新稿，不强制关闭应用或删除文件。
+- 热力图已按用户要求从正文移除，不再引用fig:heatmaps，也不自动恢复fig7.png的插图环境；原始图片和生成脚本保留供后续需要时使用，后续图号由LaTeX自动顺延。

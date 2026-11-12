@@ -502,7 +502,7 @@ YOLOv8n + GIU & 3.01 & 8.2 & \underline{94.4} & 63.0 & \underline{99.0} & \under
 
 Table~\ref{tab:ablation} compares four configurations on the same 81 test images containing 91 defects under a common evaluation protocol. MCE alone retains nearest-neighbor upsampling, while GIU alone retains the original backbone C2f blocks. MCE increases Row and Col AP@50:95 by 2.6 and 12.0 percentage points, respectively, consistent with using extended directional context to associate spatially separated elongated-defect responses. GIU improves AP@50:95 for Row, Col, and Hole by 1.8, 9.2, and 2.9 points, respectively, consistent with its content-adaptive reconstruction for shape and scale variation.
 
-Although either module alone reduces Hole AP@50 relative to the baseline, their combination achieves the highest Hole AP@50 (93.5\%) and AP@50:95 (65.2\%). The combined model also attains the highest Col AP@50 (99.5\%) and AP@50:95 (66.9\%). For Col and Hole, the AP@50:95 gains over the best single-module results are 2.2 and 2.6 percentage points, respectively. This pattern suggests that MCE supplies more coherent contextual features and GIU adapts their reconstruction before fusion with local features, benefiting both elongated Col defects and localized holes. The interaction is class-dependent: Row AP@50:95 is 64.4\%, below the MCE-only result of 65.3\%. Fig.~\ref{fig:heatmaps} provides corresponding feature visualizations.
+Although either module alone reduces Hole AP@50 relative to the baseline, their combination achieves the highest Hole AP@50 (93.5\%) and AP@50:95 (65.2\%). The combined model also attains the highest Col AP@50 (99.5\%) and AP@50:95 (66.9\%). For Col and Hole, the AP@50:95 gains over the best single-module results are 2.2 and 2.6 percentage points, respectively. This pattern suggests that MCE supplies more coherent contextual features and GIU adapts their reconstruction before fusion with local features, benefiting both elongated Col defects and localized holes. The interaction is class-dependent: Row AP@50:95 is 64.4\%, below the MCE-only result of 65.3\%.
 
 
 
@@ -531,13 +531,6 @@ GIU & \underline{3.0097} & \textbf{8.1} & \textbf{95.7} & \textbf{90.9} & \textb
 Table~\ref{tab:reference-modules} reuses the YOLOv8n baseline and MCE results from Table~\ref{tab:ablation} and compares CA and alternative upsampling operators on the same test set and under the same evaluation protocol. CA and MCE occupy the same P3/P4 C2f insertion sites with nearest-neighbor upsampling fixed; Bilinear, CARAFE, and GIU replace both top-down upsampling operations with the original backbone retained. Complexity values are taken from the fused-model evaluation summaries. MCE achieves 93.9\% mAP@50 and 63.6\% mAP@50:95, exceeding CA by 0.5 and 7.3 percentage points, respectively. Its precision is higher (93.6\% versus 92.5\%), while CA has higher recall (89.8\% versus 87.8\%).
 
 GIU achieves 63.0\% mAP@50:95, exceeding Bilinear and CARAFE by 3.9 and 1.3 percentage points, respectively. It also attains the highest precision (95.7\%) and recall (90.9\%) among the compared upsampling variants. GIU uses 3.0097 M parameters and 8.1 G reported FLOPs, compared with CARAFE's 3.1463 M and 8.4 G. These results support content-adaptive interpolation for heterogeneous defect morphologies with a small learned-parameter overhead.
-
-\begin{figure}[pos=!htbp]
-\centering
-\includegraphics[width=\columnwidth]{fig7.png}
-\caption{Feature visualizations of YOLOv8n and \model.}
-\label{fig:heatmaps}
-\end{figure}
 
 \section{System Deployment and Industrial Application}
 \label{sec:system-operation}
