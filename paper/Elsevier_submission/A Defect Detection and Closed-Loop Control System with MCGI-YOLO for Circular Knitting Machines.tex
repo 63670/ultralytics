@@ -515,7 +515,7 @@ Although either module alone reduces Hole AP@50 relative to the baseline, their 
 
 \section{System Deployment and Industrial Application}
 \label{sec:system-operation}
-The inspection workflow is implemented through the dedicated edge device, cloud platform, and configurable stopping rules. This section evaluates on-device inference and closed-loop response, and describes configurable stopping decisions, remote supervision, and the resulting change in factory inspection practice.
+The inspection workflow is implemented on the dedicated edge device with configurable stopping rules. This section evaluates on-device inference and closed-loop response, and describes configurable stopping decisions and the resulting change in factory inspection practice.
 
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
@@ -605,20 +605,6 @@ S_s=
 
 Higher sensitivity lowers the confidence, size, and count thresholds, allowing stopping for smaller defects or fewer detections within a frame. Lower sensitivity raises these thresholds to accommodate less stringent acceptance criteria. The editable presets convert detection outputs into factory-specific production decisions without retraining the detector.
 
-\subsection{Cloud Monitoring and Remote Management}
-\label{sec:network-client}
-In addition to sending defect alerts to operators, the cloud platform provides defect trend analysis, device-state monitoring, and historical defect records (Fig.~\ref{fig:iot-platform}). The trend view summarizes defect occurrence over time [Fig.~\ref{fig:iot-platform}(b)], while the monitoring view displays camera status, CPU temperature, and detection state [Fig.~\ref{fig:iot-platform}(c)]. Historical records retain defect images and timestamps for review and traceability [Fig.~\ref{fig:iot-platform}(d)].
-
-\begin{figure*}[width=\textwidth,pos=!tbp]
-\centering
-\includegraphics[width=0.98\textwidth]{iot_platform.png}
-\caption{IoT platform for monitoring and remote management.}
-\label{fig:iot-platform}
-\end{figure*}
-
-\subsection{Rule Configuration and Stop Execution}
-The client applies the post-NMS stopping decision defined in Section~\ref{sec:stop-rules} to each processed frame. Operators can select a sensitivity preset and edit the confidence, geometric, and count thresholds locally. The same parameters can be updated remotely through the interface in Fig.~\ref{fig:iot-platform}(D). When the stopping condition is met, the edge device issues a local machine-stop command and uploads the defect event for cloud recording and operator notification.
-
 \subsection{Illustrative Analysis of Defect Propagation Before Intervention}
 \label{sec:delayed-intervention}
 Fig.~\ref{fig:waste-fabric} shows actual waste fabric with repeated horizontal defects caused by a yarn abnormality. When the abnormality persists at an active feeder, a new defective course can be generated on each machine revolution, following the course-formation mechanism of circular weft knitting \cite{cottonworksKnitMachinery}. Without timely detection and intervention, these horizontal defects recur as the fabric is knitted and taken down, extending the affected region along the production direction and causing the affected fabric to be discarded.
@@ -683,9 +669,11 @@ For an illustrative procurement scenario, a publicly documented project specifie
 
 \section{Conclusion}
 \label{sec:conclusion}
-This paper presents an inspection workflow that embeds fabric-defect detection and intervention in circular-knitting production. The dedicated system coordinates rotation-activated detection, continuous image acquisition, SerDes transmission, edge inference, configurable machine stopping, and operator notification. Its lightweight detector, \model, combines MCE for elongated-defect continuity with GIU for adaptive feature reconstruction. On the production-line test set, it achieves 97.2\% mAP@50 and 65.5\% mAP@50:95, improving over YOLOv8n by 6.7 and 7.1 percentage points. INT8 deployment achieves 96.7\% mAP@50 and 64.0\% mAP@50:95 at 23 FPS, exceeding the 10 FPS design target.
+This paper presents a dedicated defect detection and closed-loop control system that integrates quality inspection into circular-knitting production. The hardware combines global-shutter imaging, LED illumination, coaxial SerDes transmission, rotation-activated detection, and RK3566 edge processing for continuous on-machine inspection. Its processor-throughput requirement is derived from machine operating conditions and the camera field of view, establishing an engineering basis for hardware selection. Configurable post-NMS stopping rules translate defect confidence, geometry, and count into local machine-control decisions, allowing the inspection criteria to match factory quality requirements.
 
-The industrial application links on-machine detection and intervention to reduced fabric waste at a collaborating 48-machine factory. Factory-provided estimates indicate that average monthly waste decreases from 2030 to 148 kg, corresponding to a 92.7\% reduction and an estimated monthly net fabric-loss reduction of approximately USD 5637.68. Integrating inspection with knitting reduces dependence on prolonged human visual screening and enables intervention before persistent abnormalities produce further defective fabric.
+The lightweight detector, \model, uses MCE to associate spatially separated responses along horizontal and vertical elongated defects and GIU to adapt feature reconstruction to different defect shapes and scales. Component ablations support the complementary contributions of these designs, with their combination achieving the highest Col and Hole AP@50:95 among the four variants. On the production-line test set, \model achieves 97.2\% mAP@50 and 65.5\% mAP@50:95, improving over YOLOv8n by 6.7 and 7.1 percentage points with only marginal increases in parameters and FLOPs. INT8 deployment retains 96.7\% mAP@50 and 64.0\% mAP@50:95 at a model-inference throughput of 23 FPS on the RK3566, exceeding the 10 FPS design target.
+
+At a pilot factory operating 48 circular knitting machines, deployment links on-machine detection and intervention to practical waste reduction. Factory-provided estimates indicate that average monthly fabric waste decreases from 2030 to 148 kg, corresponding to a 92.7\% reduction and an estimated monthly net fabric-loss reduction of approximately USD 5637.68. The workflow directs operator attention to reported defects and production faults, reducing dependence on prolonged visual screening. Integrating inspection with knitting therefore provides a practical route to detecting developing defects and limiting their propagation at the source.
 
 \FloatBarrier
 
