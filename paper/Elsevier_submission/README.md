@@ -19,9 +19,9 @@
 & ./paper/Elsevier_submission/build.ps1 -TeXBin 'C:/Users/tankz/application/MiKTex/miktex/bin/x64'
 ```
 
-散点图默认从本目录的对比表读取数据：
+正文Fig. 11使用用户手动标注的 `figures/fps_accuracy.png`，保留原图效果。脚本从对比表读取数据另存预览或底图，不能覆盖正文图：
 
 ```powershell
-python paper/plot_fps_accuracy.py
+python paper/plot_fps_accuracy.py --output paper/Elsevier_submission/figures/fps_accuracy_preview
 python paper/plot_fps_accuracy.py --unlabeled
 ```

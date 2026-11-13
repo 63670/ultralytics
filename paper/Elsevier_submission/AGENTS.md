@@ -27,4 +27,4 @@
 - 热力图已按用户要求从正文移除，不再引用fig:heatmaps，也不自动恢复fig7.png的插图环境；原始图片和生成脚本保留供后续需要时使用，后续图号由LaTeX自动顺延。
 - 已按用户要求移除原6.3 Client Detection Interface and Operator Feedback及客户端图fig:client-detection（detect.png）；不自动恢复，保留原图文件。部署节概述和云端文字已清理对应客户端反馈引入，后续章节与图号由LaTeX自动顺延。
 
-- 2026-11-13 用户确认最新 RK3566 纯模型推理速度：YOLOv8n 为33 FPS、MCGI-YOLO 为23 FPS；部署精度评估在Linux进行，客户端应用系统为Android 13。相机成本按360 CNY折算约54 USD。正文使用已有矢量 fps_accuracy.pdf，避免旧PNG中的mAP50@50标记错误；点值与tab:comparison一致。75.5 ms为三个图像处理阶段之和，对应约13.2 frames/s的串行时间预算推算，不标成实测完整流水线FPS。4.1 ms仅是帧有效载荷除以链路额定容量的理论值，不计入从预处理开始的闭环实测阶段。
+- 2026-11-13 用户确认最新 RK3566 纯模型推理速度：YOLOv8n 为33 FPS、MCGI-YOLO 为23 FPS；部署精度评估在Linux进行，客户端应用系统为Android 13。相机成本按360 CNY折算约54 USD。正文Fig. 11使用用户手动标注的fps_accuracy.png，保留原图效果；不自动切换为PDF、不重新生成或覆盖该PNG。75.5 ms为三个图像处理阶段之和，对应约13.2 frames/s的串行时间预算推算，不标成实测完整流水线FPS。4.1 ms仅是帧有效载荷除以链路额定容量的理论值，不计入从预处理开始的闭环实测阶段。

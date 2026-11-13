@@ -15,7 +15,7 @@
 - 移除没有测量依据的“impractical computational overhead”和“minimal performance loss”；保留MCE小通道子集和局部路径的真实设计。
 - 保留全部消融数据，以组合效果和互补关系叙述，不再重复强调单模块Hole AP下降。
 - 将“confirming ... outperforms generic ...”收敛为当前数据集上的实验结论。
-- 改用已有矢量版fps_accuracy.pdf，点值与表格一致，统一mAP@50、mAP@50:95，修复旧PNG中mAP50@50的重复写法。
+- 图源切换已撤销：按用户要求恢复手动标注的fps_accuracy.png，保留原图布局与标注，不自动换成矢量PDF或重绘。
 - 采购设备预算保留为独立情景，不说成已实现收益；删除“未核实取消采购”等冗长防御句。
 - 摘要、引言、结论的工厂结果统一为工厂提供的月均估计。
 
