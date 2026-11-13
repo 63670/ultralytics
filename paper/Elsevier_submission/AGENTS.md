@@ -1,15 +1,15 @@
 # Elsevier 稿件维护
 
 - 默认修改本目录以论文标题命名的唯一 `.tex` 文件，不再将新改动写回 `TIE_submission/`。
-- 全文主线是将检测从成布后的独立验布环节前移到织造中的检测与停机干预；章节为 Introduction、Related Work、System Design、Detection Method、Experiments and Results、System Deployment and Industrial Application、Conclusion。相关工作区分成布后验布和已有机上检测，不声称首次提出边织边检；不纳入经编机相关工作。验布机文献区分实际系统运行与采集数据后的模型评估；先行工作包括 Saeidi (2005)、Çelik (2022)、Ni (2025)。明海原验布机数量未知；不再写“已取消独立验布环节”，验布设备采购仅作为公开项目比例下的参考配置预算，不推导可节省四台验布机；尚未核实取消采购计划，金额不列为实际收益，也不与月度或年化布损减少额合并。成品验布仍可能因后续工序缺陷、等级评定或客户验收要求而保留，依据保存在 hardware-price-references.json。
+- 全文主线是将检测从成布后的独立验布环节前移到织造中的检测与停机干预；章节为 Introduction、Related Work、System Design、Detection Method、Experiments and Results、System Deployment and Industrial Application、Conclusion。相关工作区分成布后验布和已有机上检测，不声称首次提出边织边检；不纳入经编机相关工作。验布机文献区分实际系统运行与采集数据后的模型评估；先行工作包括 Saeidi (2005)、Çelik (2022)、Ni (2025)。工厂应用仅说明系统已部署于东莞明海纺织有限公司及其用途，不在摘要、引言、贡献、正文或结论中报告废布前后变化、减废率、经济收益或验布机采购节省；不自动恢复原经济分析表。历史数值仅保留于核验记录。
 - Related Work 保留 Fabric Inspection Systems 和 Fabric Defect Detection Algorithms 两节；离线验布流程统一称为 offline fabric inspection，织机端瑕疵检测统一称为 on-machine defect detection。2.1围绕相机和处理器的单机成本、持续推理所需计算资源及规模化部署约束，为硬件价格对比铺垫；2.2突出方向性纹理建模、多尺度特征融合和轻量化部署需求，不在缺少目标硬件测量证据时笼统断言已有方法计算开销过高。引用通过文献键自动编号，不沿用用户草稿中的手写序号。
 - 使用现有 `cas-dc` 双栏模板、`natbib` 数字引文和 CAS 的 `pos=` 浮动体选项；保持图片文件名和标签稳定。
 - 作者、单位、通讯作者、简介、实验数据和图注措辞以当前稿件为准，不补写未知的贡献声明、利益冲突声明或实验结果。
-- 全文金额统一使用 USD，不在正文写换算日期。按当前核实汇率1 USD=6.6765 CNY换算：本系统摄像头约54美元（用户更新为原360元，含串行器、不含解串器），RK3566主板约75美元（原500元，含解串器）；工厂损失与节省金额同步换算，原始CNY及计算依据保存在 hardware-price-references.json。
-- 原始数据为工厂提供的月均估计；净布损为正常布25元/kg减废布回收5元/kg，即20元/kg。
+- 全文金额统一使用 USD，不在正文写换算日期。按当前核实汇率1 USD=6.6765 CNY换算：本系统摄像头约54美元（用户更新为原360元，含串行器、不含解串器），RK3566主板约75美元（原500元，含解串器）；原始CNY及计算依据保存在 hardware-price-references.json。
+- 工厂应用仅说明系统已部署于东莞明海纺织有限公司及其用途，不在摘要、引言、贡献、正文或结论中报告废布前后变化、减废率、经济收益或验布机采购节省；不自动恢复原经济分析表。历史数值仅保留于核验记录。
 - 默认由用户手动编译；未明确要求时不主动运行编译。编译脚本为 `build.ps1`，辅助文件位于 `build/`。
 - 每次改动后创建对应的本地 Git commit，不自动推送。
-- 硬件配置与价格比较分别放在 tab:camera-costs 和 tab:processor-costs，正文保留选型依据；工厂前后对比见 tab:factory-benefits，正常布/废布回收单价放表下注，废布率、月度和年化损失减少额放正文，其余金额保留表中。估价及产品系列参考价格在表注中标明。
+- 硬件配置与价格比较分别放在 tab:camera-costs 和 tab:processor-costs，正文保留选型依据；估价及产品系列参考价格在表注中标明。工厂应用仅说明部署地点与用途，不再保留tab:factory-benefits。
 - Detection Method 先写 Defect Morphology and Design Motivation：典型样本图 fig:dataset-examples 与标注框形态图 fig:annotation-shapes 均在此双栏展示，本小节仅描述横向/竖向细长连续性、形态与尺度差异及检测需求，不提前提MCE或GIU；到MCGI-YOLO Architecture再简述两个模块各自解决的问题和插入位置；Dataset仅保留来源、数量、划分及回指，不重复设计动机。
 - 价格与汇率不在正文、表格或参考文献中引用商业网页；保留研究论文引用及必要的估价标记，价格来源仅保存在本地 hardware-price-references.json 供追溯。
 - 用户可配置停机决策（sec:stop-rules）置于 System Deployment and Industrial Application，在部署性能之后、客户端界面之前；保留规则公式与预设表，不再放入 Detection Method。
