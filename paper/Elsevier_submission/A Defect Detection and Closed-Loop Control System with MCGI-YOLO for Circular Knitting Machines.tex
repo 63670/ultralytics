@@ -7,11 +7,14 @@
 \usepackage[nospread]{flushend}
 \hypersetup{hidelinks}
 \setlength{\emergencystretch}{1em}
-\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
-\setlength{\floatsep}{8pt plus 2pt minus 2pt}
-\setlength{\intextsep}{10pt plus 2pt minus 2pt}
-\setlength{\dbltextfloatsep}{10pt plus 2pt minus 2pt}
-\setlength{\dblfloatsep}{8pt plus 2pt minus 2pt}
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\dblfloatsep}{6pt plus 2pt minus 2pt}
 \renewcommand{\floatpagefraction}{0.75}
 \renewcommand{\dblfloatpagefraction}{0.75}
 \makeatletter
@@ -73,6 +76,10 @@ Fabric inspection after knitting can identify defective cloth, but the material 
 Circular knitting machine \sep Edge computing \sep Fabric defect detection \sep Gated interpolation upsampling \sep Morphology-aware context encoding \sep YOLO
 \end{keywords}
 \maketitle
+\setlength{\abovedisplayskip}{8pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{8pt plus 2pt minus 2pt}
+\setlength{\abovedisplayshortskip}{0pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
 
 \section{Introduction}
 Circular knitting machines are key production equipment for high-volume weft-knit fabric, which is widely used in everyday clothing such as T-shirts and sportswear \cite{cottonworksKnitBasics,woolmarkCircularKnitting,cottonworksSingleDouble}. The International Textile Manufacturers Federation reported approximately 24,500 global shipments of circular knitting machines in 2025 \cite{itmf2025press}. Globally, approximately 92 million tonnes of textile waste are generated annually, highlighting the importance of reducing avoidable material losses \cite{unep2025textilewaste}. Conventional quality checks are often performed after knitting is completed. A persistent needle or yarn abnormality can therefore generate repeated defects along the fabric before discovery, accumulating substantial fabric waste and economic losses \cite{takeuchi2018knitted,akter2022material,xiang2023hooknet}. To prevent such losses, real-time detection during knitting is needed to identify these defects early and enable timely intervention before further defective fabric is produced.
@@ -273,7 +280,7 @@ Based on the fabric defect morphology analysis in Section~\ref{sec:defect-morpho
 
 \begin{figure*}[width=\textwidth,pos=!tb]
 \centering
-\includegraphics[width=0.9\textwidth]{fig4.png}
+\includegraphics[width=0.85\textwidth]{fig4.png}
 \caption{Architecture of \model.}
 \label{fig:network}
 \end{figure*}
@@ -283,7 +290,7 @@ MCE focuses on horizontal and vertical elongated defects produced by circular kn
 
 \begin{figure*}[width=\textwidth,pos=!tb]
 \centering
-\includegraphics[width=0.9\textwidth]{fig5.png}
+\includegraphics[width=0.85\textwidth]{fig5.png}
 \caption{Module structures: (a) MCE-integrated C2f, (b) GIU, (c) bottleneck, and (d) MCE.}
 \label{fig:modules}
 \end{figure*}
@@ -294,7 +301,7 @@ MCE focuses on horizontal and vertical elongated defects produced by circular kn
 \emph{2) Morphology-Aware Context Aggregation:}
 The one-quarter-channel group $U$ feeds the two pooling paths. Here, $b$, $a$, $h$, and $w$ index the batch sample, channel, row, and column, respectively. Inspired by the pooling design of coordinate attention \cite{hou2021coordinate}, we average independently for each sample and channel:
 \begin{align}
-R_h(b,a,h,1) &= \frac{1}{W}\sum_{w=1}^{W}U(b,a,h,w), \label{eq:pac-row}\\
+R_h(b,a,h,1) &= \frac{1}{W}\sum_{w=1}^{W}U(b,a,h,w), \label{eq:pac-row}\\*
 R_w(b,a,1,w) &= \frac{1}{H}\sum_{h=1}^{H}U(b,a,h,w), \label{eq:pac-column}
 \end{align}
 \noindent where averaging over $W$ retains row positions, while averaging over $H$ retains column positions. The descriptors are refined by two depthwise convolutions:
@@ -327,7 +334,7 @@ Circular-knitting defects vary substantially in morphology and scale, from narro
 \emph{1) Two Fixed Interpolation Paths:}
 For $X\in\mathbb{R}^{B\times C\times H\times W}$, nearest-neighbor and bilinear upsampling produce
 \begin{align}
-N &= \operatorname{Nearest}_{2}(X), \label{eq:giu-paths}\\
+N &= \operatorname{Nearest}_{2}(X), \label{eq:giu-paths}\\*
 L &= \operatorname{Bilinear}_{2}(X), \label{eq:giu-bilinear}
 \end{align}
 \noindent where $N,L\in\mathbb{R}^{B\times C\times2H\times2W}$. Both operations use fixed interpolation weights and introduce no learnable parameters.
@@ -546,7 +553,7 @@ T_{\mathrm{total}}={}&T_{\mathrm{pre}}+T_{\mathrm{infer}}+T_{\mathrm{post}}\\
 \end{equation}
 \noindent where $T_{\mathrm{pre}}=25$ ms, $T_{\mathrm{infer}}=43.5$ ms, $T_{\mathrm{post}}=7$ ms, and $T_{\mathrm{cmd}}=36$ ms denote the measured preprocessing, inference, postprocessing with stopping decision, and command-execution times, respectively. Successive stage boundaries are model input readiness, model output availability, stopping-decision completion, and stop-signal issuance.
 
-The software stages total 111.5 ms before the stop signal is issued. Including the typical machine-braking interval $T_{\mathrm{stop}}=1.5$--$1.8$ s gives an estimated total response of 1.61--1.91 s. Thus, the local stop command is issued in approximately 0.11 s, while the reported 23 FPS characterizes model inference only.
+The software stages total 111.5 ms before the stop signal is issued. Including the typical machine-braking interval $T_{\mathrm{stop}}=1.5$--$1.8$ s gives an estimated total response of 1.61--1.91 s. Thus, the local stop command is issued in approximately 0.11~s, while the reported 23 FPS characterizes model inference only.
 
 \subsection{User-Configurable Post-NMS Stopping Decision}
 \label{sec:stop-rules}
@@ -690,7 +697,10 @@ The industrial application links on-machine detection and intervention to reduce
 This work was supported in part by the National Natural Science Foundation of China under Grant U22A2012.
 
 \bibliographystyle{cas-model2-names}
+\begingroup
+\interlinepenalty=10000
 \bibliography{references}
+\endgroup
 
 \bio{figures/a1.jpg}
 \textbf{Kangzhao Tan} received the B.S. degree in computer science and technology from Guangzhou University, Guangzhou, China, in 2022. From 2022 to 2024, he worked as a cloud computing R\&D engineer with Sangfor Technologies Inc., Shenzhen, China. He is currently pursuing the M.S. degree in computer technology with the School of Computer Science, Guangdong University of Technology, Guangzhou, China.
