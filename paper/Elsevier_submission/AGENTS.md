@@ -5,7 +5,7 @@
 - Related Work 保留 Fabric Inspection Systems 和 Fabric Defect Detection Algorithms 两节；离线验布流程统一称为 offline fabric inspection，织机端瑕疵检测统一称为 on-machine defect detection。2.1围绕相机和处理器的单机成本、持续推理所需计算资源及规模化部署约束，为硬件价格对比铺垫；2.2突出方向性纹理建模、多尺度特征融合和轻量化部署需求，不在缺少目标硬件测量证据时笼统断言已有方法计算开销过高。引用通过文献键自动编号，不沿用用户草稿中的手写序号。
 - 使用现有 `cas-dc` 双栏模板、`natbib` 数字引文和 CAS 的 `pos=` 浮动体选项；保持图片文件名和标签稳定。
 - 作者、单位、通讯作者、简介、实验数据和图注措辞以当前稿件为准，不补写未知的贡献声明、利益冲突声明或实验结果。
-- 全文金额统一使用 USD，不在正文写换算日期。按当前核实汇率1 USD=6.6765 CNY换算：本系统摄像头约52美元（原350元，含串行器、不含解串器），RK3566主板约75美元（原500元，含解串器）；工厂损失与节省金额同步换算，原始CNY及计算依据保存在 hardware-price-references.json。
+- 全文金额统一使用 USD，不在正文写换算日期。按当前核实汇率1 USD=6.6765 CNY换算：本系统摄像头约54美元（用户更新为原360元，含串行器、不含解串器），RK3566主板约75美元（原500元，含解串器）；工厂损失与节省金额同步换算，原始CNY及计算依据保存在 hardware-price-references.json。
 - 原始数据为工厂提供的月均估计；净布损为正常布25元/kg减废布回收5元/kg，即20元/kg。
 - 默认由用户手动编译；未明确要求时不主动运行编译。编译脚本为 `build.ps1`，辅助文件位于 `build/`。
 - 每次改动后创建对应的本地 Git commit，不自动推送。
@@ -26,3 +26,5 @@
 - VS Code统一调用build.ps1，先在build/编译并生成SyncTeX，再原子更新.tex同目录PDF；预览和日志使用build/。同稿互斥锁跳过重复编译；根目录PDF被阅读器占用时保留旧PDF并使用build/最新稿，不强制关闭应用或删除文件。
 - 热力图已按用户要求从正文移除，不再引用fig:heatmaps，也不自动恢复fig7.png的插图环境；原始图片和生成脚本保留供后续需要时使用，后续图号由LaTeX自动顺延。
 - 已按用户要求移除原6.3 Client Detection Interface and Operator Feedback及客户端图fig:client-detection（detect.png）；不自动恢复，保留原图文件。部署节概述和云端文字已清理对应客户端反馈引入，后续章节与图号由LaTeX自动顺延。
+
+- 2026-11-13 用户确认最新 RK3566 纯模型推理速度：YOLOv8n 为33 FPS、MCGI-YOLO 为23 FPS；部署精度评估在Linux进行，客户端应用系统为Android 13。相机成本按360 CNY折算约54 USD。正文使用已有矢量 fps_accuracy.pdf，避免旧PNG中的mAP50@50标记错误；点值与tab:comparison一致。75.5 ms为三个图像处理阶段之和，对应约13.2 frames/s的串行时间预算推算，不标成实测完整流水线FPS。4.1 ms仅是帧有效载荷除以链路额定容量的理论值，不计入从预处理开始的闭环实测阶段。

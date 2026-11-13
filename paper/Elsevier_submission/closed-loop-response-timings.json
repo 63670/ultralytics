@@ -52,8 +52,17 @@
     "closed_loop_display_seconds_range": [
       1.61,
       1.91
-    ]
+    ],
+    "image_processing_total_ms": 75.5,
+    "nominal_sequential_processing_fps": 13.245033112582782
   },
   "inference_fps_rounded": 23,
-  "note": "No timing repetitions, distributions, or directly measured complete-response results were supplied; none are asserted in the manuscript."
+  "note": "No timing repetitions, distributions, or directly measured complete-response results were supplied; none are asserted in the manuscript.",
+  "link_payload_estimate": {
+    "frame_payload_bits": 13107200,
+    "rated_effective_bits_per_second": 3200000000,
+    "theoretical_serialization_ms": 4.096,
+    "evidence": "Calculated payload/capacity estimate, not measured frame-transfer latency.",
+    "included_in_closed_loop_interval": false
+  }
 }

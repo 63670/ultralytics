@@ -88,15 +88,16 @@
   },
   "our_hardware": {
     "camera_assembly": {
-      "original_cny": 350,
-      "usd": 52.42,
-      "manuscript_rounded_usd": 52,
+      "original_cny": 360,
+      "usd": 53.92,
+      "manuscript_rounded_usd": 54,
       "includes": [
         "serializer"
       ],
       "excludes": [
         "deserializer"
-      ]
+      ],
+      "source": "User confirmed CNY 360 during the final consistency review on 2026-11-13."
     },
     "rk3566_mainboard": {
       "original_cny": 500,
