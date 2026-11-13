@@ -607,11 +607,7 @@ Higher sensitivity lowers the confidence, size, and count thresholds, allowing s
 
 \subsection{Cloud Monitoring and Remote Management}
 \label{sec:network-client}
-The edge device reports defect events and runtime states to the cloud and receives remote configuration updates. Local detection and machine-stop commands are executed on the edge device, while the cloud provides centralized monitoring and management.
-
-The system landing page, defect trends, and defect records are shown in Fig.~\ref{fig:iot-platform}(a)--(c), respectively. The runtime-state interface in Fig.~\ref{fig:iot-platform}(f) displays the application version, camera status, CPU temperature, fabric type, and detection state. The configuration interface in Fig.~\ref{fig:iot-platform}(d) supports remote adjustment of sensitivity and the associated confidence, geometric, and defect-count thresholds.
-
-The model-management interface in Fig.~\ref{fig:iot-platform}(e) accepts RKNN models and associated class-label files for on-demand over-the-air (OTA) model updates. Updated models can be distributed remotely to edge devices for subsequent local inference. Model refinement and OTA redeployment support iterative detector updates using production data.
+In addition to sending defect alerts to operators, the cloud platform provides defect trend analysis, device-state monitoring, and historical defect records (Fig.~\ref{fig:iot-platform}). The trend view summarizes defect occurrence over time [Fig.~\ref{fig:iot-platform}(b)], while the monitoring view displays camera status, CPU temperature, and detection state [Fig.~\ref{fig:iot-platform}(c)]. Historical records retain defect images and timestamps for review and traceability [Fig.~\ref{fig:iot-platform}(d)].
 
 \begin{figure*}[width=\textwidth,pos=!tbp]
 \centering
