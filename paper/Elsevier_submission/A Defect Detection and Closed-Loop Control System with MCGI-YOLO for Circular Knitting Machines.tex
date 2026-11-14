@@ -442,7 +442,7 @@ Model parameters and FLOPs are measured at $640\times640$ input resolution using
 \caption{Accuracy, complexity, and inference throughput comparison on the test set.}
 \label{tab:comparison}
 \centering
-\small
+\footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.06}
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrr}
@@ -462,7 +462,6 @@ YOLOv8n (Baseline)~\cite{ultralytics2023} & 3.01 & 8.1 & 89.4 & 81.1 & 90.5 & 58
 \model & 3.02 & 8.2 & \underline{96.1} & 94.3 & \textbf{97.2} & \underline{65.5} & 486 \\
 \bottomrule
 \end{tabular*}
-\par\smallskip
 \renewcommand{\arraystretch}{1.0}
 \end{table*}
 
@@ -514,6 +513,7 @@ The combination of MCE and GIU achieves the highest Hole AP@50 (93.5\%) and AP@5
 
 
 
+\Needspace{8\baselineskip}
 \section{System Deployment and Industrial Application}
 \label{sec:system-operation}
 The system has been deployed at Dongguan Minghai Textile Co., Ltd., Dongguan, Guangdong, China, for on-machine fabric-defect detection and closed-loop machine control (Fig.~\ref{fig:system}). This section presents on-device performance, closed-loop response, configurable stopping decisions, and an illustrative analysis of defect propagation.
