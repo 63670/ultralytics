@@ -100,9 +100,9 @@ To this end, we have developed a complete defect detection and closed-loop contr
 The main contributions are as follows.
 \begin{enumerate}
   \renewcommand{\labelenumi}{\arabic{enumi})}
-  \item We develop an embedded defect detection and closed-loop control system for circular-knitting production, integrating rotation-activated detection, continuous image acquisition, illumination, SerDes transmission, edge processing, and machine-control interfaces.
+  \item We design and implement dedicated inspection hardware for circular knitting machines, integrating the power supply, global-shutter camera, controllable LED illumination, SerDes transmission, rotation sensing, and an RK3566 edge-processing board with machine-control interfaces.
   \item We propose \model, a lightweight detector incorporating MCE and GIU to address elongated-defect continuity and multiscale feature reconstruction under edge-computing constraints. A user-configurable post-NMS stopping module further translates detection outputs into local machine-stop decisions according to factory quality requirements.
-  \item We deploy the complete system on a circular-knitting production line, integrating image acquisition, defect detection, and local machine stopping in an industrial setting.
+  \item We develop user-configurable post-NMS stopping rules that translate detection results into machine-control decisions according to factory quality requirements, and deploy the complete system at Dongguan Minghai Textile Co., Ltd.
 \end{enumerate}
 
 The remainder of this paper is organized as follows. Section~\ref{sec:related-work} reviews inspection workflows, edge systems, and detection algorithms. Section~\ref{sec:system-design} presents the system design, and Section~\ref{sec:method} describes the detection method. Section~\ref{sec:results} reports the experimental protocol and results. Section~\ref{sec:system-operation} presents deployment, system operation, and industrial application. Section~\ref{sec:conclusion} concludes the paper.
