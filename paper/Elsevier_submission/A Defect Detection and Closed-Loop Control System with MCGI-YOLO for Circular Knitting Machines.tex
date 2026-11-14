@@ -70,7 +70,7 @@
 \cortext[1]{Corresponding authors: Jing Lin, Diyu Li, and Chunhua He.}
 
 \begin{abstract}
-Fabric inspection after knitting can identify defective cloth, but the material loss has already occurred when persistent yarn or needle abnormalities are discovered. This paper presents an inspection workflow that integrates defect detection and intervention into circular knitting. A dedicated system combines rotation-activated detection, continuous image acquisition, controlled illumination, coaxial image transmission, edge inference, configurable machine stopping, and cloud notification. It continuously inspects fabric during formation and stops production when detected defects exceed the selected acceptance criteria, limiting further defective fabric production and reducing dependence on sustained human visual attention. To support this workflow on a resource-constrained edge device, we develop \model. Morphology-aware context encoding (MCE) captures the spatial continuity of horizontal and vertical elongated defects, while gated interpolation upsampling (GIU) adapts feature reconstruction to different defect morphologies and scales. On a production-line dataset, \model achieves 97.2\% mAP@50 and 65.5\% mAP@50:95, exceeding YOLOv8n by 6.7 and 7.1 percentage points. After INT8 quantization, the model maintains 96.7\% mAP@50 with an inference throughput of 23 FPS on the edge device. Including preprocessing and postprocessing, the detection frame rate calculated from the measured stage times is 13.2 FPS. The system has been deployed at Dongguan Minghai Textile Co., Ltd., Dongguan, China, for on-machine defect detection and closed-loop machine control.
+Fabric inspection after knitting can identify defective cloth, but the material loss has already occurred when persistent yarn or needle abnormalities are discovered. This paper presents an inspection workflow that integrates defect detection and intervention into circular knitting. A dedicated system combines rotation-activated detection, continuous image acquisition, controlled illumination, coaxial image transmission, edge inference, configurable machine stopping, and cloud notification. It continuously inspects fabric during formation and stops production when detected defects exceed the selected acceptance criteria, limiting further defective fabric production and reducing dependence on sustained human visual attention. To support this workflow on a resource-constrained edge device, we develop \model. Morphology-aware context encoding (MCE) captures the spatial continuity of horizontal and vertical elongated defects, while gated interpolation upsampling (GIU) adapts feature reconstruction to different defect morphologies and scales. On a production-line dataset, \model achieves 97.2\% mAP@50 and 65.5\% mAP@50:95, exceeding YOLOv8n by 6.7 and 7.1 percentage points. After INT8 quantization, the model maintains 96.7\% mAP@50 with an inference throughput of 23 FPS on the edge device. The system has been deployed at Dongguan Minghai Textile Co., Ltd., Dongguan, China, for on-machine defect detection and closed-loop machine control.
 \end{abstract}
 \begin{keywords}
 Circular knitting machine \sep Edge computing \sep Fabric defect detection \sep Gated interpolation upsampling \sep Morphology-aware context encoding \sep YOLO
@@ -102,7 +102,7 @@ The main contributions are as follows.
   \renewcommand{\labelenumi}{\arabic{enumi})}
   \item We design and implement dedicated inspection hardware for circular knitting machines, integrating the power supply, global-shutter camera, controllable LED illumination, SerDes transmission, rotation sensing, and an RK3566 edge-processing board with machine-control interfaces.
   \item We propose \model, a lightweight detector incorporating MCE and GIU to address elongated-defect continuity and multiscale feature reconstruction under edge-computing constraints. A user-configurable post-NMS stopping module further translates detection outputs into local machine-stop decisions according to factory quality requirements.
-  \item We integrate INT8 edge deployment and user-configurable post-NMS stopping rules into a detection and control workflow. We evaluate on-device accuracy and detection-processing performance, analyze closed-loop response and defect propagation under delayed intervention, and deploy the complete system at Dongguan Minghai Textile Co., Ltd. for on-machine inspection.
+  \item We integrate INT8 edge deployment and user-configurable post-NMS stopping rules into a detection and control workflow. We evaluate on-device accuracy and detection-processing performance, analyze defect propagation under delayed intervention, and deploy the complete system at Dongguan Minghai Textile Co., Ltd. for on-machine inspection.
 \end{enumerate}
 
 The remainder of this paper is organized as follows. Section~\ref{sec:related-work} reviews inspection workflows, edge systems, and detection algorithms. Section~\ref{sec:system-design} presents the system design, and Section~\ref{sec:method} describes the detection method. Section~\ref{sec:results} reports the experimental protocol and results. Section~\ref{sec:system-operation} presents deployment, system operation, and industrial application. Section~\ref{sec:conclusion} concludes the paper.
@@ -435,7 +435,7 @@ R &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}},
 \end{align}
 \noindent where TP, FP, and FN denote true-positive, false-positive, and false-negative counts, respectively; $\mathrm{AP}_c$ is the AP of class $c$, and $N_c=3$. mAP@50 uses an IoU threshold of 0.5, while mAP@50:95 averages mAP over IoU thresholds from 0.50 to 0.95 in steps of 0.05. Reported P and R are averaged across classes, with YOLO-based detectors evaluated at the best mean-F1 operating point. All accuracy metrics are expressed as percentages. In comparison tables, bold and underlined values indicate the best and second-best results, respectively.
 
-Model parameters and FLOPs are measured at $640\times640$ input resolution using each model's respective framework. FPS denotes model-inference throughput, excluding preprocessing and postprocessing. It is measured with batch size 1 and $640\times640$ inputs using FP32 models on an RTX 3090 for detector comparisons and INT8 RKNN models on the RK3566 for deployment comparisons. The detection-processing rate additionally includes preprocessing and postprocessing.
+Model parameters and FLOPs are measured at $640\times640$ input resolution using each model's respective framework. FPS denotes model-inference throughput, excluding preprocessing and postprocessing. It is measured with batch size 1 and $640\times640$ inputs using FP32 models on an RTX 3090 for detector comparisons and INT8 RKNN models on the RK3566 for deployment comparisons.
 
 \subsection{Comparison With Other Detectors}
 \begin{table*}[width=\textwidth,pos=!tbp]
@@ -516,7 +516,7 @@ The combination of MCE and GIU achieves the highest Hole AP@50 (93.5\%) and AP@5
 \Needspace{8\baselineskip}
 \section{System Deployment and Industrial Application}
 \label{sec:system-operation}
-The system has been deployed at Dongguan Minghai Textile Co., Ltd., Dongguan, Guangdong, China, for on-machine fabric-defect detection and closed-loop machine control (Fig.~\ref{fig:system}). This section presents on-device performance, closed-loop response, configurable stopping decisions, and an illustrative analysis of defect propagation.
+The system has been deployed at Dongguan Minghai Textile Co., Ltd., Dongguan, Guangdong, China, for on-machine fabric-defect detection and closed-loop machine control (Fig.~\ref{fig:system}). This section presents on-device performance, configurable stopping decisions, and an illustrative analysis of defect propagation.
 
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
@@ -541,29 +541,6 @@ YOLOv8n & 88.3 & 81.3 & 90.2 & 57.3 & \textbf{33} \\
 \end{tabular*}
 \renewcommand{\arraystretch}{1.0}
 \end{table}
-
-\subsection{Closed-Loop Response Time}
-\label{sec:closed-loop-response}
-For a frame that triggers stopping, timing starts at preprocessing entry and ends when the machine is stationary. The total response time is
-\begin{equation}
-\begin{aligned}
-T_{\mathrm{total}}={}&T_{\mathrm{pre}}+T_{\mathrm{infer}}+T_{\mathrm{post}}\\
-&+T_{\mathrm{cmd}}+T_{\mathrm{stop}},
-\end{aligned}
-\label{eq:closed-loop-response}
-\end{equation}
-\noindent where $T_{\mathrm{pre}}=25$ ms, $T_{\mathrm{infer}}=43.5$ ms, $T_{\mathrm{post}}=7$ ms, and $T_{\mathrm{cmd}}=36$ ms are the measured preprocessing, inference, postprocessing with stopping decision, and command-execution times, respectively. Successive stage boundaries are model input readiness, model output availability, stopping-decision completion, and stop-signal issuance. Image acquisition and SerDes transmission precede this processing interval. The measured software stages total 111.5 ms before the stop signal is issued. Including the typical machine-braking interval $T_{\mathrm{stop}}=1.5$--$1.8$ s gives an estimated total response of 1.61--1.91 s.
-
-The detection-processing interval comprises preprocessing, inference, and postprocessing with the stopping decision:
-\begin{equation}
-\begin{aligned}
-T_{\mathrm{det}}&=T_{\mathrm{pre}}+T_{\mathrm{infer}}+T_{\mathrm{post}}\\
-&=25+43.5+7=75.5\ \mathrm{ms},\\
-f_{\mathrm{det}}&=\frac{1}{T_{\mathrm{det}}}\approx13.2\ \mathrm{frames/s},
-\end{aligned}
-\label{eq:detection-frame-rate}
-\end{equation}
-\noindent where $T_{\mathrm{det}}$ excludes stop-command execution and machine braking. Calculated from the measured stage times, this detection rate is approximately 1.32 times the 10 frames/s design target derived in Section~\ref{sec:coverage}.
 
 \subsection{User-Configurable Post-NMS Stopping Decision}
 \label{sec:stop-rules}
@@ -649,7 +626,7 @@ These estimates describe approximately 2.7 m of affected fabric in the productio
 \label{sec:conclusion}
 This paper presents a dedicated defect detection and closed-loop control system that integrates quality inspection into circular-knitting production. The hardware combines global-shutter imaging, LED illumination, coaxial SerDes transmission, rotation-activated detection, and RK3566 edge processing for continuous on-machine inspection. Its processor-throughput requirement is derived from machine operating conditions and the camera field of view, establishing an engineering basis for hardware selection. Configurable post-NMS stopping rules translate defect confidence, geometry, and count into local machine-control decisions, allowing the inspection criteria to match factory quality requirements.
 
-The lightweight detector, \model, uses MCE to associate spatially separated responses along horizontal and vertical elongated defects and GIU to adapt feature reconstruction to different defect shapes and scales. Component ablations support the complementary contributions of these designs, with their combination achieving the highest Col and Hole AP@50:95 among the four variants. On the production-line test set, \model achieves 97.2\% mAP@50 and 65.5\% mAP@50:95, improving over YOLOv8n by 6.7 and 7.1 percentage points with only marginal increases in parameters and FLOPs. INT8 deployment retains 96.7\% mAP@50 and 64.0\% mAP@50:95 on the RK3566, with a model-inference throughput of 23 FPS. The 75.5 ms detection-processing time, including preprocessing and postprocessing, corresponds to a calculated detection frame rate of approximately 13.2 FPS, meeting the 10 frames/s design target.
+The lightweight detector, \model, uses MCE to associate spatially separated responses along horizontal and vertical elongated defects and GIU to adapt feature reconstruction to different defect shapes and scales. Component ablations support the complementary contributions of these designs, with their combination achieving the highest Col and Hole AP@50:95 among the four variants. On the production-line test set, \model achieves 97.2\% mAP@50 and 65.5\% mAP@50:95, improving over YOLOv8n by 6.7 and 7.1 percentage points with only marginal increases in parameters and FLOPs. INT8 deployment retains 96.7\% mAP@50 and 64.0\% mAP@50:95 on the RK3566, with a model-inference throughput of 23 FPS.
 
 The system has been deployed on circular knitting machines at Dongguan Minghai Textile Co., Ltd., Dongguan, Guangdong, China. By delivering a fully integrated and deployable system, this work addresses a critical bottleneck in textile manufacturing: translating detection performance into actionable, on-machine quality control. It offers the industry a ready-to-deploy reference for intelligent fabric inspection on circular knitting machines and, more broadly, demonstrates a practical pathway for deploying lightweight vision models with closed-loop control on resource-constrained industrial edge devices.
 
