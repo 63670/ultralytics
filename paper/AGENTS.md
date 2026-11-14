@@ -12,7 +12,7 @@
 - FPS–mAP散点图（正文Fig. 11）必须使用用户手动标注的 `figures/fps_accuracy.png`，双栏展示，标签 `fig:fps-accuracy`。保留其原有布局、字号、颜色和标注，不自动切换到PDF或重新生成覆盖。已有 `.pdf` 只是备份版本。需要另出底图时使用 `paper/plot_fps_accuracy.py --output <新路径>` 或 `--unlabeled`，不得覆盖正文手动标注图；数据口径仍为RTX 3090、FP32、batch=1、640×640纯推理。
 - 手动标注用散点底图运行 `python paper/plot_fps_accuracy.py --unlabeled`，另存 `figures/fps_accuracy_unlabeled.{png,pdf,svg,json}`，左图 mAP@50、右图 mAP@50:95；保留坐标轴、刻度数字、网格、颜色、点形和数据位置；仅去掉模型名称、引线、图标题及轴标题。此版本不自动替换正文已标注插图。
 - 硬件系统部分保留 `serdes.png`（单栏）。实验后为 `System Deployment and Industrial Application`，开头说明东莞明海纺织有限公司的部署情况，随后依次介绍模型部署、闭环响应、用户可配置停机规则和延迟干预分析；不另设工厂应用小节。客户端小节和 `detect.png`、云端小节和 `iot_platform.png` 已按用户要求从正文移除，不自动恢复；原始图片保留。
-- RK3566 部署评估在 Linux 下进行：YOLOv8n 为33 FPS、MCGI-YOLO 为23 FPS（2026-11-13用户确认的最新实测值）；两者输入640×640、conf=0.001、NMS IoU=0.7、max_det=16。P/R 按 IoU=0.5 的最佳类别平均F1位置报告，并按类别宏平均。部署结果见正文 `tab:rknn-deployment`，不得混入 RTX 3090 的主对比表。
+- RK3566 部署评估在 Linux 下进行：YOLOv8n 为33 FPS、MCGI-YOLO 为23 FPS（2026-11-13用户确认的最新实测值）；两者输入640×640、conf=0.001、NMS IoU=0.7、max_det=16。P/R 按 IoU=0.5 的最佳类别平均F1位置报告，并按类别宏平均。部署结果见正文 `tab:rknn-deployment`，不得混入 RTX 3090 的主对比表。 上述33/23 FPS均为纯模型推理帧率；MCGI-YOLO包含前处理、推理和后处理的检测处理时间为75.5 ms，按阶段耗时计算约13.2 FPS，用此值判断10 FPS系统覆盖要求，不将停机命令与机器制动计入检测帧率。
 - 用户可配置停机规则置于 `System Deployment and Industrial Application`，在部署性能之后、客户端界面之前，以 `User-Configurable Post-NMS Stopping Decision`（`sec:stop-rules`）单独成节，包含 NMS 后置信度筛选、原图尺度判断、数量条件和预设表；Detection Method 不再包含该小节，不将停机规则称为改进 NMS。
 - 客户端停机规则按原始 `1280×1024` 图像计算；预设元组依次为（置信度、破洞检测框面积、横向检测框宽度、竖向检测框高度、每帧数量）：当前稿件预设为低 `(0.50, 6400, 600, 200, 3)`，中 `(0.40, 3600, 400, 100, 2)`，高 `(0.30, 1600, 200, 50, 1)`。先按置信度筛选，再判断“任意一个对应类别尺寸超过阈值，或者该帧通过置信度筛选的瑕疵总数达到数量阈值”，二者为或关系，不跨帧累计。三档均可编辑。
 - `manuscript.tex` 保留为迁移前的历史稿，`TIE_LaTeX_template/` 保留为原始模板；不要将后续论文修改写回这两处。

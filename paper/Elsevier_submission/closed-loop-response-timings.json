@@ -64,5 +64,26 @@
     "theoretical_serialization_ms": 4.096,
     "evidence": "Calculated payload/capacity estimate, not measured frame-transfer latency.",
     "included_in_closed_loop_interval": false
+  },
+  "detection_processing": {
+    "components": [
+      "T_pre",
+      "T_infer",
+      "T_post"
+    ],
+    "start": "Preprocessing entry",
+    "end": "Stopping decision ready",
+    "excluded": [
+      "Image acquisition",
+      "SerDes transmission",
+      "T_cmd",
+      "T_stop"
+    ],
+    "time_ms": 75.5,
+    "frame_rate_fps_calculated": 13.245033112582782,
+    "frame_rate_fps_display": 13.2,
+    "design_target_fps": 10,
+    "target_ratio": 1.3245033112582782,
+    "evidence": "Reciprocal of the summed, user-reported preprocessing, inference and postprocessing stage times; not an independently measured complete-pipeline throughput."
   }
 }
