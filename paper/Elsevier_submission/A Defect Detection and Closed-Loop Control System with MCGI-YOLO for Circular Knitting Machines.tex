@@ -10,10 +10,10 @@
 \clubpenalty=10000
 \widowpenalty=10000
 \displaywidowpenalty=10000
-\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\textfloatsep}{6pt plus 2pt minus 2pt}
 \setlength{\floatsep}{6pt plus 2pt minus 2pt}
-\setlength{\intextsep}{8pt plus 2pt minus 2pt}
-\setlength{\dbltextfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{6pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{6pt plus 2pt minus 2pt}
 \setlength{\dblfloatsep}{6pt plus 2pt minus 2pt}
 \renewcommand{\floatpagefraction}{0.75}
 \renewcommand{\dblfloatpagefraction}{0.75}
@@ -76,10 +76,10 @@ Fabric inspection after knitting can identify defective cloth, but the material 
 Circular knitting machine \sep Edge computing \sep Fabric defect detection \sep Gated interpolation upsampling \sep Morphology-aware context encoding \sep YOLO
 \end{keywords}
 \maketitle
-\setlength{\abovedisplayskip}{8pt plus 2pt minus 2pt}
-\setlength{\belowdisplayskip}{8pt plus 2pt minus 2pt}
+\setlength{\abovedisplayskip}{6pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{6pt plus 2pt minus 2pt}
 \setlength{\abovedisplayshortskip}{0pt plus 2pt}
-\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\setlength{\belowdisplayshortskip}{4pt plus 2pt minus 2pt}
 
 \section{Introduction}
 Circular knitting machines are key production equipment for high-volume weft-knit fabric, which is widely used in everyday clothing such as T-shirts and sportswear \cite{cottonworksKnitBasics,woolmarkCircularKnitting,cottonworksSingleDouble}. The International Textile Manufacturers Federation reported approximately 24,500 global shipments of circular knitting machines in 2025 \cite{itmf2025press}. Globally, approximately 92 million tonnes of textile waste are generated annually, highlighting the importance of reducing avoidable material losses \cite{unep2025textilewaste}. Conventional quality checks are often performed after knitting is completed. A persistent needle or yarn abnormality can therefore generate repeated defects along the fabric before discovery, accumulating substantial fabric waste and economic losses \cite{takeuchi2018knitted,akter2022material,xiang2023hooknet}. To prevent such losses, real-time detection during knitting is needed to identify these defects early and enable timely intervention before further defective fabric is produced.
@@ -420,16 +420,17 @@ Data protocol
 \renewcommand{\arraystretch}{1.0}
 \end{table}
 
+\Needspace{9\baselineskip}
 \subsubsection{Evaluation Metrics}
 \label{sec:evaluation}
 Intersection over union (IoU) measures the overlap between predicted and ground-truth bounding boxes as the ratio of their intersection area to their union area. Precision (P), recall (R), average precision (AP), and mean average precision (mAP) are defined as
 \begin{align}
 P &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}},
-\label{eq:precision}\\
+\label{eq:precision}\\*
 R &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}},
-\label{eq:recall}\\
+\label{eq:recall}\\*
 \mathrm{AP} &= \int_0^1 P(R)\,\mathrm{d}R,
-\label{eq:ap}\\
+\label{eq:ap}\\*
 \mathrm{mAP} &= \frac{1}{N_c}\sum_{c=1}^{N_c}\mathrm{AP}_c,
 \label{eq:metrics}
 \end{align}
@@ -638,6 +639,7 @@ This work was supported in part by the National Natural Science Foundation of Ch
 \bibliographystyle{cas-model2-names}
 \begingroup
 \interlinepenalty=10000
+\renewcommand{\bibfont}{\fontsize{8}{9.3}\selectfont}
 \bibliography{references}
 \endgroup
 
