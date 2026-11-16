@@ -75,7 +75,7 @@ We design and implement a dedicated defect detection and closed-loop control sys
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=0.92\textwidth]{fig1.png}
+\includegraphics[width=1.0\textwidth]{fig1.png}
 \caption{Overview of the proposed defect detection and closed-loop control system.}
 \label{fig:interactions}
 \end{figure*}
@@ -155,14 +155,14 @@ Based on the design requirements of the subsystems described above, we develop t
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=0.86\textwidth]{fig2.png}
+\includegraphics[width=1.0\textwidth]{fig2.png}
 \caption{System hardware: (a) camera and illumination, (b) camera interface board, and (c) RK3566 edge board.}
 \label{fig:hardware}
 \end{figure*}
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=0.86\textwidth]{fig3.png}
+\includegraphics[width=1.0\textwidth]{fig3.png}
 \caption{System installation on a circular knitting machine.}
 \label{fig:system}
 \end{figure*}
@@ -376,7 +376,7 @@ Data protocol
 \renewcommand{\arraystretch}{1.06}
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrr}
 \toprule
-Model & Params (M) & FLOPs (G) & P (\%) & R (\%) & mAP@50 (\%) & mAP@50:95 (\%) & FPS \\
+Model & Params (M) & FLOPs (G) & Precision (\%) & Recall (\%) & mAP@50 (\%) & mAP@50:95 (\%) & FPS \\
 \midrule
 YOLOv9t~\cite{wang2025yolov9} & \textbf{2.12} & 8.5 & 82.4 & 90.8 & 90.1 & 53.3 & 291 \\
 YOLOv10n~\cite{wang2024yolov10} & 2.78 & 8.8 & 88.6 & 74.2 & 88.2 & 58.5 & \underline{524} \\
@@ -397,7 +397,7 @@ YOLOv8n (Baseline)~\cite{ultralytics2023} & 3.01 & 8.1 & 89.4 & 81.1 & 90.5 & 58
 
 \begin{figure*}[!tbp]
 \centering
-\includegraphics[width=\textwidth]{fps_accuracy.pdf}
+\includegraphics[width=\textwidth]{fps_accuracy.png}
 \caption{Accuracy--throughput comparison using (a) mAP@50 and (b) mAP@50:95.}
 \label{fig:fps-accuracy}
 \end{figure*}

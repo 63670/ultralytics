@@ -1,5 +1,5 @@
 {
-  "latex-workshop.latex.outDir": "%DIR%/build",
+  "latex-workshop.latex.outDir": "%DIR%",
   "latex-workshop.latex.auxDir": "%OUTDIR%",
   "latex-workshop.latex.recipe.default": "pdf->bib->pdf->pdf",
   "latex-workshop.latex.recipes": [

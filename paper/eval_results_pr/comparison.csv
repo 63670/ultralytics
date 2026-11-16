@@ -1,0 +1,3 @@
+model,images,instances,precision,recall,mAP50,mAP50_95,pr_confidence,pr_method
+"mcgi-yolo.rknn",81,91,0.975988693874,0.930013142315,0.96684822942,0.640195738324,0.547547547548,ultralytics_best_mean_f1
+"yolov8n.rknn",81,91,0.883227921143,0.813164787514,0.901933580152,0.572895981756,0.588588588589,ultralytics_best_mean_f1
