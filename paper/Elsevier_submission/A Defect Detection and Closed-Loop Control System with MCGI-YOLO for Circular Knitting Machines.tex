@@ -136,32 +136,7 @@ We design and implement a dedicated defect detection and closed-loop control sys
 To accommodate different industrial supply voltages across countries and regions, we design a power adapter with a 100--500 V AC input range and a 24 V DC output rated at 3 A. The adapter first supplies this output to the device. The device then supplies the LED illumination. By adjusting the current delivered to the LEDs, the device controls the illumination brightness to suit the image-acquisition conditions. This arrangement integrates LED power delivery and brightness control into the device.
 
 \subsection{Image Acquisition and Transmission Subsystem}
-The rapid rotation of circular knitting machines requires imaging that preserves defect geometry and fine spatial detail. We therefore select a SmartSens SC130GS global-shutter sensor (SmartSens Technology Co., Ltd., Shanghai, China) at $1280\times1024$ resolution, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm horizontal width $w$ aligned with the direction of fabric motion. Compared with the camera configurations used in previous fabric inspection systems, the selected camera offers a substantial cost advantage, as shown in Table~\ref{tab:camera-costs}.
-
-\begin{table}[pos=!htbp]
-\caption{Camera configurations and reference costs.}
-\label{tab:camera-costs}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.1}
-\begin{tabular}{@{}P{0.3\columnwidth}P{0.45\columnwidth}P{\dimexpr0.25\columnwidth-12pt\relax}@{}}
-\toprule
-Study & Hardware & Cost (USD) \\
-\midrule
-Kuo et al.\cite{kuo2022woveninspection} & Basler acA4600-10uc & 739 \\
-\c{C}elik et al.\cite{celik2022circular} & Basler raL2048-48gm & 1309 \\
-Machado et al.\cite{machado2025edgefabric} & $2\times$Intel RealSense D435i & 798 \\
-Zhao et al.\cite{zhao2020edgecloud} & Line-scan CCD & $1400^{\dagger}$ \\
-Ours & SC130GS & 54 \\
-\bottomrule
-\end{tabular}
-\par\smallskip
-\begin{minipage}{\columnwidth}
-\footnotesize
-$\dagger$The original study does not report the camera model; the reference price is approximately USD 1400 for a comparable line-scan camera.
-\end{minipage}
-\end{table}
+The rapid rotation of circular knitting machines requires imaging that preserves defect geometry and fine spatial detail. We therefore select a SmartSens SC130GS global-shutter sensor (SmartSens Technology Co., Ltd., Shanghai, China) at $1280\times1024$ resolution, which exposes all pixels simultaneously to avoid motion-induced distortion from sequential row exposure. At a camera-to-fabric distance of approximately 10 cm, the field of view is approximately $16\times12$ cm, with the 16 cm horizontal width $w$ aligned with the direction of fabric motion. Previous fabric inspection systems use industrial area-scan cameras, line-scan cameras, or dual-camera configurations \cite{kuo2022woveninspection,celik2022circular,machado2025edgefabric,zhao2020edgecloud}, with reference costs generally exceeding USD~700. The proposed camera assembly costs less than USD~60.
 
 Factory machinery creates an electromagnetically noisy environment, and installation requires the camera and edge device to be separated by a cable run. We therefore use serializer/deserializer (SerDes) transmission over shielded coaxial cable to accommodate remote camera placement and the interference environment. Specifically, the THCV241A serializer and THCV242A deserializer (THine Electronics, Inc., Tokyo, Japan) bridge the camera-side and processor-side MIPI CSI-2 interfaces. As illustrated in Fig.~\ref{fig:serdes}, the serializer converts the camera output into a serial stream, which is transmitted over the coaxial cable and recovered by the deserializer for the RK3566. Power over Coax (PoC) supplies the camera side through the same cable, combining image transmission and power delivery in a single connection. The link supports a maximum serial line rate of 4.0 Gb/s per lane, corresponding to a rated effective rate of 3.2 Gb/s \cite{thineTHCV241A,thineTHCV242A}.
 
@@ -185,16 +160,9 @@ R_{\mathrm{img}} &= W \cdot H \cdot b \cdot f_{\mathrm{cam}} \\
 
 \subsection{Processor Subsystem}
 \label{sec:coverage}
-Before selecting the processor, we first determine the processor-throughput target based on the production conditions listed in Table~\ref{tab:production-inputs} and the camera's field of view. In one revolution, a circumferential fabric length of $\pi D$ passes through the camera's field of view. Each processed image covers a horizontal width of $w=0.16$ m, so covering one revolution requires approximately $\pi D/w$ images. Dividing this image count by the rotation period $T$ gives the minimum processing rate:
-\begin{equation}
-f_{\min}=\frac{\pi D/w}{T}
-=\frac{\pi\times1.016/0.16}{2}
-\approx9.97\ \mathrm{frames/s},
-\label{eq:coverage-rate}
-\end{equation}
-\noindent We therefore set 10 frames/s as the processor-throughput target for hardware selection. Rockchip's official RKNN Model Zoo reports a model-inference throughput of 35.1 FPS for INT8 YOLOv8n with $640\times640$ inputs in its RK3566 benchmark\cite{rockchipmodelzoo}. We therefore select YOLOv8n as the baseline detector and the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) as the processor. Compared with the computing platforms used in previous fabric inspection systems, the selected processor also offers a substantial cost advantage, as shown in Table~\ref{tab:processor-costs}. The RK3566 integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
+Before selecting the processor, we first determine the processor-throughput target based on the production conditions listed in Table~\ref{tab:production-inputs} and the camera's field of view.
 
-\begin{table}[pos=!hbp]
+\begin{table}[pos=!htbp]
 \caption{Machine operating parameters.}
 \label{tab:production-inputs}
 \centering
@@ -209,28 +177,16 @@ Nominal machine diameter & $D$ & 1.016 m (40 in) \\
 Rotation period & $T$ & 2~s \\
 \bottomrule
 \end{tabular*}
-\par\medskip
-\caption{Computing platforms and reference costs.}
-\label{tab:processor-costs}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.1}
-\begin{tabular}{@{}P{0.3\columnwidth}P{0.44\columnwidth}P{\dimexpr0.25\columnwidth-12pt\relax}@{}}
-\toprule
-Study & Hardware & Cost (USD) \\
-\midrule
-\c{C}elik et al.\cite{celik2022circular} & Desktop computer & $1200^{\dagger}$ \\
-Machado et al.\cite{machado2025edgefabric} & Jetson Orin Nano & 399 \\
-Ours & RK3566 edge device & 75 \\
-\bottomrule
-\end{tabular}
-\par\smallskip
-\begin{minipage}{\columnwidth}
-\footnotesize
-$\dagger$The original study does not report the desktop configuration; the cost is estimated for a comparable general-purpose desktop.
-\end{minipage}
 \end{table}
+
+In one revolution, a circumferential fabric length of $\pi D$ passes through the camera's field of view. Each processed image covers a horizontal width of $w=0.16$ m, so covering one revolution requires approximately $\pi D/w$ images. Dividing this image count by the rotation period $T$ gives the minimum processing rate:
+\begin{equation}
+f_{\min}=\frac{\pi D/w}{T}
+=\frac{\pi\times1.016/0.16}{2}
+\approx9.97\ \mathrm{frames/s},
+\label{eq:coverage-rate}
+\end{equation}
+\noindent We therefore set 10 frames/s as the processor-throughput target for hardware selection. Rockchip's official RKNN Model Zoo reports a model-inference throughput of 35.1 FPS for INT8 YOLOv8n with $640\times640$ inputs in its RK3566 benchmark\cite{rockchipmodelzoo}. We therefore select YOLOv8n as the baseline detector and the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) as the processor. Previous fabric inspection systems use desktop computers or Jetson Orin Nano platforms \cite{celik2022circular,machado2025edgefabric}, with reference costs generally exceeding USD~300. The proposed RK3566-based processing board costs less than USD~100. The RK3566 integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
 
 \subsection{Hardware Implementation}
 \label{sec:hardware-implementation}
