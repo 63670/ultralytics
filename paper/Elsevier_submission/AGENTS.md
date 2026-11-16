@@ -1,24 +1,24 @@
 # Elsevier 稿件维护
 
 - 默认修改本目录以论文标题命名的唯一 `.tex` 文件，不再将新改动写回 `TIE_submission/`。
-- 全文主线是将检测从成布后的独立验布环节前移到织造中的检测与停机干预；章节为 Introduction、Related Work、System Design、Detection Method、Experiments and Results、System Deployment and Industrial Application、Conclusion。相关工作区分成布后验布和已有机上检测，不声称首次提出边织边检；不纳入经编机相关工作。验布机文献区分实际系统运行与采集数据后的模型评估；先行工作包括 Saeidi (2005)、Çelik (2022)、Ni (2025)。工厂应用仅说明系统已部署于东莞明海纺织有限公司及其用途，不在摘要、引言、贡献、正文或结论中报告废布前后变化、减废率、经济收益或验布机采购节省；不自动恢复原经济分析表。历史数值仅保留于核验记录。
+- 全文主线是将检测从成布后的独立验布环节前移到织造中的检测与停机干预；章节为 Introduction、Related Work、Defect Detection and Closed-Loop Control System、Detection Algorithm、Experiments and Results、Conclusion；模型部署为5.4 Model Deployment and On-Device Performance。相关工作区分成布后验布和已有机上检测，不声称首次提出边织边检；不纳入经编机相关工作。验布机文献区分实际系统运行与采集数据后的模型评估；先行工作包括 Saeidi (2005)、Çelik (2022)、Ni (2025)。工厂应用仅说明系统已部署于东莞明海纺织有限公司及其用途，不在摘要、引言、贡献、正文或结论中报告废布前后变化、减废率、经济收益或验布机采购节省；不自动恢复原经济分析表。历史数值仅保留于核验记录。
 - Related Work 保留 Fabric Inspection Systems 和 Fabric Defect Detection Algorithms 两节；离线验布流程统一称为 offline fabric inspection，织机端瑕疵检测统一称为 on-machine defect detection。2.1围绕相机和处理器的单机成本、持续推理所需计算资源及规模化部署约束，为硬件价格对比铺垫；2.2突出方向性纹理建模、多尺度特征融合和轻量化部署需求，不在缺少目标硬件测量证据时笼统断言已有方法计算开销过高。引用通过文献键自动编号，不沿用用户草稿中的手写序号。
 - 使用现有 `cas-dc` 双栏模板、`natbib` 数字引文和 CAS 的 `pos=` 浮动体选项；保持图片文件名和标签稳定。
 - 作者、单位、通讯作者、简介、实验数据和图注措辞以当前稿件为准，不补写未知的贡献声明、利益冲突声明或实验结果。
 - 全文金额统一使用 USD，不在正文写换算日期。按当前核实汇率1 USD=6.6765 CNY换算：本系统摄像头约54美元（用户更新为原360元，含串行器、不含解串器），RK3566主板约75美元（原500元，含解串器）；原始CNY及计算依据保存在 hardware-price-references.json。
-- 工厂应用仅说明系统已部署于东莞明海纺织有限公司及其用途，不在摘要、引言、贡献、正文或结论中报告废布前后变化、减废率、经济收益或验布机采购节省；不自动恢复原经济分析表。历史数值仅保留于核验记录。 部署说明放在第6节System Deployment and Industrial Application首段，已删除单独的Factory Application小节，不自动恢复。
+- 工厂应用仅说明系统已部署于东莞明海纺织有限公司及其用途，不在摘要、引言、贡献、正文或结论中报告废布前后变化、减废率、经济收益或验布机采购节省；不自动恢复原经济分析表。历史数值仅保留于核验记录。 工厂应用地点与用途保留于摘要、引言、硬件实现图注和结论，不另设工厂应用章节。
 - 默认由用户手动编译；未明确要求时不主动运行编译。编译脚本为 `build.ps1`，辅助文件位于 `build/`。
 - 每次改动后创建对应的本地 Git commit，不自动推送。
 - 硬件配置与价格比较分别放在 tab:camera-costs 和 tab:processor-costs，正文保留选型依据；估价及产品系列参考价格在表注中标明。工厂应用仅说明部署地点与用途，不再保留tab:factory-benefits。
 - Detection Method 先写 Defect Morphology and Design Motivation：典型样本图 fig:dataset-examples 与标注框形态图 fig:annotation-shapes 均在此双栏展示，本小节仅描述横向/竖向细长连续性、形态与尺度差异及检测需求，不提前提MCE或GIU；到MCGI-YOLO Architecture再简述两个模块各自解决的问题和插入位置；Dataset仅保留来源、数量、划分及回指，不重复设计动机。
 - 价格与汇率不在正文、表格或参考文献中引用商业网页；保留研究论文引用及必要的估价标记，价格来源仅保存在本地 hardware-price-references.json 供追溯。
-- 用户可配置停机决策（sec:stop-rules）置于 System Deployment and Industrial Application，在部署性能之后、客户端界面之前；保留规则公式与预设表，不再放入 Detection Method。
+- 2026-11-16 用户要求删除原第6章System Deployment and Industrial Application，将原6.1完整移至实验结果5.4 Model Deployment and On-Device Performance，保留tab:rknn-deployment及全部实测数据；原停机规则小节、预设表及公式、延迟干预分析及废布照片从正文移除，不移回算法章节，也不自动恢复。原7 Conclusion自动顺延为6，图表与公式编号自动更新。
 - 图表在相关段落内尽早声明；系统总览图、硬件图放在首次引用句后，对比表、检测对比图和FPS散点图在Comparison With Other Detectors起始处依次声明。避免在章节前密集添加FloatBarrier或大块Needspace造成空栏，仅在文末清空浮动队列；单栏图表优先使用pos=!htbp，形态图、架构图与模块图使用pos=!tb以图文共同排版。
 - 图像采集小节先介绍高速成像需求、相机型号与视场，接相机成本对比表，再介绍SerDes链路与带宽；圆机直径和旋转周期参数表放在Processor Subsystem的帧率计算之前，不在相机小节提前引入。图表引用融入选型论述，避免独立的“Table summarizes/compares”堆叠。
 - CAS的跨栏环境设置fps@figure/table后调用内核@dblfloat，而内核默认@dbflt使用[tp]；稿件导言区的兼容定义让跨栏定位遵循pos参数，不改模板源文件。flushend[nospread]用于平衡参考文献末页双栏。经用户授权的排版编译必须逐页检查实际PDF，不能仅凭源码判断空白已消除。
 - 公式后接where、so或其它解释续写时，式末用逗号，接续文字顶格；独立完结式用句号，后续另起段落保留首行缩进。成组独立编号公式中间式用逗号；连续等号分行只在最后一行加标点。
 - 处理器选型先由生产工况及视场推导最低覆盖帧率，10 frames/s为硬件设计输入；瑞芯微RKNN Model Zoo官方基准中YOLOv8n为35.1 FPS（RK3566/RK3568、INT8、640×640、最高NPU频率、纯模型推理），作为YOLOv8n与RK3566联合选型及算法改进余量的参考，引用rockchipmodelzoo。部署实测速率仅用于后续验证，不将官方35.1 FPS替换成本文实测或反推选型依据。
-- 已按用户要求从正文移除 Cloud Monitoring and Remote Management 小节及图 fig:iot-platform，不自动恢复；iot_platform.png 原始图片保留。第6节概述不再预告云端管理内容，后续章节和图号由LaTeX自动顺延；延迟估算标题使用 Illustrative Analysis of Defect Propagation Before Intervention，明确287.3 m为90圈横向瑕疵长度累计，2.7 m为生产方向受影响布长，不将前者写成报废布长。
+- 已移除云端监控、客户端反馈和闭环响应分析，不自动恢复相应章节或占位；原延迟干预分析与fig:waste-fabric已随原第6章删除，原始素材保留。
 - 2026-11-14 用户要求移除原Section 6.2 Closed-Loop Response Time，暂不报告包含前后处理的实际检测帧率、阶段耗时及闭环响应估算；摘要、引言贡献、评价指标、系统部署概述和结论同步清理相应预告及结论。保留纯模型推理FPS和10 frames/s硬件设计输入，后续章节及公式由LaTeX自动顺延，不自动恢复已删内容。
 - 本系统统一使用 rotation-activated detection：霍尔传感器仅检测织机运行状态并激活检测流程，不负责逐帧触发相机采集或曝光；启动后相机连续采集、边缘端持续推理，满足规则后下发停机命令。摘要、引言、贡献点、系统总览及结论保持一致；相关工作中其他系统的encoder-based synchronization不据此改写。
 - 参考模块横向对比按用户要求暂不纳入投稿正文，已移除原tab:context-comparison、tab:upsampling-comparison及对应分析；仅保留检测器对比和四组组件消融。原始结果reference-module-results.json、模块代码、配置和实验命令保留，只有用户后续明确要求时才恢复或补做，不在正文写后续补实验占位。恢复时MCE应复用真实组件消融结果（P=93.6%、R=87.8%、mAP@50=93.9%、mAP@50:95=63.6%，来源为已核实的axis-only/4/test_metrics.log），不得误用另一轮88.5/56.3结果；不自动启动训练。
@@ -28,5 +28,5 @@
 - 已按用户要求移除原6.3 Client Detection Interface and Operator Feedback及客户端图fig:client-detection（detect.png）；不自动恢复，保留原图文件。部署节概述和云端文字已清理对应客户端反馈引入，后续章节与图号由LaTeX自动顺延。
 
 - 2026-11-13 用户确认最新 RK3566 纯模型推理速度：YOLOv8n 为33 FPS、MCGI-YOLO 为23 FPS；部署精度评估在Linux进行，客户端应用系统为Android 13。相机成本按360 CNY折算约54 USD。正文Fig. 11使用用户手动标注的fps_accuracy.png，保留原图效果；不自动切换为PDF、不重新生成或覆盖该PNG。表中33/23 FPS均为纯模型推理，不包含前后处理；按2026-11-14用户要求，正文暂不报告实际检测处理帧率与闭环响应时间，也不使用23 FPS进行整段检测处理的覆盖达标论证。4.1 ms仅是帧有效载荷除以链路额定容量的理论值，不作为实测链路延迟。
-- 引言贡献分为三项：第一项为专用硬件设计与实现（电源、全局快门相机、LED、SerDes、旋转感知、RK3566主板及控制接口），第二项为MCGI-YOLO检测算法，第三项归纳第6节：INT8边缘部署、用户可配置post-NMS停机规则、端侧精度与纯推理性能评估、延迟干预下的瑕疵蔓延分析，以及东莞明海纺织有限公司的工厂部署；瑕疵蔓延写作分析，不将估算写成实测结果。
+- 引言贡献分为三项：第一项为专用硬件设计与实现，第二项为MCGI-YOLO检测算法，第三项为RK3566的INT8部署、端侧精度与纯推理性能评估，以及东莞明海纺织有限公司的工厂部署；不再预告已删除的停机规则设计或延迟干预分析。系统总览保留真实的检测、停机与告警流程。
 - 实验结果表统一表头与显示精度：P、R、AP、mAP均标注(%)并保留1位小数；Params (M)保留2位小数，FLOPs (G)保留1位小数，Inference FPS显示整数。消融表Model列与其他结果表一致，Overall/Row/Col/Hole分组下的每个AP/mAP列均有百分比单位。部署正文用同样的准确率精度；原始日志与JSON不按显示精度覆盖。数据集计数和像素阈值保留整数，置信度预设保留原值。

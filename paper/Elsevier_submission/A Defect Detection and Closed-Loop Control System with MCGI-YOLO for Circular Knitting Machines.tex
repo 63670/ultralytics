@@ -95,14 +95,14 @@ Conventional fabric inspection typically separates production from quality contr
 
 To address these issues, machine-vision-based fabric inspection systems have been proposed, in which cameras and processing units are installed on inspection machines to replace human observation \cite{kumar2008survey,machado2025edgefabric}. Although such systems mitigate the drawbacks of manual inspection, they still operate as post-production inspection: defects are identified only after the fabric has been produced, by which time substantial defective material may already have accumulated, resulting in economic loss. Therefore, real-time inspection during the knitting process, coupled with closed-loop machine control, is needed to detect developing defects and trigger timely intervention.
 
-To this end, we have developed a defect detection and closed-loop control system embedded directly into circular-knitting production. At the hardware level, the system integrates a global-shutter camera, LED illumination, coaxial serializer/deserializer (SerDes) transmission, a Hall sensor for rotation-activated detection, and an edge computing device, together with interfaces for local machine stopping and remote alarm notification. At the algorithmic level, guided by systematic observations of defect morphologies arising during the knitting process, we propose \model, a lightweight fabric defect detector. The detector incorporates a morphology-aware context encoding (MCE) module to capture the extended spatial continuity of horizontal and vertical elongated defects, and a gated interpolation upsampling (GIU) module to enable content-adaptive feature reconstruction for defects of diverse shapes and scales. To translate detection results into stopping decisions, we design a user-configurable post-NMS stopping module. The system has been deployed on circular knitting machines at Dongguan Minghai Textile Co., Ltd., Dongguan, Guangdong, China.
+To this end, we have developed a defect detection and closed-loop control system embedded directly into circular-knitting production. At the hardware level, the system integrates a global-shutter camera, LED illumination, coaxial serializer/deserializer (SerDes) transmission, a Hall sensor for rotation-activated detection, and an edge computing device, together with interfaces for local machine stopping and remote alarm notification. At the algorithmic level, guided by systematic observations of defect morphologies arising during the knitting process, we propose \model, a lightweight fabric defect detector. The detector incorporates a morphology-aware context encoding (MCE) module to capture the extended spatial continuity of horizontal and vertical elongated defects, and a gated interpolation upsampling (GIU) module to enable content-adaptive feature reconstruction for defects of diverse shapes and scales. The system has been deployed on circular knitting machines at Dongguan Minghai Textile Co., Ltd., Dongguan, Guangdong, China.
 
 The main contributions of our work are as follows
 \begin{enumerate}
   \renewcommand{\labelenumi}{\arabic{enumi})}
   \item We design and implement dedicated inspection hardware for circular knitting machines, integrating the power supply, global-shutter camera, controllable LED illumination, SerDes transmission, rotation sensing, and an edge-processing board with machine-control interfaces.
   \item We propose \model, a lightweight fabric defect detector incorporating a morphology-aware context encoding (MCE) module and a gated interpolation upsampling (GIU) module tailored to knitting defect characteristics.
-  \item We integrate INT8 edge deployment and user-configurable post-NMS stopping rules into a detection and control workflow, evaluating on-device accuracy and detection performance, analyzing defect propagation under delayed intervention, and deploying the complete system at Dongguan Minghai Textile Co., Ltd. for on-machine inspection.
+  \item We evaluate INT8 deployment on the RK3566 in terms of detection accuracy and inference throughput, and deploy the complete system at Dongguan Minghai Textile Co., Ltd. for on-machine inspection.
 \end{enumerate}
 
 \section{Related Work}
@@ -507,11 +507,6 @@ Table~\ref{tab:ablation} summarizes the component ablation results. MCE alone re
 
 The combination of MCE and GIU achieves the highest Hole AP@50 (93.5\%) and AP@50:95 (65.2\%). The combined model also attains the highest Col AP@50 (99.5\%) and AP@50:95 (66.9\%). For Col and Hole, the AP@50:95 gains over the best single-module results are 2.2 and 2.6 percentage points, respectively. This pattern suggests that MCE supplies more coherent contextual features and GIU adapts their reconstruction before fusion with local features, benefiting both elongated Col defects and localized holes.
 
-\Needspace{8\baselineskip}
-\section{System Deployment and Industrial Application}
-\label{sec:system-operation}
-The system has been deployed at Dongguan Minghai Textile Co., Ltd., Dongguan, Guangdong, China, for on-machine fabric-defect detection and closed-loop machine control (Fig.~\ref{fig:system}). This section presents on-device performance, configurable stopping decisions, and an illustrative analysis of defect propagation.
-
 \subsection{Model Deployment and On-Device Performance}
 \label{sec:deployment}
 To deploy \model on the RK3566 edge device, the trained model is exported to ONNX with a fixed input size of $640\times640$ and then converted into an INT8 RKNN model using RKNN-Toolkit2 \cite{rockchiptoolkit2}. The converted \model and YOLOv8n baseline are evaluated on the same test set. Table~\ref{tab:rknn-deployment} reports the deployed models' overall detection accuracy and inference throughput. \model achieves 96.7\% mAP@50 and 64.0\% mAP@50:95, exceeding the deployed YOLOv8n baseline by 6.5 and 6.7 percentage points, respectively. Its overall precision and recall reach 97.6\% and 93.0\%. Relative to the PyTorch results in Table~\ref{tab:comparison}, the deployed \model shows reductions of approximately 0.5 and 1.5 percentage points in the two mAP metrics. On the RK3566, YOLOv8n and \model achieve 33 and 23 FPS, respectively.
@@ -534,86 +529,9 @@ YOLOv8n & 88.3 & 81.3 & 90.2 & 57.3 & \textbf{33} \\
 \renewcommand{\arraystretch}{1.0}
 \end{table}
 
-\subsection{User-Configurable Post-NMS Stopping Decision}
-\label{sec:stop-rules}
-Textile factories differ in their tolerance for fabric defects and the quality requirements of their products. We therefore introduce a user-configurable postprocessing stage after non-maximum suppression (NMS), translating detection results into machine-stop decisions. Three editable sensitivity presets, low, medium, and high, accommodate different factory acceptance criteria. Each sensitivity preset combines a confidence threshold, three geometric thresholds, and a defect-count threshold per frame, as listed in Table~\ref{tab:stop-rules}.
-
-\begin{table}[pos=!htbp]
-\caption{User-configurable machine-stop parameters.}
-\label{tab:stop-rules}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.08}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrr@{}}
-\toprule
-Level & $\tau_s$ & \shortstack{$A_s$\\(pixels$^2$)} & \shortstack{$W_s$\\(pixels)} & \shortstack{$H_s$\\(pixels)} & $N_s$ \\
-\midrule
-Low & 0.50 & 6400 & 600 & 200 & 3 \\
-Medium & 0.40 & 3600 & 400 & 100 & 2 \\
-High & 0.30 & 1600 & 200 & 50 & 1 \\
-\bottomrule
-\end{tabular*}
-\renewcommand{\arraystretch}{1.0}
-\end{table}
-
-Class-aware NMS suppresses redundant overlapping predictions within each category. The retained bounding boxes are mapped back to the original $1280\times1024$ camera image before their dimensions are evaluated. For sensitivity level $s$, let $\tau_s$ denote the confidence threshold, $W_s$ and $H_s$ the horizontal- and vertical-defect length thresholds in pixels, $A_s$ the hole-area threshold in square pixels, and $N_s$ the defect-count threshold. For detection $i$ with class $c_i$, bounding-box width $w_i$, and height $h_i$, the geometric qualification indicator is
-\begin{equation}
-r_i^{(s)}=
-\begin{cases}
-1, & c_i=\mathrm{row},\quad w_i>W_s\\
-1, & c_i=\mathrm{col},\quad h_i>H_s\\
-1, & c_i=\mathrm{hole},\quad w_i h_i>A_s\\
-0, & \text{otherwise}
-\end{cases},
-\label{eq:stop-rule}
-\end{equation}
-\noindent where $r_i^{(s)}=1$ indicates that the detection exceeds its class-specific size threshold; otherwise, $r_i^{(s)}=0$. Width measures the horizontal extent of a row defect, height measures the vertical extent of a column defect, and bounding-box area measures the extent of a hole. Let $\mathcal{P}$ denote the detections retained by NMS and $p_i$ the confidence of detection $i$. The set $\mathcal{D}_s=\{i\in\mathcal{P}\mid p_i\geq\tau_s\}$ contains the confidence-qualified detections in the current frame. The stopping decision is
-\begin{equation}
-S_s=
-\begin{cases}
-1, & \displaystyle\sum_{i\in\mathcal{D}_s}r_i^{(s)}\geq1\\
-1, & |\mathcal{D}_s|\geq N_s\\
-0, & \text{otherwise}
-\end{cases},
-\label{eq:frame-stop-rule}
-\end{equation}
-\noindent where $S_s=1$ triggers a stop command, and $S_s=0$ continues inspection. A stop command is issued when either a confidence-qualified detection exceeds its class-specific size threshold or the total number of confidence-qualified detections reaches $N_s$. The count criterion includes defects below the geometric thresholds, allowing multiple small defects to trigger stopping. Counts are evaluated independently for each frame.
-
-Higher sensitivity lowers the confidence, size, and count thresholds, allowing stopping for smaller defects or fewer detections within a frame. Lower sensitivity raises these thresholds to allow for more lenient quality standards. The editable presets convert detection outputs into factory-specific production decisions without retraining the detector.
-
-\subsection{Illustrative Analysis of Defect Propagation Before Intervention}
-\label{sec:delayed-intervention}
-Fig.~\ref{fig:waste-fabric} shows actual waste fabric with repeated horizontal defects caused by a yarn abnormality. When the abnormality persists at an active feeder, a new horizontal defect can appear on each machine revolution, following the knitting mechanism of circular weft knitting \cite{cottonworksKnitMachinery}. Without timely detection and intervention, as the fabric is continuously knitted and drawn downward, these defects recur revolution by revolution, causing the length of affected fabric to grow and ultimately leading to large sections being discarded.
-\begin{figure}[pos=!htbp]
-\centering
-\includegraphics[width=0.9\columnwidth]{fabric_with_defect.jpg}
-\caption{Waste fabric with recurring horizontal defects.}
-\label{fig:waste-fabric}
-\end{figure}
-
-Consider a three-minute delay ($\tau=180$ s) between defect occurrence and operator discovery. The machine completes $N=\tau/T=90$ revolutions during this interval. Since each revolution produces a defect extending around the fabric circumference, the total length of these circumferential defects is
-\begin{equation}
-L_{\mathrm{sum}}=N\pi D
-=90\times\pi\times1.016
-\approx287.3\ \mathrm{m}.
-\label{eq:cumulative-defect-length}
-\end{equation}
-
-\Needspace{5\baselineskip}
-The corresponding affected fabric length along the fabric take-down direction is determined by the take-down increment, taken as $p=0.03$ m per revolution:
-\begin{equation}
-L_{\mathrm{affected}}=Np
-=\frac{180}{2}\times0.03
-\approx2.7\ \mathrm{m}.
-\label{eq:affected-fabric-length}
-\end{equation}
-
-These estimates describe approximately 2.7 m of affected fabric in the production direction, containing 90 repeated horizontal defects with a summed transverse length of 287.3 m. The latter measures accumulated defect extent across revolutions, rather than the length of discarded fabric.
-
 \section{Conclusion}
 \label{sec:conclusion}
-This paper presents a dedicated defect detection and closed-loop control system that integrates quality inspection into circular-knitting production. The hardware combines global-shutter imaging, LED illumination, coaxial SerDes transmission, rotation-activated detection, and RK3566 edge processing for continuous on-machine inspection. Its processor-throughput requirement is derived from machine operating conditions and the camera field of view, establishing an engineering basis for hardware selection. Configurable post-NMS stopping rules translate defect confidence, geometry, and count into local machine-control decisions, allowing the inspection criteria to match factory quality requirements.
+This paper presents a dedicated defect detection and closed-loop control system that integrates quality inspection into circular-knitting production. The hardware combines global-shutter imaging, LED illumination, coaxial SerDes transmission, rotation-activated detection, and RK3566 edge processing for continuous on-machine inspection. Its processor-throughput requirement is derived from machine operating conditions and the camera field of view, establishing an engineering basis for hardware selection. Detection outputs are coupled with local machine control to interrupt defect propagation.
 
 The lightweight detector, \model, uses MCE to associate spatially separated responses along horizontal and vertical elongated defects and GIU to adapt feature reconstruction to different defect shapes and scales. Component ablations support the complementary contributions of these designs, with their combination achieving the highest Col and Hole AP@50:95 among the four variants. On the production-line test set, \model achieves 97.2\% mAP@50 and 65.5\% mAP@50:95, improving over YOLOv8n by 6.7 and 7.1 percentage points with only marginal increases in parameters and FLOPs. INT8 deployment retains 96.7\% mAP@50 and 64.0\% mAP@50:95 on the RK3566, with a model-inference throughput of 23 FPS.
 
