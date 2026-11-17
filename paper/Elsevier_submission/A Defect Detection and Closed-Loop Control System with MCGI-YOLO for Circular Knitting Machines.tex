@@ -285,7 +285,7 @@ U' &= U+\gamma\odot U\odot(2G-1), \label{eq:pac-modulation}
 Circular-knitting defects vary substantially in morphology and scale, from narrow horizontal and vertical patterns to small and large holes. Their feature representations therefore place different demands on spatial continuity, response concentration, and boundary extent. In the top-down feature pyramid, higher-level context must be reconstructed at a finer resolution before fusion with lateral features. Nearest-neighbor interpolation replicates responses within local regions, whereas bilinear interpolation combines neighboring responses to produce smoother spatial transitions. A fixed interpolation rule applies the same reconstruction behavior to all locations, limiting its adaptability to these diverse defect patterns. We develop GIU to adjust the balance between response replication and neighborhood smoothing according to the input features [Fig.~\ref{fig:modules}(b)]. To achieve this adaptation with a small computational overhead, GIU combines two parameter-free interpolation paths using a single spatial weight map predicted at low resolution and shared across channels. It reconstructs the higher-level context before fusion with shallow lateral features, which retain local texture and localization cues.
 
 \emph{1) Two Fixed Interpolation Paths:}
-For $X\in\mathbb{R}^{B\times C\times H\times W}$, nearest-neighbor and bilinear upsampling produce
+For $X\in\mathbb{R}^{B\times C\times H\times W}$, nearest-neighbor and bilinear upsampling produce:
 \begin{align}
 N &= \operatorname{Nearest}_{2}(X), \label{eq:giu-paths}\\*
 L &= \operatorname{Bilinear}_{2}(X), \label{eq:giu-bilinear}
@@ -306,7 +306,7 @@ The output $Y\in\mathbb{R}^{B\times C\times2H\times2W}$ is a convex combination:
 Y=(1-G)\odot N+G\odot L,
 \label{eq:giu-mixture}
 \end{equation}
-\noindent where small values of $G$ favor response replication, while larger values favor neighborhood smoothing. This spatially varying mixture allows the reconstruction behavior to adapt to local feature content associated with different defect morphologies and scales.
+\noindent where small values of $G$ favor response replication, while larger values favor neighborhood smoothing. This spatially varying mixture allows the reconstruction behavior to adapt to local feature content associated with different defect morphologies and scales. At initialization:
 \begin{equation}
 G_{\mathrm{init}}=0.05,\qquad Y_{\mathrm{init}}=0.95N+0.05L,
 \label{eq:giu-initialization}
@@ -376,7 +376,7 @@ Table~\ref{tab:implementation} summarizes the training and deployment settings. 
 \Needspace{9\baselineskip}
 \subsubsection{Evaluation Metrics}
 \label{sec:evaluation}
-Intersection over union (IoU) measures the overlap between predicted and ground-truth bounding boxes as the ratio of their intersection area to their union area. Precision (P), recall (R), average precision (AP), and mean average precision (mAP) are defined as
+Intersection over union (IoU) measures the overlap between predicted and ground-truth bounding boxes as the ratio of their intersection area to their union area. Precision (P), recall (R), average precision (AP), and mean average precision (mAP) are defined as:
 \begin{align}
 P &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}},
 \label{eq:precision}\\*
