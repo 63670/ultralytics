@@ -162,24 +162,7 @@ R_{\mathrm{img}} &= W \cdot H \cdot b \cdot f_{\mathrm{cam}} \\
 
 \subsection{Processor Subsystem}
 \label{sec:coverage}
-Before selecting the processor, we first determine the processor-throughput target based on the production conditions listed in Table~\ref{tab:production-inputs} and the camera's field of view.
-
-\begin{table}[pos=!htbp]
-\caption{Machine operating parameters.}
-\label{tab:production-inputs}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.08}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}llr@{}}
-\toprule
-Parameter & Symbol & Value \\
-\midrule
-Nominal machine diameter & $D$ & 1.016 m (40 in) \\
-Rotation period & $T$ & 2~s \\
-\bottomrule
-\end{tabular*}
-\end{table}
+Before selecting the processor, we first determine the processor-throughput target based on the machine operating conditions and the camera's field of view. We consider a nominal machine diameter of $D=1.016$ m (40 in) and a rotation period of $T=2$ s.
 
 In one revolution, a circumferential fabric length of $\pi D$ passes through the camera's field of view. Each processed image covers a horizontal width of $w=0.16$ m, so covering one revolution requires approximately $\pi D/w$ images. Dividing this image count by the rotation period $T$ gives the minimum processing rate:
 \begin{equation}

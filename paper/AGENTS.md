@@ -8,7 +8,7 @@
 - 数据集样本图使用 `figures/defect.png`，在 Detection Method 的 Defect Morphology and Design Motivation 小节双栏展示，标签为 `fig:dataset-examples`；四行依次为 row、col、hole 及多类瑕疵共存样本。
 - 原延迟干预分析及废布照片fig:waste-fabric已随原第6章从正文删除；figures/fabric_with_defect.jpg作为原始素材保留，不自动恢复插图或估算。
 - 工厂名称仅保留于Fig. 5安装照片图注，不在摘要、引言、贡献或结论重复；不另设工厂应用章节；原第6章已删除，原6.1完整移至实验结果5.4。
-- 标注框形态与尺度图为 `figures/annotation_shapes.png`（双栏，`fig:annotation-shapes`，与典型样本图一起置于算法设计动机小节）；由 `paper/plot_annotation_shapes.py --labels <数据集labels目录> --output paper/Elsevier_submission/figures/annotation_shapes.png` 生成，全部框中心对齐并保留归一化宽高，附 `.stats.json` 记录统计和标注哈希。机器直径和旋转周期见 `tab:production-inputs`，该两行参数表置于处理器选型小节、帧率计算之前；横向视场宽度w=16 cm在相机介绍正文说明，不在表中重复；原延迟干预估算已随原第6章删除，不恢复相应图表和计算。
+- 标注框形态与尺度图为 `figures/annotation_shapes.png`（双栏，`fig:annotation-shapes`，与典型样本图一起置于算法设计动机小节）；由 `paper/plot_annotation_shapes.py --labels <数据集labels目录> --output paper/Elsevier_submission/figures/annotation_shapes.png` 生成，全部框中心对齐并保留归一化宽高，附 `.stats.json` 记录统计和标注哈希。机器直径D=1.016 m（40 in）和旋转周期T=2 s在处理器选型小节的帧率推导前直接写入正文；原tab:production-inputs两行参数表已删除，不恢复；横向视场宽度w=16 cm在相机介绍正文说明，不在表中重复；原延迟干预估算已随原第6章删除，不恢复相应图表和计算。
 - FPS–mAP散点图（正文Fig. 11）必须使用用户手动标注的 `figures/fps_accuracy.png`，双栏展示，标签 `fig:fps-accuracy`。保留其原有布局、字号、颜色和标注，不自动切换到PDF或重新生成覆盖。已有 `.pdf` 只是备份版本。需要另出底图时使用 `paper/plot_fps_accuracy.py --output <新路径>` 或 `--unlabeled`，不得覆盖正文手动标注图；数据口径仍为RTX 3090、FP32、batch=1、640×640纯推理。
 - 手动标注用散点底图运行 `python paper/plot_fps_accuracy.py --unlabeled`，另存 `figures/fps_accuracy_unlabeled.{png,pdf,svg,json}`，左图 mAP@50、右图 mAP@50:95；保留坐标轴、刻度数字、网格、颜色、点形和数据位置；仅去掉模型名称、引线、图标题及轴标题。此版本不自动替换正文已标注插图。
 - 硬件系统部分保留serdes.png（单栏）。模型部署与端侧性能位于实验结果5.4；原第6章及停机规则、延迟干预分析已删除。客户端和云端小节及detect.png、iot_platform.png不恢复，原始素材保留。

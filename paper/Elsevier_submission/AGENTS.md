@@ -9,12 +9,12 @@
 - 工厂名称仅在Fig. 5安装照片图注中保留；摘要、引言、贡献和结论用检测精度、模型复杂度及端侧评估结果支持纺织行业大圆机在线瑕疵检测的规模化应用，不声称已验证大规模部署，不在摘要、引言、贡献、正文或结论中报告废布前后变化、减废率、经济收益或验布机采购节省；不自动恢复原经济分析表。历史数值仅保留于核验记录。 工厂名称仅保留于Fig. 5安装照片图注，不在摘要、引言、贡献或结论重复；不另设工厂应用章节。
 - 默认由用户手动编译；未明确要求时不主动运行编译。编译脚本为 `build.ps1`，辅助文件位于 `build/`。
 - 每次改动后创建对应的本地 Git commit，不自动推送。
-- 相机和计算平台价格对比表tab:camera-costs、tab:processor-costs已按用户要求删除；在各自选型正文中简述已有配置与本方案的概略价格界限，并保留研究论文引用。tab:production-inputs机器参数表保留，不因其与原处理器价格表共用浮动环境而误删。
+- 相机和计算平台价格对比表tab:camera-costs、tab:processor-costs已按用户要求删除；在各自选型正文中简述已有配置与本方案的概略价格界限，并保留研究论文引用。原Table 1机器参数表tab:production-inputs已删除；直径D=1.016 m（40 in）和旋转周期T=2 s直接写在Processor Subsystem正文，后续表格由LaTeX自动顺延编号，不手工改写。
 - Detection Method 先写 Defect Morphology and Design Motivation：典型样本图 fig:dataset-examples 与标注框形态图 fig:annotation-shapes 均在此双栏展示，本小节仅描述横向/竖向细长连续性、形态与尺度差异及检测需求，不提前提MCE或GIU；到MCGI-YOLO Architecture再简述两个模块各自解决的问题和插入位置；Dataset仅保留来源、数量、划分及回指，不重复设计动机。
 - 价格与汇率不在正文、表格或参考文献中引用商业网页；保留研究论文引用及必要的估价标记，价格来源仅保存在本地 hardware-price-references.json 供追溯。
 - 2026-11-16 用户要求删除原第6章System Deployment and Industrial Application，将原6.1完整移至实验结果5.4 Model Deployment and On-Device Performance，保留tab:rknn-deployment及全部实测数据；原停机规则小节、预设表及公式、延迟干预分析及废布照片从正文移除，不移回算法章节，也不自动恢复。原7 Conclusion自动顺延为6，图表与公式编号自动更新。 摘要、引言、贡献、系统总览及结论不得残留可配置停机规则、灵敏度预设或post-NMS停机模块的功能宣称；仅保留检测后下发停机命令的流程，摘要使用local machine control，系统总览使用Upon detecting a defect。
 - 图表在相关段落内尽早声明；系统总览图、硬件图放在首次引用句后，对比表、检测对比图和FPS散点图在Comparison With Other Detectors起始处依次声明。避免在章节前密集添加FloatBarrier或大块Needspace造成空栏，仅在文末清空浮动队列；单栏图表优先使用pos=!htbp，形态图、架构图与模块图使用pos=!tb以图文共同排版。
-- 图像采集小节先介绍高速成像需求、相机型号与视场，接相机成本的概略比较，再介绍SerDes链路与带宽；圆机直径和旋转周期参数表放在Processor Subsystem的帧率计算之前，不在相机小节提前引入。图表引用融入选型论述，避免独立的“Table summarizes/compares”堆叠。
+- 图像采集小节先介绍高速成像需求、相机型号与视场，接相机成本的概略比较，再介绍SerDes链路与带宽；圆机直径和旋转周期在Processor Subsystem的帧率计算之前直接以文字给出，不再单独列参数表，不在相机小节提前引入。图表引用融入选型论述，避免独立的“Table summarizes/compares”堆叠。
 - CAS的跨栏环境设置fps@figure/table后调用内核@dblfloat，而内核默认@dbflt使用[tp]；稿件导言区的兼容定义让跨栏定位遵循pos参数，不改模板源文件。flushend[nospread]用于平衡参考文献末页双栏。经用户授权的排版编译必须逐页检查实际PDF，不能仅凭源码判断空白已消除。
 - 引出陈列公式的文字统一以英文冒号结尾；原来直接接公式而没有引导语的初始化表达，用At initialization:引出。公式后接where、so或其它解释续写时，式末用逗号，接续文字顶格；独立完结式用句号，后续另起段落保留首行缩进。成组独立编号公式中间式用逗号；连续等号分行只在最后一行加标点。
 - 处理器选型先由生产工况及视场推导最低覆盖帧率，10 frames/s为硬件设计输入；瑞芯微RKNN Model Zoo官方基准中YOLOv8n为35.1 FPS（RK3566/RK3568、INT8、640×640、最高NPU频率、纯模型推理），作为YOLOv8n与RK3566联合选型及算法改进余量的参考，引用rockchipmodelzoo。部署实测速率仅用于后续验证，不将官方35.1 FPS替换成本文实测或反推选型依据。
