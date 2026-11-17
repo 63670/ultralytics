@@ -2,7 +2,7 @@
 
 - 默认修改本目录以论文标题命名的唯一 `.tex` 文件，不再将新改动写回 `TIE_submission/`。
 - 全文主线是将检测从成布后的独立验布环节前移到织造中的检测与停机干预；章节为 Introduction、Related Work、Defect Detection and Closed-Loop Control System、Detection Algorithm、Experiments and Results、Conclusion；模型部署为5.4 Model Deployment and On-Device Performance。相关工作区分成布后验布和已有机上检测，不声称首次提出边织边检；不纳入经编机相关工作。验布机文献区分实际系统运行与采集数据后的模型评估；先行工作包括 Saeidi (2005)、Çelik (2022)、Ni (2025)。工厂名称仅在Fig. 5安装照片图注中保留；摘要、引言、贡献和结论用检测精度、模型复杂度及端侧评估结果支持纺织行业大圆机在线瑕疵检测的规模化应用，不声称已验证大规模部署，不在摘要、引言、贡献、正文或结论中报告废布前后变化、减废率、经济收益或验布机采购节省；不自动恢复原经济分析表。历史数值仅保留于核验记录。
-- Related Work 保留 Fabric Inspection Systems 和 Fabric Defect Detection Algorithms 两节；离线验布流程统一称为 offline fabric inspection，织机端瑕疵检测统一称为 on-machine defect detection。2.1围绕相机和处理器的单机成本、持续推理所需计算资源及规模化部署约束，为硬件价格对比铺垫；2.2突出方向性纹理建模、多尺度特征融合和轻量化部署需求，不在缺少目标硬件测量证据时笼统断言已有方法计算开销过高。引用通过文献键自动编号，不沿用用户草稿中的手写序号。
+- Related Work 保留 Fabric Inspection Systems 和 Fabric Defect Detection Algorithms 两节；离线验布流程统一称为 offline fabric inspection，织机端瑕疵检测统一称为 on-machine defect detection。2.1围绕相机和处理器的单机成本、持续推理所需计算资源及规模化部署约束，为硬件价格对比铺垫；2.2突出方向性纹理建模、多尺度特征融合和轻量化部署需求，不在缺少目标硬件测量证据时笼统断言已有方法计算开销过高。引用通过文献键自动编号，不沿用用户草稿中的手写序号。 Related Work以行业需求和研究动机收束，不直接介绍本文设备或宣称其已解决前述问题；具体方案在后续系统与算法章节展开。
 - 使用现有cas-dc双栏模板、natbib数字引文和CAS的pos浮动体选项；保持图片文件名和标签稳定。参考文献使用cas-model2-names-citeorder.bst，按正文首次引用顺序从1编号，References按相同顺序排列；同一文献重复引用沿用原编号，保留原CAS条目著录格式。不手工改写引文编号或按作者字母排序。
 - 作者、单位、通讯作者、简介、实验数据和图注措辞以当前稿件为准，不补写未知的贡献声明、利益冲突声明或实验结果。
 - 全文金额统一使用USD，不写换算日期。2026-11-16用户要求只给概略价格界限：已有相机配置约USD 700以上、本相机组件USD 60以内；已有计算平台约USD 300以上、本RK3566处理板USD 100以内。正文不列具体报价，原始报价与计算依据保留在hardware-price-references.json，不覆盖原始记录。
