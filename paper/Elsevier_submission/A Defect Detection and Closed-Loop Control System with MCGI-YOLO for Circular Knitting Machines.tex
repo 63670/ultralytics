@@ -188,7 +188,7 @@ f_{\min}=\frac{\pi D}{wT}
 \approx9.97\ \mathrm{frames/s},
 \label{eq:coverage-rate}
 \end{equation}
-\noindent We therefore set 10 frames/s as the processor-throughput target for hardware selection. Rockchip's official RKNN Model Zoo reports a model-inference throughput of 35.1 FPS for INT8 YOLOv8n with $640\times640$ inputs in its RK3566 benchmark\cite{rockchipmodelzoo}. We therefore select YOLOv8n as the baseline detector and the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) as the processor. Previous fabric inspection systems use desktop computers or Jetson Orin Nano platforms \cite{celik2022circular,machado2025edgefabric}, with reference costs generally exceeding USD~300. The proposed RK3566-based processing board costs less than USD~100. The RK3566 integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
+\noindent We therefore set 10 frames/s as the processor-throughput target for hardware selection. Rockchip's official RKNN Model Zoo reports a model-inference throughput of 35.1 FPS for INT8 YOLOv8n with $640\times640$ inputs in its RK3566 benchmark\cite{rockchipmodelzoo}. We therefore select YOLOv8n as the baseline detector and the Rockchip RK3566 (Rockchip Electronics Co., Ltd., Fuzhou, China) as the processor. Previous fabric inspection systems use desktop computers \cite{celik2022circular}, with reference costs generally exceeding USD~300. The proposed RK3566-based processing board costs less than USD~100. The RK3566 integrates a quad-core Cortex-A55 CPU and an NPU rated at 1 TOPS for INT8 operations \cite{rockchiprk3566}.
 
 \subsection{Hardware Implementation}
 \label{sec:hardware-implementation}
