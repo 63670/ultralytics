@@ -12,7 +12,7 @@
 - 相机和计算平台价格对比表tab:camera-costs、tab:processor-costs已按用户要求删除；在各自选型正文中简述已有配置与本方案的概略价格界限，并保留研究论文引用。tab:production-inputs机器参数表保留，不因其与原处理器价格表共用浮动环境而误删。
 - Detection Method 先写 Defect Morphology and Design Motivation：典型样本图 fig:dataset-examples 与标注框形态图 fig:annotation-shapes 均在此双栏展示，本小节仅描述横向/竖向细长连续性、形态与尺度差异及检测需求，不提前提MCE或GIU；到MCGI-YOLO Architecture再简述两个模块各自解决的问题和插入位置；Dataset仅保留来源、数量、划分及回指，不重复设计动机。
 - 价格与汇率不在正文、表格或参考文献中引用商业网页；保留研究论文引用及必要的估价标记，价格来源仅保存在本地 hardware-price-references.json 供追溯。
-- 2026-11-16 用户要求删除原第6章System Deployment and Industrial Application，将原6.1完整移至实验结果5.4 Model Deployment and On-Device Performance，保留tab:rknn-deployment及全部实测数据；原停机规则小节、预设表及公式、延迟干预分析及废布照片从正文移除，不移回算法章节，也不自动恢复。原7 Conclusion自动顺延为6，图表与公式编号自动更新。
+- 2026-11-16 用户要求删除原第6章System Deployment and Industrial Application，将原6.1完整移至实验结果5.4 Model Deployment and On-Device Performance，保留tab:rknn-deployment及全部实测数据；原停机规则小节、预设表及公式、延迟干预分析及废布照片从正文移除，不移回算法章节，也不自动恢复。原7 Conclusion自动顺延为6，图表与公式编号自动更新。 摘要、引言、贡献、系统总览及结论不得残留可配置停机规则、灵敏度预设或post-NMS停机模块的功能宣称；仅保留检测后下发停机命令的流程，摘要使用local machine control，系统总览使用Upon detecting a defect。
 - 图表在相关段落内尽早声明；系统总览图、硬件图放在首次引用句后，对比表、检测对比图和FPS散点图在Comparison With Other Detectors起始处依次声明。避免在章节前密集添加FloatBarrier或大块Needspace造成空栏，仅在文末清空浮动队列；单栏图表优先使用pos=!htbp，形态图、架构图与模块图使用pos=!tb以图文共同排版。
 - 图像采集小节先介绍高速成像需求、相机型号与视场，接相机成本的概略比较，再介绍SerDes链路与带宽；圆机直径和旋转周期参数表放在Processor Subsystem的帧率计算之前，不在相机小节提前引入。图表引用融入选型论述，避免独立的“Table summarizes/compares”堆叠。
 - CAS的跨栏环境设置fps@figure/table后调用内核@dblfloat，而内核默认@dbflt使用[tp]；稿件导言区的兼容定义让跨栏定位遵循pos参数，不改模板源文件。flushend[nospread]用于平衡参考文献末页双栏。经用户授权的排版编译必须逐页检查实际PDF，不能仅凭源码判断空白已消除。
@@ -20,7 +20,7 @@
 - 处理器选型先由生产工况及视场推导最低覆盖帧率，10 frames/s为硬件设计输入；瑞芯微RKNN Model Zoo官方基准中YOLOv8n为35.1 FPS（RK3566/RK3568、INT8、640×640、最高NPU频率、纯模型推理），作为YOLOv8n与RK3566联合选型及算法改进余量的参考，引用rockchipmodelzoo。部署实测速率仅用于后续验证，不将官方35.1 FPS替换成本文实测或反推选型依据。
 - 已移除云端监控、客户端反馈和闭环响应分析，不自动恢复相应章节或占位；原延迟干预分析与fig:waste-fabric已随原第6章删除，原始素材保留。
 - 2026-11-14 用户要求移除原Section 6.2 Closed-Loop Response Time，暂不报告包含前后处理的实际检测帧率、阶段耗时及闭环响应估算；摘要、引言贡献、评价指标、系统部署概述和结论同步清理相应预告及结论。保留纯模型推理FPS和10 frames/s硬件设计输入，后续章节及公式由LaTeX自动顺延，不自动恢复已删内容。
-- 本系统统一使用 rotation-activated detection：霍尔传感器仅检测织机运行状态并激活检测流程，不负责逐帧触发相机采集或曝光；启动后相机连续采集、边缘端持续推理，满足规则后下发停机命令。摘要、引言、贡献点、系统总览及结论保持一致；相关工作中其他系统的encoder-based synchronization不据此改写。
+- 本系统统一使用 rotation-activated detection：霍尔传感器仅检测织机运行状态并激活检测流程，不负责逐帧触发相机采集或曝光；启动后相机连续采集、边缘端持续推理，检测到瑕疵后下发停机命令。摘要、引言、贡献点、系统总览及结论保持一致；相关工作中其他系统的encoder-based synchronization不据此改写。
 - 参考模块横向对比按用户要求暂不纳入投稿正文，已移除原tab:context-comparison、tab:upsampling-comparison及对应分析；仅保留检测器对比和四组组件消融。原始结果reference-module-results.json、模块代码、配置和实验命令保留，只有用户后续明确要求时才恢复或补做，不在正文写后续补实验占位。恢复时MCE应复用真实组件消融结果（P=93.6%、R=87.8%、mAP@50=93.9%、mAP@50:95=63.6%，来源为已核实的axis-only/4/test_metrics.log），不得误用另一轮88.5/56.3结果；不自动启动训练。
 - 总体消融、分类别AP和复杂度合并为单张双栏组件表；tab:ablation与tab:ablation-classwise指向同一张表。变体名已表明MCE/GIU组合，不再重复勾选列；组件合并表使用双栏8 pt。
 - VS Code统一调用build.ps1，先在build/编译并生成SyncTeX，再原子更新.tex同目录PDF；预览和日志使用build/。同稿互斥锁跳过重复编译；根目录PDF被阅读器占用时保留旧PDF并使用build/最新稿，不强制关闭应用或删除文件。
