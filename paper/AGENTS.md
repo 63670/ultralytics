@@ -1,13 +1,13 @@
 # 论文维护入口
 
 - 后续 MCGI-YOLO 论文修改默认基于 `Elsevier_submission/A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines.tex`；转投修订也在此维护。
-- 全文主线是将检测从成布后的独立验布环节前移到织造中的检测与停机干预；章节为 Introduction、Related Work、Defect Detection and Closed-Loop Control System、Detection Algorithm、Experiments and Results、Conclusion；模型部署为5.4 Model Deployment and On-Device Performance。相关工作区分成布后验布和已有机上检测，不声称首次提出边织边检；不纳入经编机相关工作。验布机文献区分实际系统运行与采集数据后的模型评估；先行工作包括 Saeidi (2005)、Çelik (2022)、Ni (2025)。工厂应用仅说明系统已部署于东莞明海纺织有限公司及其用途，不在摘要、引言、贡献、正文或结论中报告废布前后变化、减废率、经济收益或验布机采购节省；不自动恢复原经济分析表。历史数值仅保留于核验记录。
+- 全文主线是将检测从成布后的独立验布环节前移到织造中的检测与停机干预；章节为 Introduction、Related Work、Defect Detection and Closed-Loop Control System、Detection Algorithm、Experiments and Results、Conclusion；模型部署为5.4 Model Deployment and On-Device Performance。相关工作区分成布后验布和已有机上检测，不声称首次提出边织边检；不纳入经编机相关工作。验布机文献区分实际系统运行与采集数据后的模型评估；先行工作包括 Saeidi (2005)、Çelik (2022)、Ni (2025)。工厂名称仅在Fig. 5安装照片图注中保留；摘要、引言、贡献和结论用检测精度、模型复杂度及端侧评估结果支持纺织行业大圆机在线瑕疵检测的规模化应用，不声称已验证大规模部署，不在摘要、引言、贡献、正文或结论中报告废布前后变化、减废率、经济收益或验布机采购节省；不自动恢复原经济分析表。历史数值仅保留于核验记录。
 - `TIE_submission/` 保留为迁移前归档；后续正文、图表、实验数据和编译默认只更新 `Elsevier_submission/`。
 - 图注和表题采用 JMS 常见的简短主题式写法，原则上一个短句；多子图仅保留必要的(a)–(d)对应。参数、测试口径、百分数和最优/次优标记规则放在正文，避免在图表标题重复说明。
 - 对应图片、参考文献和编译脚本位于 `Elsevier_submission/figures/`、`Elsevier_submission/references.bib` 和 `Elsevier_submission/build.ps1`。模板采用 `els-cas-templates/` 提供的 `cas-dc` 双栏类；原有正文图片文件名 `fig1.png` 至 `fig7.png` 保持稳定；正文图号由 LaTeX 自动生成，不再等同于文件名。旧草稿目录已删除，不重新创建。
 - 数据集样本图使用 `figures/defect.png`，在 Detection Method 的 Defect Morphology and Design Motivation 小节双栏展示，标签为 `fig:dataset-examples`；四行依次为 row、col、hole 及多类瑕疵共存样本。
 - 原延迟干预分析及废布照片fig:waste-fabric已随原第6章从正文删除；figures/fabric_with_defect.jpg作为原始素材保留，不自动恢复插图或估算。
-- 工厂应用地点与用途保留于摘要、引言、硬件实现图注和结论，不另设工厂应用章节；原第6章已删除，原6.1完整移至实验结果5.4。
+- 工厂名称仅保留于Fig. 5安装照片图注，不在摘要、引言、贡献或结论重复；不另设工厂应用章节；原第6章已删除，原6.1完整移至实验结果5.4。
 - 标注框形态与尺度图为 `figures/annotation_shapes.png`（双栏，`fig:annotation-shapes`，与典型样本图一起置于算法设计动机小节）；由 `paper/plot_annotation_shapes.py --labels <数据集labels目录> --output paper/Elsevier_submission/figures/annotation_shapes.png` 生成，全部框中心对齐并保留归一化宽高，附 `.stats.json` 记录统计和标注哈希。机器直径和旋转周期见 `tab:production-inputs`，该两行参数表置于处理器选型小节、帧率计算之前；横向视场宽度w=16 cm在相机介绍正文说明，不在表中重复；原延迟干预估算已随原第6章删除，不恢复相应图表和计算。
 - FPS–mAP散点图（正文Fig. 11）必须使用用户手动标注的 `figures/fps_accuracy.png`，双栏展示，标签 `fig:fps-accuracy`。保留其原有布局、字号、颜色和标注，不自动切换到PDF或重新生成覆盖。已有 `.pdf` 只是备份版本。需要另出底图时使用 `paper/plot_fps_accuracy.py --output <新路径>` 或 `--unlabeled`，不得覆盖正文手动标注图；数据口径仍为RTX 3090、FP32、batch=1、640×640纯推理。
 - 手动标注用散点底图运行 `python paper/plot_fps_accuracy.py --unlabeled`，另存 `figures/fps_accuracy_unlabeled.{png,pdf,svg,json}`，左图 mAP@50、右图 mAP@50:95；保留坐标轴、刻度数字、网格、颜色、点形和数据位置；仅去掉模型名称、引线、图标题及轴标题。此版本不自动替换正文已标注插图。
