@@ -15,7 +15,7 @@
 \usepackage{etoolbox}
 \graphicspath{{figures/}}
 
-\newcommand{\model}{MCGI-YOLO\xspace}
+\newcommand{\model}{GESR-YOLO\xspace}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
 \setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
@@ -26,7 +26,7 @@
 \begin{document}
 \raggedbottom
 
-\title{A Defect Detection and Closed-Loop Control System with MCGI-YOLO for Circular Knitting Machines}
+\title{A Defect Detection and Closed-Loop Control System with \model{} for Circular Knitting Machines}
 
 \author{Kangzhao Tan, Jiarui Zhang, Junjie Yu, Heng Wu, Jing Lin\textsuperscript{*}, Diyu Li\textsuperscript{*}, and Chunhua He\textsuperscript{*}%
 \thanks{Manuscript received xxxx xx, xxxx; revised xxxx xx, xxxx; accepted xxxx xx, xxxx. This work was supported in part by the National Natural Science Foundation of China under Grant U22A2012. \textit{(\textsuperscript{*}Corresponding authors: Jing Lin, Diyu Li, and Chunhua He.)}}%
@@ -36,11 +36,11 @@
 \maketitle
 
 \begin{abstract}
-Defect detection is critical for circular knitting production, where persistent needle or yarn abnormalities lead to repeated fabric defects, resulting in severe material waste and economic losses. Existing methods are rarely tailored to circular knitting machines and tend to be cost-prohibitive, limiting large-scale industrial deployment. To address this issue, we present a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines, which triggers image acquisition from machine rotation, halts the machine upon defect detection to interrupt defect propagation, and alerts the operator for corrective intervention, forming a complete production–detection–control loop. To further improve detection accuracy for diverse fabric defect morphologies and scales, we propose a lightweight detector termed \model. To strengthen boundary evidence against repetitive fabric texture, selective gradient residual enhancement (SGRE) learns to select and mix fixed gradient responses after each bottleneck in the P3 and P4 backbone stages. To reconstruct fine spatial responses with limited computation, subpixel-adaptive residual upsampling (SARU) adds a low-resolution filtered correction with content-dependent weights for the four upsampled positions. On a real-world dataset collected from a circular-knitting production line, \model achieves 97.4\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.9 and 7.1 percentage points, respectively. The model achieves a pure-inference throughput of 491 FPS on an RTX 3090 at FP32 precision and batch size 1. The proposed system provides a cost-effective solution for real-time defect detection in circular-knitting production.
+Defect detection is critical for circular knitting production, where persistent needle or yarn abnormalities lead to repeated fabric defects, resulting in severe material waste and economic losses. Existing methods are rarely tailored to circular knitting machines and tend to be cost-prohibitive, limiting large-scale industrial deployment. To address this issue, we present a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines, which triggers image acquisition from machine rotation, halts the machine upon defect detection to interrupt defect propagation, and alerts the operator for corrective intervention, forming a complete production–detection–control loop. To further improve detection accuracy for diverse fabric defect morphologies and scales, we propose a lightweight detector termed \model. To strengthen boundary evidence against repetitive fabric texture, Sobel-Guide learns to select and mix fixed gradient responses after each bottleneck in the P3 and P4 backbone stages. To reconstruct fine spatial responses with limited computation, subpixel-adaptive residual upsampling (SARU) adds a low-resolution filtered correction with content-dependent weights for the four upsampled positions. On a real-world dataset collected from a circular-knitting production line, \model achieves 97.4\% mAP50 and 65.5\% mAP50--95, improving on the YOLOv8n baseline by 6.9 and 7.1 percentage points, respectively. The model achieves a pure-inference throughput of 491 FPS on an RTX 3090 at FP32 precision and batch size 1. The proposed system provides a cost-effective solution for real-time defect detection in circular-knitting production.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Circular knitting machine, edge computing, fabric defect detection, selective gradient residual enhancement (SGRE), subpixel-adaptive residual upsampling (SARU), YOLO.
+Circular knitting machine, edge computing, fabric defect detection, Sobel-Guide, subpixel-adaptive residual upsampling (SARU), YOLO.
 \end{IEEEkeywords}
 
 \markboth{IEEE INTERNET OF THINGS JOURNAL}{}
@@ -52,17 +52,17 @@ Edge computing offers a practical pathway toward such real-time detection, and h
 
 In terms of detection algorithms, YOLO-based detectors have been widely explored for industrial defect detection because of their efficient inference and explicit defect localization \cite{redmon2016yolo}. FA-YOLO combines receptive-field enhancement, attention, and adaptive spatial feature fusion \cite{yu2024fayolo}. DGHR-YOLO integrates deformable convolution for morphology adaptation with a high-level screening feature pyramid and lightweight feature processing \cite{zhang2025dghr}. Zhao et al. proposed attention-based multiscale feature fusion (AMFF), combining intralayer feature enhancement and cross-layer attention to strengthen weak defect representations on fabric and aluminum surfaces \cite{zhao2024amff}. An and Wan introduced JDCBL, combining contextual Transformer features with balanced contrastive learning to address scale variation and long-tailed defect categories in fabric detection \cite{an2025jdcbl}. Wang et al. developed RRNet, a lightweight rotated fabric defect detector that combines position-guided fusion and multiscale rotation-guided strip coupling to model elongated and tilted defect structures \cite{wang2026rrnet}. Together, these methods advance the representation of subtle defects, irregular shapes, and scale variation. Related work on photovoltaic-cell and pipeline-weld detection also explores task-specific feature pyramids, contextual relations, and lightweight rotated representations \cite{su2022baf,shen2024crnet,liu2025lrnet}. However, these methods are tailored to their respective detection targets and may not be directly applicable to defect detection on circular knitting machines. Defects on circular knitting machines exhibit diverse morphologies and scales, ranging from horizontal and vertical elongated patterns to localized holes. In addition, modules such as deformable convolution and attention often introduce substantial computational overhead, making them less suitable for deployment on resource-constrained edge devices.
 
-Motivated by these limitations, we design and implement a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines. The system integrates a power adapter, a global-shutter camera with LED illumination, a coaxial serializer/deserializer (SerDes) image-transmission link, a Hall sensor, and an edge device. For defect detection within this system, we develop \model, a lightweight detector that combines selective boundary enhancement with adaptive spatial reconstruction. SGRE combines fixed local gradients with learned selection and pointwise mixing to strengthen defect-boundary evidence while preserving the original features. SARU filters low-resolution features and predicts four subpixel-position weights to adapt the residual reconstruction before lateral fusion. Together, the components connect progressive boundary refinement with content-dependent spatial reconstruction within a compact parameter budget.
+Motivated by these limitations, we design and implement a low-cost, dedicated defect detection and closed-loop control system for circular knitting machines. The system integrates a power adapter, a global-shutter camera with LED illumination, a coaxial serializer/deserializer (SerDes) image-transmission link, a Hall sensor, and an edge device. For defect detection within this system, we develop \model, a lightweight detector that combines selective boundary enhancement with adaptive spatial reconstruction. Sobel-Guide combines fixed local gradients with learned selection and pointwise mixing to strengthen defect-boundary evidence while preserving the original features. SARU filters low-resolution features and predicts four subpixel-position weights to adapt the residual reconstruction before lateral fusion. Together, the components connect progressive boundary refinement with content-dependent spatial reconstruction within a compact parameter budget.
 
 The main contributions of our work are as follows.
 \begin{enumerate}
   \renewcommand{\labelenumi}{\arabic{enumi})}
   \item We design and implement a dedicated defect detection and closed-loop system for circular knitting machines, integrating image acquisition, camera transmission, edge inference, and local machine-stop control, and demonstrate its deployment on a real production line.
-  \item We develop SGRE to incorporate fixed gradient evidence through learned spatial selection and channel mixing. Its residual enhancement follows every bottleneck in the P3 and P4 backbone C2f blocks, preserving the original feature paths.
+  \item We develop Sobel-Guide to incorporate fixed gradient evidence through learned spatial selection and channel mixing. Its residual enhancement follows every bottleneck in the P3 and P4 backbone C2f blocks, preserving the original feature paths.
   \item We design SARU to reconstruct fine spatial responses with low-resolution filtering and content-dependent subpixel weights. A shared positional weighting map modulates a residual correction to nearest-neighbor upsampling, keeping the learned convolutional cost linear in channel count.
 \end{enumerate}
 
-The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes MCGI-YOLO and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} reports detector comparisons, component ablation, and model deployment. Section~\ref{sec:conclusion} concludes.
+The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes \model and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} reports detector comparisons, component ablation, and model deployment. Section~\ref{sec:conclusion} concludes.
 
 \section{Defect Detection and Closed-Loop Control System}
 \label{sec:system-design}
@@ -157,29 +157,29 @@ Based on the design requirements of the subsystems described above, we develop t
 \section{Detection Algorithm}
 \label{sec:method}
 \subsection{Network Architecture}
-Fig.~\ref{fig:network} shows the detector developed from YOLOv8n \cite{ultralytics2023}. Selective gradient residual enhancement (SGRE) is inserted after every bottleneck in the P3 and P4 backbone C2f blocks, progressively incorporating selected boundary responses while preserving the original feature paths. Subpixel-adaptive residual upsampling (SARU) replaces the two top-down upsampling operations, using content-dependent weights for the four output positions of each low-resolution cell. The remaining backbone stages, bottom-up aggregation path, and three-scale detection head are retained \cite{lin2017fpn,liu2018panet}.
+Fig.~\ref{fig:network} shows the detector developed from YOLOv8n \cite{ultralytics2023}. Sobel-Guide is inserted after every bottleneck in the P3 and P4 backbone C2f blocks, progressively incorporating selected boundary responses while preserving the original feature paths. Subpixel-adaptive residual upsampling (SARU) replaces the two top-down upsampling operations, using content-dependent weights for the four output positions of each low-resolution cell. The remaining backbone stages, bottom-up aggregation path, and three-scale detection head are retained \cite{lin2017fpn,liu2018panet}.
 
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.95\textwidth]{network-v3.pdf}
-\caption{Network architecture of the proposed detector. Each bottleneck in the backbone P3 and P4 C2f blocks is followed by SGRE. SARU replaces the two top-down upsampling operations. C denotes channel concatenation; downsampling convolutions and the three-scale detection head retain the YOLOv8n structure.}
+\caption{Network architecture of the proposed detector. Each bottleneck in the backbone P3 and P4 C2f blocks is followed by Sobel-Guide. SARU replaces the two top-down upsampling operations. C denotes channel concatenation; downsampling convolutions and the three-scale detection head retain the YOLOv8n structure.}
 \label{fig:network}
 \end{figure*}
 
-\subsection{Selective Gradient Residual Enhancement}
-Knitting defects can produce narrow, weak boundaries against repetitive fabric texture. Their boundary responses provide complementary evidence to the features learned by convolution, but gradient magnitude alone also responds to normal yarn patterns. We therefore develop SGRE to select and mix gradient evidence before adding it to the original features [Fig.~\ref{fig:modules}(a)]. The Sobel filters supply a fixed local derivative prior, whereas the selection and channel mixing are learned from the detection objective. SGRE is applied to all hidden channels after each complete bottleneck output, including its original shortcut, in the backbone P3 and P4 C2f blocks. This placement lets the enhanced output enter both the next bottleneck and the final C2f concatenation. P2 and P5 retain their original C2f blocks.
+\subsection{Sobel-Guide}
+Knitting defects can produce narrow, weak boundaries against repetitive fabric texture. Their boundary responses provide complementary evidence to the features learned by convolution, but gradient magnitude alone also responds to normal yarn patterns. We therefore develop Sobel-Guide to select and mix gradient evidence before adding it to the original features [Fig.~\ref{fig:modules}(a)]. The Sobel filters supply a fixed local derivative prior, whereas the selection and channel mixing are learned from the detection objective. Sobel-Guide is applied to all hidden channels after each complete bottleneck output, including its original shortcut, in the backbone P3 and P4 C2f blocks. This placement lets the enhanced output enter both the next bottleneck and the final C2f concatenation. P2 and P5 retain their original C2f blocks.
 
 \emph{1) Fixed Gradient Extraction:}
 For a bottleneck output $F\in\mathbb{R}^{B\times C\times H\times W}$, two depthwise convolutions compute gradients using normalized Sobel kernels:
 \begin{equation}
 K_x=\frac{1}{8}\begin{bmatrix}-1&0&1\\-2&0&2\\-1&0&1\end{bmatrix}
 \qquad K_y=K_x^{\mathsf T}
-\label{eq:sgre-kernels}
+\label{eq:sobel-guide-kernels}
 \end{equation}
 \noindent The gradient evidence is formed as
 \begin{equation}
 E=\left|K_x*_{\mathrm{dw}}F\right|+\left|K_y*_{\mathrm{dw}}F\right|
-\label{eq:sgre-gradient}
+\label{eq:sobel-guide-gradient}
 \end{equation}
 \noindent where $*_{\mathrm{dw}}$ denotes channel-independent convolution with padding of one. Both absolute-value operations are performed before summation. Thus $E$ has the same $B\times C\times H\times W$ shape as $F$. The two Sobel kernels remain fixed during training.
 
@@ -187,36 +187,36 @@ E=\left|K_x*_{\mathrm{dw}}F\right|+\left|K_y*_{\mathrm{dw}}F\right|
 A learned depthwise convolution and Hardsigmoid predict channel-specific spatial selection weights from the original feature, while a separate pointwise convolution mixes the gradient evidence:
 \begin{align}
 G &= \operatorname{HS}(\operatorname{DWConv}_{3\times3}(F))
-\label{eq:sgre-selection}\\
+\label{eq:sobel-guide-selection}\\
 R &= \operatorname{Conv}_{1\times1}(E)
-\label{eq:sgre-projection}\\
+\label{eq:sobel-guide-projection}\\
 Z &= F+G\odot R
-\label{eq:sgre-output}
+\label{eq:sobel-guide-output}
 \end{align}
-\noindent where $G,R,Z\in\mathbb{R}^{B\times C\times H\times W}$. The depthwise selection convolution includes a bias, whereas the $C$-to-$C$ pointwise projection is bias-free. The selection weights regulate the contribution of gradient evidence at each channel and spatial position, and the residual connection retains the original feature. There is no partial-channel split inside SGRE. The selection convolution and pointwise projection are initialized to zero, giving $G=0.5$ and $Z=F$ at initialization.
+\noindent where $G,R,Z\in\mathbb{R}^{B\times C\times H\times W}$. The depthwise selection convolution includes a bias, whereas the $C$-to-$C$ pointwise projection is bias-free. The selection weights regulate the contribution of gradient evidence at each channel and spatial position, and the residual connection retains the original feature. There is no partial-channel split inside Sobel-Guide. The selection convolution and pointwise projection are initialized to zero, giving $G=0.5$ and $Z=F$ at initialization.
 
 For a selected C2f block, let $U,V$ denote its two initial hidden branches. The enhanced progressive outputs satisfy
 \begin{equation}
 Z_0=V\qquad
-Z_i=\operatorname{SGRE}_i(\operatorname{Bottleneck}_i(Z_{i-1}))
-\label{eq:sgre-progressive}
+Z_i=\operatorname{Sobel\text{-}Guide}_i(\operatorname{Bottleneck}_i(Z_{i-1}))
+\label{eq:sobel-guide-progressive}
 \end{equation}
-\noindent for $i=1,\ldots,n$. The original C2f fusion concatenates $U$, $V$, and all enhanced outputs $Z_1,\ldots,Z_n$. Each SGRE has independent learned weights. Under the YOLOv8n scaling used here, P3 and P4 each contain two such bottlenecks, giving four SGRE units in total.
+\noindent for $i=1,\ldots,n$. The original C2f fusion concatenates $U$, $V$, and all enhanced outputs $Z_1,\ldots,Z_n$. Each Sobel-Guide unit has independent learned weights. Under the YOLOv8n scaling used here, P3 and P4 each contain two such bottlenecks, giving four Sobel-Guide units in total.
 
 \emph{3) Computational Cost:}
-For one SGRE with $C$ hidden channels, the added parameter count and convolutional MAC count are
+For a Sobel-Guide unit with $C$ hidden channels, the added parameter count and convolutional MAC count are
 \begin{align}
-P_{\mathrm{SGRE}} &= C^2+10C
-\label{eq:sgre-params}\\
-\operatorname{MAC}_{\mathrm{SGRE}} &= BHW(C^2+27C)
-\label{eq:sgre-macs}
+P_{\text{Sobel-Guide}} &= C^2+10C
+\label{eq:sobel-guide-params}\\
+\operatorname{MAC}_{\text{Sobel-Guide}} &= BHW(C^2+27C)
+\label{eq:sobel-guide-macs}
 \end{align}
 \noindent The $C^2$ parameters belong to the pointwise projection; the depthwise selector contributes $9C$ weights and $C$ biases. The fixed Sobel filters are stored as buffers rather than model parameters. In convolutional computation, however, both filters still contribute $18C$ MACs per spatial location, in addition to the selector's $9C$ and the projection's $C^2$ MACs. Absolute values, Hardsigmoid, and element-wise arithmetic introduce additional linear cost in $BCHW$. The complete added cost is obtained by summing over the four inserted units.
 
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=\textwidth]{modules-v3.pdf}
-\caption{Implementation-matched module structures: (a) SGRE applies fixed depthwise Sobel filters, channel-wise spatial selection, and learned pointwise mixing to a complete bottleneck output; (b) SARU adds a low-resolution filtered residual to nearest-neighbor upsampling. PixelShuffle rearranges four weights into four distinct subpixel positions; the resulting single-channel map is broadcast across feature channels before multiplication. Dashed blocks denote fixed filters.}
+\caption{Implementation-matched module structures: (a) Sobel-Guide applies fixed depthwise Sobel filters, channel-wise spatial selection, and learned pointwise mixing to a complete bottleneck output; (b) SARU adds a low-resolution filtered residual to nearest-neighbor upsampling. PixelShuffle rearranges four weights into four distinct subpixel positions; the resulting single-channel map is broadcast across feature channels before multiplication. Dashed blocks denote fixed filters.}
 \label{fig:modules}
 \end{figure*}
 
@@ -351,7 +351,7 @@ YOLOv8n (Baseline)~\cite{ultralytics2023} & 3.01 & 8.1 & 90.5 & 58.4 & \textbf{5
 \begin{figure*}[!tbp]
 \centering
 \includegraphics[width=0.86\textwidth]{fig6.png}
-\caption{Qualitative comparison of detection results across different methods. From left to right: ground-truth annotations (Label), YOLOv8n, RT-DETR-R18, Faster R-CNN-R50, and \model (Ours).}
+\caption{Qualitative comparison from the earlier MCGI-YOLO experiment. From left to right: ground-truth annotations (Label), YOLOv8n, RT-DETR-R18, Faster R-CNN-R50, and MCGI-YOLO.}
 \label{fig:qualitative}
 \end{figure*}
 
@@ -373,29 +373,29 @@ Model parameters and FLOPs are measured at $640\times640$ input resolution using
 \section{Results and Discussion}
 \label{sec:results}
 \subsection{Comparison With Other Detectors}
-Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inference throughput. \model achieves the highest mAP50 of 97.4\% and the second-highest mAP50--95 of 65.5\%, improving over the YOLOv8n~\cite{ultralytics2023} baseline by 6.9 and 7.1 percentage points, respectively. This gain comes with only a marginal increase in parameters (3.01 M $\rightarrow$ 3.02 M) and FLOPs (8.1 G $\rightarrow$ 8.2 G), while throughput on the RTX 3090 decreases from 554 to 491 FPS. Among lightweight variants, YOLO11n~\cite{ultralytics2023} attains the next-best accuracy (93.3\% mAP50, 60.8\% mAP50--95); \model surpasses it by 4.1 and 4.7 points while running faster (491 vs.\ 463 FPS). YOLOv9t~\cite{wang2025yolov9}, YOLOv10n~\cite{wang2024yolov10}, YOLO12n~\cite{tian2025yolov12}, and YOLO26n~\cite{ultralytics2023} have fewer parameters or lower FLOPs but underperform on this test set, confirming that task-specific adaptation outperforms generic lightweight detectors. RT-DETR-R18~\cite{zhao2024rtdetr} leads in mAP50--95 (67.7\%) but requires 20.09 M parameters and 60.7 G FLOPs at 146 FPS. \model also outperforms DETR-R50~\cite{carion2020detr}, Deformable DETR-R50~\cite{zhu2021deformable}, and Faster R-CNN-R50~\cite{ren2015faster} on both mAP metrics with substantially lower cost, offering the best overall accuracy--efficiency tradeoff. Fig.~\ref{fig:qualitative} shows that \model produces fewer fragmented boxes and tighter localization on elongated defects and holes, consistent with the aggregate results.
+Table~\ref{tab:comparison} compares test-set accuracy, model complexity, and inference throughput. \model achieves the highest mAP50 of 97.4\% and the second-highest mAP50--95 of 65.5\%, improving over the YOLOv8n~\cite{ultralytics2023} baseline by 6.9 and 7.1 percentage points, respectively. This gain comes with only a marginal increase in parameters (3.01 M $\rightarrow$ 3.02 M) and FLOPs (8.1 G $\rightarrow$ 8.2 G), while throughput on the RTX 3090 decreases from 554 to 491 FPS. Among lightweight variants, YOLO11n~\cite{ultralytics2023} attains the next-best accuracy (93.3\% mAP50, 60.8\% mAP50--95); \model surpasses it by 4.1 and 4.7 points while running faster (491 vs.\ 463 FPS). YOLOv9t~\cite{wang2025yolov9}, YOLOv10n~\cite{wang2024yolov10}, YOLO12n~\cite{tian2025yolov12}, and YOLO26n~\cite{ultralytics2023} have fewer parameters or lower FLOPs but underperform on this test set, confirming that task-specific adaptation outperforms generic lightweight detectors. RT-DETR-R18~\cite{zhao2024rtdetr} leads in mAP50--95 (67.7\%) but requires 20.09 M parameters and 60.7 G FLOPs at 146 FPS. \model also outperforms DETR-R50~\cite{carion2020detr}, Deformable DETR-R50~\cite{zhu2021deformable}, and Faster R-CNN-R50~\cite{ren2015faster} on both mAP metrics with substantially lower cost, offering the best overall accuracy--efficiency tradeoff.
 
 \subsection{Component Ablation}
 \label{sec:component-ablation}
 \begin{table}[!htbp]
-\caption{Component ablation of SGRE and SARU.}
+\caption{Component ablation of Sobel-Guide and SARU.}
 \label{tab:ablation}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lccrrrr@{}}
 \toprule
-Variant & SGRE & SARU & Params (M) & FLOPs (G) & mAP50 & mAP50--95 \\
+Variant & \shortstack{Sobel-\\Guide} & SARU & Params (M) & FLOPs (G) & mAP50 & mAP50--95 \\
 \midrule
 YOLOv8n & -- & -- & 3.01 & 8.1 & 90.5 & 58.4 \\
-+ SGRE & \checkmark & -- & 3.02 & 8.2 & 94.3 & 61.5 \\
++ Sobel-Guide & \checkmark & -- & 3.02 & 8.2 & 94.3 & 61.5 \\
 + SARU & -- & \checkmark & 3.01 & 8.1 & 93.4 & 61.6 \\
 \model & \checkmark & \checkmark & 3.02 & 8.2 & 97.4 & 65.5 \\
 \bottomrule
 \end{tabular*}
 \end{table}
 
-Table~\ref{tab:ablation} compares the baseline, SGRE alone, SARU alone, and their combination. The SGRE-only model retains nearest-neighbor upsampling; the SARU-only model retains the original backbone. SGRE alone achieves 94.3\% mAP50 and 61.5\% mAP50--95, improving over the baseline by 3.8 and 3.1 percentage points. SARU alone achieves 93.4\% and 61.6\%, corresponding to gains of 2.9 and 3.2 points. Their combination achieves 97.4\% and 65.5\%, exceeding the best single-module result by 3.1 and 3.9 points for the two metrics. These results indicate complementary benefits from progressive gradient-based refinement and subpixel-adaptive residual reconstruction.
+Table~\ref{tab:ablation} compares the baseline, Sobel-Guide alone, SARU alone, and their combination. The Sobel-Guide-only model retains nearest-neighbor upsampling; the SARU-only model retains the original backbone. Sobel-Guide alone achieves 94.3\% mAP50 and 61.5\% mAP50--95, improving over the baseline by 3.8 and 3.1 percentage points. SARU alone achieves 93.4\% and 61.6\%, corresponding to gains of 2.9 and 3.2 points. Their combination achieves 97.4\% and 65.5\%, exceeding the best single-module result by 3.1 and 3.9 points for the two metrics. These results indicate complementary benefits from progressive gradient-based refinement and subpixel-adaptive residual reconstruction.
 
 \subsection{Model Export}
 \label{sec:deployment}
@@ -403,12 +403,12 @@ The trained detector is exported to ONNX with a fixed input size of $640\times64
 
 \section{Conclusion}
 \label{sec:conclusion}
-This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, integrating image acquisition, SerDes transmission, edge inference, machine stopping, and cloud alerts. The lightweight \model combines SGRE for progressive gradient-based feature enhancement with SARU for subpixel-adaptive residual reconstruction. On the self-collected test set, it achieves 97.4\% mAP50 and 65.5\% mAP50--95, improving over YOLOv8n by 6.9 and 7.1 percentage points. The detector reaches 491 FPS in pure FP32 inference on an RTX 3090 with batch size 1. Unlike generic object detection pipelines, our work jointly tailors both the hardware architecture and the detection algorithm to the morphology of knitting defects and the constraints of edge deployment, enabling real-time closed-loop control directly on the machine. By delivering a fully integrated and deployable system rather than an isolated algorithm, this work addresses a critical bottleneck in textile manufacturing—namely, the difficulty of translating detection performance into actionable, on-machine quality control. It offers the industry a ready-to-deploy reference for intelligent detection of circular knitting machines and, more broadly, demonstrates a reproducible pathway for deploying lightweight vision models on resource-constrained edge devices in industrial settings.
+This paper presents a dedicated defect detection and closed-loop control system for circular knitting machines, integrating image acquisition, SerDes transmission, edge inference, machine stopping, and cloud alerts. The lightweight \model combines Sobel-Guide for progressive gradient-based feature enhancement with SARU for subpixel-adaptive residual reconstruction. On the self-collected test set, it achieves 97.4\% mAP50 and 65.5\% mAP50--95, improving over YOLOv8n by 6.9 and 7.1 percentage points. The detector reaches 491 FPS in pure FP32 inference on an RTX 3090 with batch size 1. Unlike generic object detection pipelines, our work jointly tailors both the hardware architecture and the detection algorithm to the morphology of knitting defects and the constraints of edge deployment, enabling real-time closed-loop control directly on the machine. By delivering a fully integrated and deployable system rather than an isolated algorithm, this work addresses a critical bottleneck in textile manufacturing—namely, the difficulty of translating detection performance into actionable, on-machine quality control. It offers the industry a ready-to-deploy reference for intelligent detection of circular knitting machines and, more broadly, demonstrates a reproducible pathway for deploying lightweight vision models on resource-constrained edge devices in industrial settings.
 
 \begin{figure}[!hb]
 \centering
 \includegraphics[width=\columnwidth]{fig7.png}
-\caption{Feature visualization of YOLOv8n and \model. From left to right: ground-truth annotations (Label), YOLOv8n, and \model.}
+\caption{Feature visualization from the earlier MCGI-YOLO experiment. From left to right: ground-truth annotations (Label), YOLOv8n, and MCGI-YOLO.}
 \label{fig:heatmaps}
 \end{figure}
 

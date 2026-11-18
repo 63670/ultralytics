@@ -55,9 +55,9 @@ def sgre(ax, offset=0):
     def b(x,y,w,h,s,c=BLUE,size=15,dashed=False): box(ax,x,y+offset,w,h,s,c,size,dashed)
     def p(points,**kw): path(ax,[(x,y+offset) for x,y in points],**kw)
     def o(x,y,s): op(ax,x,y+offset,s)
-    t(.22,5.65,"(a) SGRE | Selective Gradient Residual Enhancement",20,ha="left")
+    t(.22,5.65,"(a) Sobel-Guide",20,ha="left")
     t(7,5.15,"After every bottleneck in backbone P3 / P4; all hidden channels",15)
-    # The original bottleneck includes its own shortcut before entering SGRE.
+    # The original bottleneck includes its own shortcut before entering Sobel-Guide.
     b(.3,3.05,1.65,.9,"Bottleneck\noutput",BLUE)
     t(1.1,2.7,r"$F: B\times C\times H\times W$",14)
     p([(1.95,3.5),(2.25,3.5),(2.25,4.65),(12.6,4.65),(12.6,3.5)])
@@ -147,12 +147,12 @@ def export(fig, name):
 
 def architecture():
     fig, ax=canvas(7.5)
-    text(ax,.2,7.15,"Network architecture | Backbone P3/P4 refinement and top-down reconstruction",19,ha="left")
+    text(ax,.2,7.15,"GESR-YOLO | Backbone P3/P4 refinement and top-down reconstruction",19,ha="left")
     text(ax,2.0,6.65,"Backbone",17,weight="bold")
     text(ax,7.55,6.65,"PAN-FPN",17,weight="bold")
     text(ax,12.4,6.65,"Detect",17,weight="bold")
-    stages=[("Stem + P2 C2f",5.55,BLUE),("P3 downsample +\nC2f-SGRE",4.15,ORANGE),
-            ("P4 downsample +\nC2f-SGRE",2.75,ORANGE),("P5 downsample +\nC2f + SPPF",1.35,BLUE)]
+    stages=[("Stem + P2 C2f",5.55,BLUE),("P3 downsample +\nC2f with Sobel-Guide",4.15,ORANGE),
+            ("P4 downsample +\nC2f with Sobel-Guide",2.75,ORANGE),("P5 downsample +\nC2f + SPPF",1.35,BLUE)]
     for label,y,color in stages: box(ax,.5,y,3,.7,label,color,14)
     for hi,lo in zip(stages,stages[1:]): path(ax,[(2,hi[1]),(2,lo[1]+.7)])
     # P5 -> SARU -> lateral P4 fusion -> SARU -> lateral P3 fusion.
