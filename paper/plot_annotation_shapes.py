@@ -58,7 +58,15 @@ def main():
     if args.font:
         font_manager.fontManager.addfont(args.font)
         font_family = font_manager.FontProperties(fname=args.font).get_name()
-    plt.rcParams.update({"font.family": font_family, "font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8})
+    plt.rcParams.update({
+        "font.family": font_family,
+        "font.size": 8,
+        "font.weight": "bold",
+        "axes.titlesize": 9,
+        "axes.titleweight": "bold",
+        "axes.labelsize": 8,
+        "axes.labelweight": "bold",
+    })
     fig, axes = plt.subplots(1, 4, figsize=(7.3, 2.35), sharex=True, sharey=True)
     for panel, ax in enumerate(axes):
         selected = boxes if panel == 0 else boxes[boxes[:, 0] == panel - 1]
@@ -73,7 +81,7 @@ def main():
         ax.tick_params(length=2, pad=2, labelsize=7)
         for spine in ax.spines.values():
             spine.set_color("#777777")
-            spine.set_linewidth(0.5)
+            spine.set_linewidth(0.8)
     axes[0].set_ylabel("Normalized y")
     fig.legend([Line2D([0], [0], color=c, lw=1.5) for c in COLORS], NAMES,
                loc="lower center", bbox_to_anchor=(0.5, 0), ncol=3, frameon=False)
