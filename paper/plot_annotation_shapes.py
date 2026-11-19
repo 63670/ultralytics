@@ -13,6 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import font_manager
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 
@@ -50,9 +51,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--labels", required=True, type=Path, help="Label root, e.g. labels containing train/val/test")
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--font", type=Path, help="Font file to use for all plot text")
     args = parser.parse_args()
     boxes, image_count, splits, digest = read_annotations(args.labels)
-    plt.rcParams.update({"font.family": "serif", "font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8})
+    font_family = "serif"
+    if args.font:
+        font_manager.fontManager.addfont(args.font)
+        font_family = font_manager.FontProperties(fname=args.font).get_name()
+    plt.rcParams.update({"font.family": font_family, "font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8})
     fig, axes = plt.subplots(1, 4, figsize=(7.3, 2.35), sharex=True, sharey=True)
     for panel, ax in enumerate(axes):
         selected = boxes if panel == 0 else boxes[boxes[:, 0] == panel - 1]

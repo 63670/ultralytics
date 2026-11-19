@@ -32,3 +32,4 @@
 - 实验结果表统一表头与显示精度：单位仅在Evaluation Metrics正文统一说明，P、R、AP、mAP以百分数表示，Params以millions (M)表示，FLOPs以billions (G)表示；各结果表不再重复添加单位Note。表头不写(%)、(M)、(G)，Params和FLOPs保持单行；消融表保留Overall/Row/Col/Hole分组的两行表头。P、R、AP、mAP保留1位小数，Params保留2位小数，FLOPs保留1位小数，FPS显示整数。部署正文用同样的准确率精度；原始日志与JSON不按显示精度覆盖。数据集计数和像素阈值保留整数，置信度预设保留原值。
 - 检测对比图Fig. 10（fig:qualitative，figures/fig6.png）保持双栏，当前以0.9\textwidth、pos=!t排版，与相关表格和正文共同排版；避免允许p浮动后单独占据图片页。修改后必须编译验证，保留全部五行样例、原图标注及图注。
 - 硬件图fig2.png、安装图fig3.png与形态分布图annotation_shapes.png当前使用0.98\textwidth，样本图defect.png使用0.97\textwidth，为后续小节开头和成组公式保留连续栏高，避免第5页左栏、第6页右栏提前换栏留下大块空白；不以缩小正文字号、拆开池化公式或改图内容来填空。
+- Fig. 7（`figures/annotation_shapes.png`）的子图标题、坐标轴、刻度和图例统一使用 Times New Roman。重绘时向 `paper/plot_annotation_shapes.py` 传入 `--font C:/Windows/Fonts/times.ttf`，使用同目录 `.stats.json` 所记录的标注源，核对标注哈希和样本计数不变。
