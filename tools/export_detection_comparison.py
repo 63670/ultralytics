@@ -88,12 +88,11 @@ def draw(image, records, names, args):
             label = names[row["class_id"]]
             if args.show_conf and row["score"] is not None:
                 label += f" {row['score']:.2f}"
-            bounds = painter.textbbox((0, 0), label, font=text_font, stroke_width=1)
-            text_width, text_height = bounds[2]-bounds[0], bounds[3]-bounds[1]
-            text_x = min(x1, max(0, image.width-text_width))
-            text_y = max(0, y1-text_height-2)
-            painter.text((text_x-bounds[0], text_y-bounds[1]), label, font=text_font,
-                         fill=color, stroke_width=1, stroke_fill="black")
+            bounds = painter.textbbox((0, 0), label, font=text_font)
+            tw, th = bounds[2]-bounds[0]+6, bounds[3]-bounds[1]+6
+            tx, ty = min(x1, max(0, image.width-tw)), max(0, y1-th)
+            painter.rectangle((tx, ty, tx+tw, ty+th), fill=color)
+            painter.text((tx+3-bounds[0], ty+3-bounds[1]), label, font=text_font, fill="white")
     return result
 
 
