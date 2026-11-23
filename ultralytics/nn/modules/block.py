@@ -37,6 +37,7 @@ __all__ = (
     "C2f",
     "C2fAttn",
     "C2fCIB",
+    "C2fPooledContext",
     "C2fDirectional",
     "C2fDirectionalPre",
     "C2fPartialAxis",
@@ -389,6 +390,40 @@ class C2f(nn.Module):
         y = [y[0], y[1]]
         y.extend(m(y[-1]) for m in self.m)
         return self.cv2(torch.cat(y, 1))
+
+
+class C2fPooledContext(C2f):
+    """Refine the C2f output with attention from each position to pooled 2D regions."""
+
+    def __init__(
+        self, c1: int, c2: int, n: int = 1, shortcut: bool = False, context_channels: int = 16, pool_size: int = 5
+    ):
+        super().__init__(c1, c2, n, shortcut)
+        if context_channels < 1 or pool_size < 1:
+            raise ValueError("context_channels and pool_size must be positive.")
+        self.context_channels = context_channels
+        self.scale = context_channels**-0.5
+        self.pool = nn.AvgPool2d(pool_size, stride=pool_size, ceil_mode=True, count_include_pad=False)
+        self.query = nn.Conv2d(c2, context_channels, 1, bias=False)
+        self.key_value = nn.Conv2d(c2, 2 * context_channels, 1, bias=False)
+        self.project = nn.Conv2d(context_channels, c2, 1, bias=False)
+        nn.init.zeros_(self.project.weight)
+
+    def _add_context(self, x: torch.Tensor) -> torch.Tensor:
+        query = self.query(x).flatten(2).transpose(1, 2)
+        key, value = self.key_value(self.pool(x)).flatten(2).chunk(2, dim=1)
+        attention = (torch.bmm(query, key) * self.scale).softmax(dim=-1)
+        context = torch.bmm(value, attention.transpose(1, 2))
+        context = context.reshape(x.shape[0], self.context_channels, *x.shape[-2:])
+        return x + self.project(context)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Add global context after the standard C2f aggregation."""
+        return self._add_context(super().forward(x))
+
+    def forward_split(self, x: torch.Tensor) -> torch.Tensor:
+        """Preserve the residual context path when exporting with explicit splits."""
+        return self._add_context(super().forward_split(x))
 
 
 class PartialAxisBottleneck(nn.Module):
