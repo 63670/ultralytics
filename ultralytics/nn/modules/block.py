@@ -39,6 +39,7 @@ __all__ = (
     "C2fCIB",
     "C2fPooledContext",
     "C2fCrossScaleContext",
+    "C2fLineContinuity",
     "C2fDirectional",
     "C2fDirectionalPre",
     "C2fPartialAxis",
@@ -493,6 +494,50 @@ class C2fCrossScaleContext(C2f):
         """Keep the cross-scale path when exporting with explicit C2f splits."""
         x, reference = features
         return self._add_context(super().forward_split(x), reference)
+
+
+class C2fLineContinuity(C2f):
+    """Refine fused features using collinear evidence with local transverse contrast."""
+
+    def __init__(self, c1: int, c2: int, n: int = 1, channels_per_direction: int = 8):
+        super().__init__(c1, c2, n)
+        line_channels = 2 * channels_per_direction
+        self.evidence = nn.Conv2d(c2, line_channels, 1, bias=False)
+        self.project = nn.Conv2d(line_channels, c2, 1, bias=False)
+        nn.init.zeros_(self.project.weight)
+
+    @staticmethod
+    def _line_support(evidence: torch.Tensor) -> torch.Tensor:
+        """Find supported positions along the last dimension of one directional feature map."""
+        flanks = F.pad(evidence, (0, 0, 2, 2), mode="replicate")
+        center = (evidence - 0.5 * (flanks[..., :-4, :] + flanks[..., 4:, :])).relu()
+
+        reach = 7
+        width = center.shape[-1]
+        padded = F.pad(center, (reach, reach))
+        left_far, left_mid, left_near, right_near, right_mid, right_far = (
+            padded[..., reach + offset : reach + offset + width] for offset in (-reach, -3, -1, 1, 3, reach)
+        )
+        left = torch.maximum(0.5 * torch.minimum(left_near, left_mid), torch.minimum(left_mid, left_far))
+        right = torch.maximum(0.5 * torch.minimum(right_near, right_mid), torch.minimum(right_mid, right_far))
+        # Two supported arms can bridge a weak center. One arm can retain a supported endpoint.
+        bridge = torch.minimum(left, right)
+        endpoint = torch.minimum(center, torch.maximum(left, right))
+        return torch.maximum(bridge, endpoint)
+
+    def _add_continuity(self, x: torch.Tensor) -> torch.Tensor:
+        horizontal, vertical = F.hardsigmoid(self.evidence(x)).chunk(2, dim=1)
+        horizontal = self._line_support(horizontal)
+        vertical = self._line_support(vertical.transpose(-2, -1)).transpose(-2, -1)
+        return x + self.project(torch.cat((horizontal, vertical), dim=1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Refine the output of the standard C2f aggregation."""
+        return self._add_continuity(super().forward(x))
+
+    def forward_split(self, x: torch.Tensor) -> torch.Tensor:
+        """Keep line support when exporting with explicit C2f splits."""
+        return self._add_continuity(super().forward_split(x))
 
 
 class PartialAxisBottleneck(nn.Module):
