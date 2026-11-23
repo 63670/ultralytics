@@ -36,6 +36,7 @@ from ultralytics.nn.modules import (
     C2fAttn,
     C2fCIB,
     C2fPooledContext,
+    C2fCrossScaleContext,
     C2fDirectional,
     C2fDirectionalPre,
     C2fPartialAxis,
@@ -2162,9 +2163,9 @@ def parse_model(d, ch, verbose=True):
                 legacy = False
         elif m is AIFI:
             args = [ch[f], *args]
-        elif m is C2fDetailFusion:
+        elif m in {C2fDetailFusion, C2fCrossScaleContext}:
             if not isinstance(f, list) or len(f) != 2:
-                raise ValueError("C2fDetailFusion requires [main_feature, stride_4_detail_feature].")
+                raise ValueError(f"{m.__name__} requires [main_feature, auxiliary_feature].")
             c2 = make_divisible(min(args[0], max_channels) * width, 8)
             args = [ch[f[0]], c2, n, ch[f[1]], *args[1:]]
             n = 1

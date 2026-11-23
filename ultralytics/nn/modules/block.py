@@ -38,6 +38,7 @@ __all__ = (
     "C2fAttn",
     "C2fCIB",
     "C2fPooledContext",
+    "C2fCrossScaleContext",
     "C2fDirectional",
     "C2fDirectionalPre",
     "C2fPartialAxis",
@@ -424,6 +425,74 @@ class C2fPooledContext(C2f):
     def forward_split(self, x: torch.Tensor) -> torch.Tensor:
         """Preserve the residual context path when exporting with explicit splits."""
         return self._add_context(super().forward_split(x))
+
+
+class C2fCrossScaleContext(C2f):
+    """Gate P3 detail by its deviation from same-image P4 context outside the aligned pooling region."""
+
+    def __init__(
+        self,
+        c1: int,
+        c2: int,
+        n: int,
+        c_ref: int,
+        context_channels: int = 16,
+        pool_size: int = 8,
+        deviation: bool = True,
+        exclude_aligned: bool = True,
+    ):
+        super().__init__(c1, c2, n)
+        if context_channels < 1 or pool_size < 1:
+            raise ValueError("context_channels and pool_size must be positive.")
+        self.pool_size = pool_size
+        self.deviation = deviation
+        self.exclude_aligned = exclude_aligned
+        self.pool = nn.AvgPool2d(pool_size, stride=pool_size, ceil_mode=True, count_include_pad=False)
+        self.local = nn.Conv2d(c2, context_channels, 1, bias=False)
+        self.reference = nn.Conv2d(c_ref, context_channels, 1, bias=False)
+        self.project = nn.Conv2d(context_channels, c2, 1, bias=False)
+        nn.init.zeros_(self.project.weight)
+
+    def _eligible_tiles(self, local: torch.Tensor, reference: torch.Tensor, tiles: torch.Tensor) -> torch.Tensor:
+        """Exclude the P4 tile covering each P3 query, including partial tiles on the bottom and right."""
+        height, width = local.shape[-2:]
+        tile_height, tile_width = tiles.shape[-2:]
+        if not self.exclude_aligned:
+            return torch.ones((height * width, tile_height * tile_width), device=local.device, dtype=torch.bool)
+        ref_height, ref_width = reference.shape[-2:]
+        rows = torch.arange(height, device=local.device) * ref_height // (height * self.pool_size)
+        cols = torch.arange(width, device=local.device) * ref_width // (width * self.pool_size)
+        aligned = (rows[:, None] * tile_width + cols).flatten()
+        tile_indices = torch.arange(tile_height * tile_width, device=local.device)
+        return aligned[:, None] != tile_indices
+
+    def _add_context(self, x: torch.Tensor, reference: torch.Tensor) -> torch.Tensor:
+        local = self.local(x)
+        tiles = self.reference(self.pool(reference))
+        eligible = self._eligible_tiles(local, reference, tiles)
+        query = F.normalize(local.flatten(2), dim=1, eps=1e-6).transpose(1, 2)
+        value = tiles.flatten(2)
+        key = F.normalize(value, dim=1, eps=1e-6)
+        scores = torch.bmm(query, key) * 4.0
+        weights = scores.masked_fill(~eligible, torch.finfo(scores.dtype).min).softmax(dim=-1)
+        # Mask again to make an empty reference (a one-tile feature map) contribute zero.
+        weights = weights.masked_fill(~eligible, 0.0)
+        context = torch.bmm(value, weights.transpose(1, 2)).reshape_as(local)
+        if self.deviation:
+            gate = (local - context).abs().clamp(max=1.0)
+            has_reference = eligible.any(dim=-1).reshape(1, 1, *local.shape[-2:])
+            context = local * gate * has_reference
+        return x + self.project(context)
+
+    def forward(self, features: list[torch.Tensor]) -> torch.Tensor:
+        """Aggregate the usual P3 branches before comparing with the P4 reference."""
+        x, reference = features
+        return self._add_context(super().forward(x), reference)
+
+    def forward_split(self, features: list[torch.Tensor]) -> torch.Tensor:
+        """Keep the cross-scale path when exporting with explicit C2f splits."""
+        x, reference = features
+        return self._add_context(super().forward_split(x), reference)
 
 
 class PartialAxisBottleneck(nn.Module):
