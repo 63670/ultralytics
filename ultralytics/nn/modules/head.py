@@ -25,6 +25,7 @@ __all__ = (
     "Depth",
     "Detect",
     "BrightnessRankDetect",
+    "SidePropagationDetect",
     "Pose",
     "RTDETRDecoder",
     "Segment",
@@ -168,9 +169,13 @@ class Detect(nn.Module):
         if box_head is None or cls_head is None:  # for fused inference
             return {}
         bs = x[0].shape[0]  # batch size
-        boxes = torch.cat([box_head[i](x[i]).view(bs, 4 * self.reg_max, -1) for i in range(self.nl)], dim=-1)
+        boxes = torch.cat([box.view(bs, 4 * self.reg_max, -1) for box in self._box_maps(x, box_head)], dim=-1)
         scores = torch.cat([score.view(bs, self.nc, -1) for score in self._class_maps(x, cls_head)], dim=-1)
         return {"boxes": boxes, "scores": scores, "feats": x[: self.nl]}
+
+    def _box_maps(self, features: list[torch.Tensor], box_head: nn.Module) -> list[torch.Tensor]:
+        """Return the spatial DFL logits for each detection level."""
+        return [box_head[i](features[i]) for i in range(self.nl)]
 
     def _class_maps(self, features: list[torch.Tensor], cls_head: nn.Module) -> list[torch.Tensor]:
         """Return the spatial classification logits for each detection level."""
@@ -321,6 +326,70 @@ class BrightnessRankDetect(Detect):
         correction = self.rank_project(rank).tanh() * self.rank_gate(p3).sigmoid()
         scores[0] = scores[0] + correction
         return scores
+
+
+class _SidePropagation(nn.Module):
+    """Propagate along contiguous rows and columns and route context to the four DFL sides."""
+
+    def __init__(self, channels: int, reg_max: int):
+        super().__init__()
+        self.value = nn.Conv2d(channels, 16, 1, bias=False)
+        self.retention_bias = nn.Parameter(torch.full((2,), 3.5))
+        self.project = nn.Conv2d(64, 4 * reg_max, 1, groups=4, bias=False)
+        nn.init.zeros_(self.project.weight)
+
+    @staticmethod
+    def _shift(x: torch.Tensor, offset: int, reverse: bool) -> torch.Tensor:
+        width = x.shape[-1]
+        if reverse:
+            return F.pad(x, (0, offset))[..., offset : offset + width]
+        return F.pad(x, (offset, 0))[..., :width]
+
+    def _scan(self, value: torch.Tensor, retention: torch.Tensor, reverse: bool) -> torch.Tensor:
+        """Compose adjacent affine updates in six doubling steps, covering up to 64 cells."""
+        carry = retention
+        state = (1.0 - carry) * value
+        for offset in (1, 2, 4, 8, 16, 32):
+            state = state + carry * self._shift(state, offset, reverse)
+            carry = carry * self._shift(carry, offset, reverse)
+        return state / (1.0 - carry)
+
+    def _propagate(self, value: torch.Tensor, bias: torch.Tensor, reverse: bool) -> torch.Tensor:
+        neighbor = self._shift(value, 1, reverse)
+        difference = (value - neighbor).abs().mean(dim=1, keepdim=True)
+        valid = self._shift(torch.ones_like(value[:, :1, :1]), 1, reverse)
+        retention = 0.995 * (bias - 4.0 * difference).sigmoid() * valid
+        return self._scan(value, retention, reverse)
+
+    def forward(self, feature: torch.Tensor) -> torch.Tensor:
+        horizontal, vertical = self.value(feature).float().chunk(2, dim=1)
+        left = self._propagate(horizontal, self.retention_bias[0], False)
+        right = self._propagate(horizontal, self.retention_bias[0], True)
+        vertical = vertical.transpose(-2, -1)
+        top = self._propagate(vertical, self.retention_bias[1], False).transpose(-2, -1)
+        bottom = self._propagate(vertical, self.retention_bias[1], True).transpose(-2, -1)
+        # Each side receives outward evidence and the bidirectional support along that side.
+        along_horizontal = 0.5 * (left + right)
+        along_vertical = 0.5 * (top + bottom)
+        sides = torch.cat((left, along_vertical, top, along_horizontal, right, along_vertical, bottom, along_horizontal), 1)
+        return self.project(sides.to(feature.dtype)).tanh()
+
+
+class SidePropagationDetect(Detect):
+    """Refine P3 and P4 box distributions with affinity-gated long-range evidence."""
+
+    def __init__(self, nc: int = 80, reg_max: int = 16, end2end: bool = False, ch: tuple = ()):
+        if len(ch) != 3 or end2end:
+            raise ValueError("SidePropagationDetect requires ordinary three-scale YOLO detection.")
+        super().__init__(nc, reg_max, end2end, ch)
+        self.side_propagation = nn.ModuleList(_SidePropagation(channels, reg_max) for channels in ch[:2])
+
+    def _box_maps(self, features: list[torch.Tensor], box_head: nn.Module) -> list[torch.Tensor]:
+        """Add bounded propagation residuals to the P3 and P4 box logits."""
+        boxes = super()._box_maps(features, box_head)
+        for index, propagation in enumerate(self.side_propagation):
+            boxes[index] = boxes[index] + propagation(features[index])
+        return boxes
 
 
 class Segment(Detect):

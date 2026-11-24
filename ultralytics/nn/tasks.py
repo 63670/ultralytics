@@ -97,6 +97,7 @@ from ultralytics.nn.modules import (
     SCDown,
     Segment,
     Segment26,
+    SidePropagationDetect,
     SemanticSegment,
     TorchVision,
     WorldDetect,
@@ -2195,6 +2196,7 @@ def parse_model(d, ch, verbose=True):
             {
                 Detect,
                 BrightnessRankDetect,
+                SidePropagationDetect,
                 WorldDetect,
                 YOLOEDetect,
                 Segment,
@@ -2210,7 +2212,20 @@ def parse_model(d, ch, verbose=True):
             args.extend([reg_max, end2end, [ch[x] for x in f]])
             if m is Segment or m is YOLOESegment or m is Segment26 or m is YOLOESegment26:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
-            if m in {Detect, BrightnessRankDetect, YOLOEDetect, Segment, Segment26, YOLOESegment, YOLOESegment26, Pose, Pose26, OBB, OBB26}:
+            if m in {
+                Detect,
+                BrightnessRankDetect,
+                SidePropagationDetect,
+                YOLOEDetect,
+                Segment,
+                Segment26,
+                YOLOESegment,
+                YOLOESegment26,
+                Pose,
+                Pose26,
+                OBB,
+                OBB26,
+            }:
                 m.legacy = legacy
         elif m is Depth:
             args = [*args[:1], [ch[x] for x in f]]  # c_mid, ch tuple; drops the legacy mode arg old checkpoints store
