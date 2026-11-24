@@ -61,7 +61,7 @@ class TaskAlignedAssigner(nn.Module):
         self._oom_warned = False
 
     @torch.no_grad()
-    def forward(self, pd_scores, pd_bboxes, anc_points, gt_labels, gt_bboxes, mask_gt):
+    def forward(self, pd_scores, pd_bboxes, anc_points, gt_labels, gt_bboxes, mask_gt, **candidate_args):
         """Compute the task-aligned assignment.
 
         Args:
@@ -94,7 +94,7 @@ class TaskAlignedAssigner(nn.Module):
             )
 
         try:
-            return self._forward(pd_scores, pd_bboxes, anc_points, gt_labels, gt_bboxes, mask_gt)
+            return self._forward(pd_scores, pd_bboxes, anc_points, gt_labels, gt_bboxes, mask_gt, **candidate_args)
         except RuntimeError as e:
             if "out of memory" not in str(e).lower():
                 raise
@@ -125,6 +125,7 @@ class TaskAlignedAssigner(nn.Module):
                     gt_labels[i : i + 1, : self.n_max_boxes],
                     gt_bboxes[i : i + 1, : self.n_max_boxes],
                     mask_gt[i : i + 1, : self.n_max_boxes],
+                    **candidate_args,
                 )
                 if results is None:
                     results = tuple(x.new_empty((bs, *x.shape[1:])) for x in result)
@@ -134,7 +135,7 @@ class TaskAlignedAssigner(nn.Module):
             self.bs, self.n_max_boxes = bs, n_max_boxes
         return results
 
-    def _forward(self, pd_scores, pd_bboxes, anc_points, gt_labels, gt_bboxes, mask_gt):
+    def _forward(self, pd_scores, pd_bboxes, anc_points, gt_labels, gt_bboxes, mask_gt, **candidate_args):
         """Compute the task-aligned assignment.
 
         Args:
@@ -153,7 +154,7 @@ class TaskAlignedAssigner(nn.Module):
             target_gt_idx (torch.Tensor): Target ground truth indices with shape (bs, num_total_anchors).
         """
         mask_pos, align_metric, overlaps = self.get_pos_mask(
-            pd_scores, pd_bboxes, gt_labels, gt_bboxes, anc_points, mask_gt
+            pd_scores, pd_bboxes, gt_labels, gt_bboxes, anc_points, mask_gt, **candidate_args
         )
 
         target_gt_idx, fg_mask, mask_pos = self.select_highest_overlaps(
@@ -377,6 +378,57 @@ class TaskAlignedAssigner(nn.Module):
         # Find each grid serve which gt(index)
         target_gt_idx = mask_pos.argmax(-2)  # (b, h*w)
         return target_gt_idx, fg_mask, mask_pos
+
+
+class LongAxisTaskAlignedAssigner(TaskAlignedAssigner):
+    """Reserve well-aligned positives in separate thirds of elongated ground-truth boxes."""
+
+    def __init__(self, *args, reg_max: int, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.topk < 3 or reg_max < 2:
+            raise ValueError("Long-axis assignment requires topk >= 3 and DFL.")
+        self.max_distance = reg_max - 1 - 0.01
+
+    def get_pos_mask(self, pd_scores, pd_bboxes, gt_labels, gt_bboxes, anc_points, mask_gt, *, anchor_strides):
+        mask, alignment, overlaps = super().get_pos_mask(pd_scores, pd_bboxes, gt_labels, gt_bboxes, anc_points, mask_gt)
+        sizes = gt_bboxes[..., 2:] - gt_bboxes[..., :2]
+        shorter, longer = sizes.amin(dim=-1), sizes.amax(dim=-1)
+        elongated = (shorter > 0) & (longer >= 4 * shorter) & (longer >= 4 * min(self.stride))
+        rows = (elongated & mask_gt.squeeze(-1).bool()).nonzero(as_tuple=True)
+        if rows[0].numel() == 0:
+            return mask, alignment, overlaps
+
+        mask[rows] = self._cover_long_axis(
+            mask[rows], alignment[rows], overlaps[rows], gt_bboxes[rows], anc_points, anchor_strides
+        )
+        return mask, alignment, overlaps
+
+    def _cover_long_axis(self, selected, alignment, overlaps, boxes, anchors, anchor_strides):
+        """Fill the original top-k budget after reserving one representable anchor per eligible third."""
+        lower, upper = boxes.chunk(2, dim=-1)
+        size = upper - lower
+        half_size = 0.5 * size[:, None]
+        offset = anchors - (lower + upper)[:, None] * 0.5
+        inside = (offset.abs() < half_size).all(dim=-1)
+        reach = self.max_distance * anchor_strides.to(boxes.dtype).reshape(1, -1, 1)
+        representable = (offset.abs() + half_size <= reach).all(dim=-1)
+        quality = (overlaps >= 0.5 * overlaps.amax(dim=-1, keepdim=True)) & (alignment > 0)
+        eligible = inside & representable & quality
+
+        horizontal = size[:, :1] >= size[:, 1:]
+        position = torch.where(horizontal, offset[..., 0], offset[..., 1]) / size.amax(dim=-1, keepdim=True) + 0.5
+        thirds = (3 * position).to(torch.long)
+        reserved = torch.zeros_like(selected, dtype=torch.bool)
+        for segment in range(3):
+            metric = alignment.masked_fill(~(eligible & (thirds == segment)), -1.0)
+            best, index = metric.max(dim=-1, keepdim=True)
+            reserved |= torch.zeros_like(reserved).scatter_(-1, index, best > 0)
+
+        slots = self.topk - reserved.sum(dim=-1, keepdim=True)
+        available = alignment.masked_fill(~selected.bool() | reserved, -1.0)
+        values, indices = available.topk(self.topk, dim=-1)
+        fill = (torch.arange(self.topk, device=selected.device) < slots) & (values >= 0)
+        return (reserved | torch.zeros_like(reserved).scatter_(-1, indices, fill)).to(selected.dtype)
 
 
 class RotatedTaskAlignedAssigner(TaskAlignedAssigner):

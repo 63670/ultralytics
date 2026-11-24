@@ -12,7 +12,14 @@ from torch import nn
 
 from ultralytics.utils.metrics import CITYSCAPES_WEIGHT, OKS_SIGMA, RLE_WEIGHT
 from ultralytics.utils.ops import crop_mask, xywh2xyxy, xyxy2xywh
-from ultralytics.utils.tal import RotatedTaskAlignedAssigner, TaskAlignedAssigner, dist2bbox, dist2rbox, make_anchors
+from ultralytics.utils.tal import (
+    LongAxisTaskAlignedAssigner,
+    RotatedTaskAlignedAssigner,
+    TaskAlignedAssigner,
+    dist2bbox,
+    dist2rbox,
+    make_anchors,
+)
 from ultralytics.utils.torch_utils import autocast
 
 from .metrics import bbox_iou, probiou
@@ -361,14 +368,13 @@ class v8DetectionLoss:
         if self.class_weights is not None:
             self.class_weights = self.class_weights.to(device).view(1, 1, -1)
 
-        self.assigner = TaskAlignedAssigner(
-            topk=tal_topk,
-            num_classes=self.nc,
-            alpha=0.5,
-            beta=6.0,
-            stride=self.stride.tolist(),
-            topk2=tal_topk2,
+        assignment_args = dict(
+            topk=tal_topk, num_classes=self.nc, alpha=0.5, beta=6.0, stride=self.stride.tolist(), topk2=tal_topk2
         )
+        if (getattr(model, "yaml", None) or {}).get("long_axis_assignment", False):
+            self.assigner = LongAxisTaskAlignedAssigner(**assignment_args, reg_max=self.reg_max)
+        else:
+            self.assigner = TaskAlignedAssigner(**assignment_args)
         self.bbox_loss = BboxLoss(m.reg_max).to(device)
         self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device)
 
@@ -423,6 +429,9 @@ class v8DetectionLoss:
         # Pboxes
         pred_bboxes = self.bbox_decode(anchor_points, pred_distri)  # xyxy, (b, h*w, 4)
 
+        candidate_args = {}
+        if isinstance(self.assigner, LongAxisTaskAlignedAssigner):
+            candidate_args["anchor_strides"] = stride_tensor
         _, target_bboxes, target_scores, fg_mask, target_gt_idx = self.assigner(
             pred_scores.detach().sigmoid(),
             (pred_bboxes.detach() * stride_tensor).type(gt_bboxes.dtype),
@@ -430,6 +439,7 @@ class v8DetectionLoss:
             gt_labels,
             gt_bboxes,
             mask_gt,
+            **candidate_args,
         )
 
         target_scores_sum = max(target_scores.sum(), 1)
