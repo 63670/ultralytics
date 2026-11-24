@@ -83,6 +83,7 @@ from ultralytics.nn.modules import (
     ImagePoolingAttn,
     Index,
     LRPCHead,
+    LuminanceStem,
     Pose,
     Pose26,
     RepC3,
@@ -2037,6 +2038,7 @@ def parse_model(d, ch, verbose=True):
         {
             Classify,
             Conv,
+            LuminanceStem,
             ConvTranspose,
             DirectionalConv,
             DirectionalDownsample,

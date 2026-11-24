@@ -7,6 +7,7 @@ import math
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 __all__ = (
@@ -24,6 +25,7 @@ __all__ = (
     "GhostConv",
     "Index",
     "LightConv",
+    "LuminanceStem",
     "RepConv",
     "SpatialAttention",
 )
@@ -89,6 +91,68 @@ class Conv(nn.Module):
             (torch.Tensor): Output tensor.
         """
         return self.act(self.conv(x))
+
+
+class LuminanceStem(Conv):
+    """Add locally bright and dark evidence to a standard stride-2 detector stem."""
+
+    def __init__(self, c1: int, c2: int):
+        super().__init__(c1, c2, k=3, s=2)
+        if c1 not in (1, 3):
+            raise ValueError("LuminanceStem expects grayscale or RGB input.")
+        weights = (1.0,) if c1 == 1 else (0.299, 0.587, 0.114)
+        self.register_buffer("luminance_weights", torch.tensor(weights).view(1, c1, 1, 1))
+        self.project = nn.Conv2d(4, c2, 1, bias=False)
+        nn.init.zeros_(self.project.weight)
+
+    @staticmethod
+    def _opposing_contrast(center: torch.Tensor, background: torch.Tensor, offset: int, radius: int) -> torch.Tensor:
+        """Require the center to have the same contrast polarity against both neighboring patches."""
+        width = center.shape[-1]
+        padded = F.pad(background, (offset, offset))
+        left_mean, left_variance = padded[..., :width].split(1, dim=1)
+        right_mean, right_variance = padded[..., 2 * offset : 2 * offset + width].split(1, dim=1)
+        bright = (center - torch.maximum(left_mean, right_mean)).relu()
+        dark = (torch.minimum(left_mean, right_mean) - center).relu()
+        scale = (torch.maximum(left_variance, right_variance) + 0.02**2).rsqrt()
+        height = center.shape[-2]
+        columns = torch.arange(width, device=center.device)
+        rows = torch.arange(height, device=center.device)
+        reach = offset + radius
+        valid_columns = (columns >= reach) & (columns < width - reach)
+        valid_rows = (rows >= radius) & (rows < height - radius)
+        valid = valid_rows[:, None] & valid_columns
+        return (torch.cat((bright, dark), dim=1) * scale).clamp(max=4.0) * valid
+
+    def _contrast(self, x: torch.Tensor) -> torch.Tensor:
+        """Return bright and dark maps at two neighborhood sizes on the stem grid."""
+        luminance = (x.float() * self.luminance_weights.float()).sum(dim=1, keepdim=True)
+        center = F.avg_pool2d(luminance, 2, stride=2, ceil_mode=True, count_include_pad=False)
+        moments = torch.cat((center, center.square()), dim=1)
+        contrasts = []
+        for size, offset in ((3, 4), (7, 12)):
+            radius = size // 2
+            mean, second = F.avg_pool2d(moments, size, stride=1, padding=radius).split(1, dim=1)
+            background = torch.cat((mean, (second - mean.square()).clamp_min(0)), dim=1)
+            # Match the cross-axis width of the reference patches when measuring the center.
+            horizontal_center = F.avg_pool2d(center, (size, 1), stride=1, padding=(radius, 0))
+            vertical_center = F.avg_pool2d(center, (1, size), stride=1, padding=(0, radius))
+            horizontal = self._opposing_contrast(horizontal_center, background, offset, radius)
+            vertical = self._opposing_contrast(
+                vertical_center.transpose(-2, -1), background.transpose(-2, -1), offset, radius
+            ).transpose(-2, -1)
+            contrasts.append(torch.maximum(horizontal, vertical))
+        return torch.cat(contrasts, dim=1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Keep the pretrained convolution and add learned projections of the luminance evidence."""
+        base = super().forward(x)
+        return base + self.project(self._contrast(x).to(base.dtype))
+
+    def forward_fuse(self, x: torch.Tensor) -> torch.Tensor:
+        """Retain the contrast branch after the standard convolution is fused."""
+        base = super().forward_fuse(x)
+        return base + self.project(self._contrast(x).to(base.dtype))
 
 
 class Conv2(Conv):

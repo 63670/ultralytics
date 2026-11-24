@@ -106,6 +106,7 @@ from .conv import (
     GhostConv,
     Index,
     LightConv,
+    LuminanceStem,
     RepConv,
     SpatialAttention,
 )
@@ -227,6 +228,7 @@ __all__ = (
     "LRPCHead",
     "LayerNorm2d",
     "LightConv",
+    "LuminanceStem",
     "MLPBlock",
     "MSDeformAttn",
     "MaxSigmoidAttnBlock",
