@@ -48,6 +48,7 @@ __all__ = (
     "C2fSobel",
     "C2fSobelBottleneck",
     "C2fDetailFusion",
+    "C2fPeriodicResidual",
     "C2fWWTE",
     "C2fWWTEGated",
     "ContentAwareUpsample",
@@ -786,6 +787,77 @@ class C2fDetailFusion(C2f):
     def forward_split(self, x: list[torch.Tensor]) -> torch.Tensor:
         """Preserve the detail path when exporters switch C2f to explicit split sizes."""
         return super().forward_split(x[0]) + self.detail_scale * self.detail(x[1])
+
+
+class C2fPeriodicResidual(C2f):
+    """Fuse deviations from the image's own repeating P2 texture into P3."""
+
+    def __init__(self, c1: int, c2: int, n: int, detail_c: int, detail_channels: int = 8):
+        super().__init__(c1, c2, n)
+        if detail_channels < 1:
+            raise ValueError("detail_channels must be positive.")
+        self.compress = nn.Conv2d(detail_c, detail_channels, 1, bias=False)
+        residual_channels = 2 * detail_channels
+        self.downsample = nn.Conv2d(residual_channels, residual_channels, 3, 2, 1, groups=residual_channels, bias=False)
+        self.project = nn.Conv2d(residual_channels, c2, 1, bias=False)
+        nn.init.zeros_(self.project.weight)
+
+    @staticmethod
+    @torch.no_grad()
+    def _period_weights(x: torch.Tensor) -> torch.Tensor:
+        """Detect positive autocorrelation peaks at lags 2–6 along the last dimension."""
+        centered = x.float() - x.float().mean(dim=(-2, -1), keepdim=True)
+        width = centered.shape[-1]
+        padded = F.pad(centered, (0, 7))
+        valid = F.pad(torch.ones_like(centered[:, :1, :1]), (0, 7))
+        correlations, overlaps = [], []
+        for lag in range(1, 8):
+            shifted = padded[..., lag : lag + width]
+            overlap = valid[..., lag : lag + width]
+            base = centered * overlap
+            numerator = (base * shifted).mean(dim=(1, 2, 3), keepdim=True)
+            base_norm = (base.square().mean(dim=(1, 2, 3), keepdim=True) + 1e-6).sqrt()
+            shifted_norm = (shifted.square().mean(dim=(1, 2, 3), keepdim=True) + 1e-6).sqrt()
+            correlations.append(numerator / (base_norm * shifted_norm))
+            overlaps.append(overlap.mean(dim=-1, keepdim=True))
+
+        correlations = torch.cat(correlations, dim=1)
+        peaks = correlations[:, 1:-1]
+        neighbors = torch.maximum(correlations[:, :-2], correlations[:, 2:])
+        enough_overlap = torch.cat(overlaps[2:], dim=1) >= 0.5
+        confidence = (peaks - neighbors).relu() * peaks.relu() * enough_overlap
+        return (confidence / (0.25 + confidence.sum(dim=1, keepdim=True))).to(x.dtype)
+
+    @staticmethod
+    def _repeat_residual(x: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
+        """Subtract aligned repeats, omitting samples that would lie outside the feature map."""
+        width = x.shape[-1]
+        padded = F.pad(x, (6, 6))
+        valid = F.pad(torch.ones_like(x[:, :1, :1]), (6, 6))
+        residual = torch.zeros_like(x)
+        for index, lag in enumerate(range(2, 7)):
+            left_start, right_start = 6 - lag, 6 + lag
+            left = padded[..., left_start : left_start + width]
+            right = padded[..., right_start : right_start + width]
+            count = valid[..., left_start : left_start + width] + valid[..., right_start : right_start + width]
+            difference = (count * x - left - right) / count.clamp_min(1)
+            residual = residual + weights[:, index : index + 1] * difference
+        return residual
+
+    def _period_correction(self, detail: torch.Tensor) -> torch.Tensor:
+        compressed = self.compress(detail)
+        horizontal = self._repeat_residual(compressed, self._period_weights(compressed))
+        transposed = compressed.transpose(-2, -1)
+        vertical = self._repeat_residual(transposed, self._period_weights(transposed)).transpose(-2, -1)
+        return self.project(self.downsample(torch.cat((horizontal, vertical), dim=1)))
+
+    def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
+        """Keep the standard P3 fusion and add texture deviations from the shallow feature."""
+        return super().forward(x[0]) + self._period_correction(x[1])
+
+    def forward_split(self, x: list[torch.Tensor]) -> torch.Tensor:
+        """Keep periodic residuals when exporting with explicit C2f splits."""
+        return super().forward_split(x[0]) + self._period_correction(x[1])
 
 
 class C2fDirectional(C2f):

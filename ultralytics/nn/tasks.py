@@ -49,6 +49,7 @@ from ultralytics.nn.modules import (
     C2fSobel,
     C2fSobelBottleneck,
     C2fDetailFusion,
+    C2fPeriodicResidual,
     C2fWWTE,
     C2fWWTEGated,
     CARAFEUpsample,
@@ -2166,7 +2167,7 @@ def parse_model(d, ch, verbose=True):
                 legacy = False
         elif m is AIFI:
             args = [ch[f], *args]
-        elif m in {C2fDetailFusion, C2fCrossScaleContext}:
+        elif m in {C2fDetailFusion, C2fCrossScaleContext, C2fPeriodicResidual}:
             if not isinstance(f, list) or len(f) != 2:
                 raise ValueError(f"{m.__name__} requires [main_feature, auxiliary_feature].")
             c2 = make_divisible(min(args[0], max_channels) * width, 8)
