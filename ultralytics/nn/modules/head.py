@@ -24,6 +24,7 @@ __all__ = (
     "Classify",
     "Depth",
     "Detect",
+    "BrightnessRankDetect",
     "Pose",
     "RTDETRDecoder",
     "Segment",
@@ -168,8 +169,12 @@ class Detect(nn.Module):
             return {}
         bs = x[0].shape[0]  # batch size
         boxes = torch.cat([box_head[i](x[i]).view(bs, 4 * self.reg_max, -1) for i in range(self.nl)], dim=-1)
-        scores = torch.cat([cls_head[i](x[i]).view(bs, self.nc, -1) for i in range(self.nl)], dim=-1)
-        return {"boxes": boxes, "scores": scores, "feats": x}
+        scores = torch.cat([score.view(bs, self.nc, -1) for score in self._class_maps(x, cls_head)], dim=-1)
+        return {"boxes": boxes, "scores": scores, "feats": x[: self.nl]}
+
+    def _class_maps(self, features: list[torch.Tensor], cls_head: nn.Module) -> list[torch.Tensor]:
+        """Return the spatial classification logits for each detection level."""
+        return [cls_head[i](features[i]) for i in range(self.nl)]
 
     def forward(
         self, x: list[torch.Tensor]
@@ -275,6 +280,47 @@ class Detect(nn.Module):
     def fuse(self) -> None:
         """Remove the one2many head for inference optimization."""
         self.cv2 = self.cv3 = None
+
+
+class BrightnessRankDetect(Detect):
+    """Use P2 local rank and P3 semantics to correct P3 classification logits."""
+
+    def __init__(self, nc: int = 80, reg_max: int = 16, end2end: bool = False, ch: tuple = ()):
+        if len(ch) != 4 or end2end:
+            raise ValueError("BrightnessRankDetect requires [P3, P4, P5, P2] and ordinary YOLO detection.")
+        super().__init__(nc, reg_max, end2end, ch[:-1])
+        self.rank_features = nn.Conv2d(ch[-1], 8, 1, bias=False)
+        self.rank_project = nn.Conv2d(16, nc, 1, bias=False)
+        self.rank_gate = nn.Conv2d(ch[0], nc, 1)
+        nn.init.zeros_(self.rank_project.weight)
+
+    @staticmethod
+    def _local_rank(x: torch.Tensor) -> torch.Tensor:
+        """Aggregate bounded brighter/darker votes from eight surrounding locations."""
+        height, width = x.shape[-2:]
+        radius = 3
+        padded = F.pad(x, (radius, radius, radius, radius))
+        centered = x - x.mean(dim=(-2, -1), keepdim=True)
+        scale = (0.5 * centered.abs().mean(dim=(-2, -1), keepdim=True)).clamp_min(1e-4)
+        votes = torch.zeros_like(x)
+        for row, col in ((0, 0), (0, 3), (0, 6), (3, 0), (3, 6), (6, 0), (6, 3), (6, 6)):
+            difference = x - padded[..., row : row + height, col : col + width]
+            votes = votes + difference / (scale + difference.abs())
+        rows = torch.arange(height, device=x.device)
+        cols = torch.arange(width, device=x.device)
+        valid = ((rows >= radius) & (rows < height - radius))[:, None] & (cols >= radius) & (cols < width - radius)
+        rank = votes * (1.0 / 8.0)
+        return torch.cat(((rank - 0.25).relu(), (-rank - 0.25).relu()), dim=1) * valid
+
+    def _class_maps(self, features: list[torch.Tensor], cls_head: nn.Module) -> list[torch.Tensor]:
+        """Apply a gated, bounded P3 logit correction using the stride-4 detail feature."""
+        scores = super()._class_maps(features, cls_head)
+        p3, p2 = features[0], features[-1]
+        rank = self._local_rank(self.rank_features(p2))
+        rank = F.max_pool2d(rank, 2, stride=2, ceil_mode=True)
+        correction = self.rank_project(rank).tanh() * self.rank_gate(p3).sigmoid()
+        scores[0] = scores[0] + correction
+        return scores
 
 
 class Segment(Detect):

@@ -111,6 +111,7 @@ from .conv import (
     SpatialAttention,
 )
 from .head import (
+    BrightnessRankDetect,
     OBB,
     OBB26,
     Classify,
@@ -218,6 +219,7 @@ __all__ = (
     "DeformableTransformerDecoderLayer",
     "Depth",
     "Detect",
+    "BrightnessRankDetect",
     "Focus",
     "GhostBottleneck",
     "GhostConv",
