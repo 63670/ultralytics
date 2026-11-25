@@ -38,6 +38,7 @@ __all__ = (
     "C2fAttn",
     "C2fCIB",
     "C2fPooledContext",
+    "C2fStateContext",
     "C2fCrossScaleContext",
     "C2fLineContinuity",
     "C2fDirectional",
@@ -426,6 +427,40 @@ class C2fPooledContext(C2f):
 
     def forward_split(self, x: torch.Tensor) -> torch.Tensor:
         """Preserve the residual context path when exporting with explicit splits."""
+        return self._add_context(super().forward_split(x))
+
+
+class C2fStateContext(C2f):
+    """Exchange image-wide context through a small set of content-routed states."""
+
+    def __init__(self, c1: int, c2: int, n: int = 1, shortcut: bool = False, states: int = 8):
+        super().__init__(c1, c2, n, shortcut)
+        if states < 2:
+            raise ValueError("C2fStateContext requires at least two states.")
+        routes = 2 * states
+        self.route = nn.Conv2d(c2, routes, 1, bias=False)
+        self.route_spatial = nn.Conv2d(routes, routes, 3, padding=1, groups=routes, bias=False)
+        hidden = max(1, c2 // 4)
+        self.state_reduce = nn.Linear(c2, hidden, bias=False)
+        self.state_expand = nn.Linear(hidden, c2, bias=False)
+        nn.init.zeros_(self.state_expand.weight)
+
+    def _add_context(self, x: torch.Tensor) -> torch.Tensor:
+        routing = self.route(x)
+        write, read = (routing + self.route_spatial(routing)).flatten(2).chunk(2, dim=1)
+        values = x.flatten(2).transpose(1, 2)
+        # Each state gathers over the whole image. Each position reads a mixture of states.
+        states = torch.bmm(write.softmax(dim=-1), values)
+        states = self.state_expand(F.silu(self.state_reduce(states)))
+        context = torch.bmm(states.transpose(1, 2), read.softmax(dim=1))
+        return x + context.reshape_as(x)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Add global context after the standard C2f aggregation."""
+        return self._add_context(super().forward(x))
+
+    def forward_split(self, x: torch.Tensor) -> torch.Tensor:
+        """Preserve state routing when exporting with explicit C2f splits."""
         return self._add_context(super().forward_split(x))
 
 
