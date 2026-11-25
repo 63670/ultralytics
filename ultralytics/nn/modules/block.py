@@ -57,6 +57,7 @@ __all__ = (
     "ContentAwareUpsampleLite",
     "GatedInterpolationUpsample",
     "LateralGuidedUpsample",
+    "MorphologyAdaptiveUpsample",
     "PhaseAwareUpsample",
     "C2fPSA",
     "C3Ghost",
@@ -1123,6 +1124,40 @@ class LateralGuidedUpsample(nn.Module):
         horizontal = F.interpolate(horizontal, size=target_size, mode="nearest")
         vertical = F.interpolate(vertical, size=target_size, mode="nearest")
         return base + weight_x * (horizontal - base) + weight_y * (vertical - base)
+
+
+class MorphologyAdaptiveUpsample(nn.Module):
+    """Select reconstruction support from fine and coarse cues in the backbone feature."""
+
+    def __init__(self, c1: int, lateral_channels: int, guide_channels: int = 4):
+        super().__init__()
+        if guide_channels < 1:
+            raise ValueError("guide_channels must be positive.")
+        self.coarse_guide = nn.Conv2d(c1, guide_channels, 1, bias=False)
+        self.lateral_guide = nn.Conv2d(lateral_channels, guide_channels, 1, bias=False)
+        self.support = nn.Conv2d(4 * guide_channels, 3, 3, padding=1)
+        self.project = nn.Conv2d(guide_channels, c1, 1, bias=False)
+        nn.init.zeros_(self.project.weight)
+
+    def forward(self, features: list[torch.Tensor]) -> torch.Tensor:
+        """Mix point, local bilinear, and wider contextual reconstruction at each target cell."""
+        coarse, lateral = features
+        size = lateral.shape[-2:]
+        base = F.interpolate(coarse, size=size, mode="nearest")
+        latent = self.coarse_guide(coarse)
+        nearest = F.interpolate(latent, size=size, mode="nearest")
+
+        detail = self.lateral_guide(lateral)
+        local_mean = F.avg_pool2d(detail, 3, stride=1, padding=1, count_include_pad=False)
+        context_mean = F.avg_pool2d(detail, 7, stride=1, padding=3, count_include_pad=False)
+        guide = torch.cat((nearest, detail, (detail - local_mean).abs(), (local_mean - context_mean).abs()), dim=1)
+        _, local_weight, context_weight = self.support(guide).softmax(dim=1).chunk(3, dim=1)
+
+        local = F.interpolate(latent, size=size, mode="bilinear", align_corners=False)
+        pooled = F.avg_pool2d(latent, 3, stride=1, padding=1, count_include_pad=False)
+        context = F.interpolate(pooled, size=size, mode="bilinear", align_corners=False)
+        correction = local_weight * (local - nearest) + context_weight * (context - nearest)
+        return base + self.project(correction)
 
 
 class PhaseAwareUpsample(nn.Module):
