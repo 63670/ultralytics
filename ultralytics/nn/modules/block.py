@@ -56,6 +56,7 @@ __all__ = (
     "ContentAwareUpsample",
     "ContentAwareUpsampleLite",
     "GatedInterpolationUpsample",
+    "LateralGuidedUpsample",
     "PhaseAwareUpsample",
     "C2fPSA",
     "C3Ghost",
@@ -1091,6 +1092,37 @@ class GatedInterpolationUpsample(nn.Module):
         linear = F.interpolate(x, scale_factor=self.scale_factor, mode="bilinear", align_corners=False)
         gate = F.interpolate(self.gate(self.gate_conv(x)), scale_factor=self.scale_factor, mode="nearest")
         return nearest + gate * (linear - nearest)
+
+
+class LateralGuidedUpsample(nn.Module):
+    """Use aligned backbone features to guide horizontal and vertical interpolation separately."""
+
+    def __init__(self, c1: int, lateral_channels: int, guide_channels: int = 4):
+        super().__init__()
+        if guide_channels < 1:
+            raise ValueError("guide_channels must be positive.")
+        self.coarse_guide = nn.Conv2d(c1, guide_channels, 1, bias=False)
+        self.lateral_guide = nn.Conv2d(lateral_channels, guide_channels, 1, bias=False)
+        self.direction = nn.Conv2d(2 * guide_channels, 2, 3, padding=1)
+        nn.init.zeros_(self.direction.weight)
+        nn.init.zeros_(self.direction.bias)
+
+    def forward(self, features: list[torch.Tensor]) -> torch.Tensor:
+        """Start from nearest upsampling and add bounded directional interpolation corrections."""
+        coarse, lateral = features
+        height, width = coarse.shape[-2:]
+        target_height, target_width = lateral.shape[-2:]
+        target_size = (target_height, target_width)
+        base = F.interpolate(coarse, size=target_size, mode="nearest")
+        guide = F.interpolate(self.coarse_guide(coarse), size=target_size, mode="nearest")
+        weights = 0.5 * self.direction(torch.cat((guide, self.lateral_guide(lateral)), dim=1)).tanh()
+        weight_x, weight_y = weights.chunk(2, dim=1)
+
+        horizontal = F.interpolate(coarse, size=(height, target_width), mode="bilinear", align_corners=False)
+        vertical = F.interpolate(coarse, size=(target_height, width), mode="bilinear", align_corners=False)
+        horizontal = F.interpolate(horizontal, size=target_size, mode="nearest")
+        vertical = F.interpolate(vertical, size=target_size, mode="nearest")
+        return base + weight_x * (horizontal - base) + weight_y * (vertical - base)
 
 
 class PhaseAwareUpsample(nn.Module):
