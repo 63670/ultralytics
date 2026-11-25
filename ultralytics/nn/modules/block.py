@@ -39,6 +39,7 @@ __all__ = (
     "C2fCIB",
     "C2fPooledContext",
     "C2fStateContext",
+    "C2fRibbonAttention",
     "C2fCrossScaleContext",
     "C2fLineContinuity",
     "C2fDirectional",
@@ -461,6 +462,63 @@ class C2fStateContext(C2f):
 
     def forward_split(self, x: torch.Tensor) -> torch.Tensor:
         """Preserve state routing when exporting with explicit C2f splits."""
+        return self._add_context(super().forward_split(x))
+
+
+class C2fRibbonAttention(C2f):
+    """Apply position-preserving attention in interleaved horizontal and vertical ribbons."""
+
+    def __init__(
+        self, c1: int, c2: int, n: int = 1, shortcut: bool = False, head_dim: int = 8, band: int = 2, step: int = 8
+    ):
+        super().__init__(c1, c2, n, shortcut)
+        if min(head_dim, band, step) < 1:
+            raise ValueError("head_dim, band, and step must be positive.")
+        self.head_dim = head_dim
+        self.band = band
+        self.step = step
+        self.scale = head_dim**-0.5
+        channels = 6 * head_dim
+        self.qkv = nn.Conv2d(c2, channels, 1, bias=False)
+        self.local = nn.Conv2d(channels, channels, 3, padding=1, groups=channels, bias=False)
+        self.project = nn.Conv2d(2 * head_dim, c2, 1, bias=False)
+        nn.init.zeros_(self.project.weight)
+
+    def _ribbon_context(self, qkv: torch.Tensor) -> torch.Tensor:
+        """Group neighboring rows and columns in the same stride phase, without pooling their tokens."""
+        batch, channels, height, width = qkv.shape
+        band, step, dim = self.band, self.step, self.head_dim
+        bands, columns = (height + band - 1) // band, (width + step - 1) // step
+        padded_height, padded_width = bands * band, columns * step
+        padded = F.pad(
+            torch.cat((qkv, torch.ones_like(qkv[:, :1])), dim=1), (0, padded_width - width, 0, padded_height - height)
+        )
+        channels += 1  # Last channel marks valid keys.
+        # Move horizontal phase before the sampled columns, then group adjacent rows per phase.
+        grouped = padded.transpose(1, 2).reshape(batch * padded_height, channels, columns, step)
+        grouped = grouped.permute(0, 3, 2, 1).reshape(batch * bands, band, step, columns * channels)
+        grouped = grouped.transpose(1, 2).reshape(batch * bands * step, band * columns, channels)
+        query, key, value, valid = grouped.split((dim, dim, dim, 1), dim=-1)
+        scores = torch.bmm(query, key.transpose(1, 2)) * self.scale
+        scores = scores.masked_fill(~valid.transpose(1, 2).bool(), torch.finfo(scores.dtype).min)
+        context = torch.bmm(scores.softmax(dim=-1), value)
+        context = context.reshape(batch * bands, step, band, columns * dim).transpose(1, 2)
+        context = context.reshape(batch * padded_height, step, columns, dim).permute(0, 3, 2, 1)
+        return context.reshape(batch, padded_height, dim, padded_width).transpose(1, 2)[..., :height, :width]
+
+    def _add_context(self, x: torch.Tensor) -> torch.Tensor:
+        projected = self.qkv(x)
+        horizontal, vertical = (projected + self.local(projected)).chunk(2, dim=1)
+        horizontal = self._ribbon_context(horizontal)
+        vertical = self._ribbon_context(vertical.transpose(-2, -1)).transpose(-2, -1)
+        return x + self.project(torch.cat((horizontal, vertical), dim=1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply ribbon attention to standard C2f features via a residual."""
+        return self._add_context(super().forward(x))
+
+    def forward_split(self, x: torch.Tensor) -> torch.Tensor:
+        """Retain the attention path with explicit C2f splits."""
         return self._add_context(super().forward_split(x))
 
 
