@@ -96,21 +96,32 @@ def draw(image, records, names, args):
     return result
 
 
+def build_ultralytics_predictor(weights, args, names=None):
+    """Build a predictor and use checkpoint class names when no target order is supplied."""
+    from ultralytics import YOLO
+
+    model = YOLO(str(weights))
+    source = model.names
+    if names is None:
+        names = [source[i] for i in range(len(source))]
+    mapping = class_mapping(source, names)
+
+    def predict(path):
+        result = model.predict(
+            str(path), imgsz=args.imgsz, device=args.device, conf=args.conf, iou=args.iou,
+            max_det=args.max_det, rect=False, quantize=None, save=False, save_txt=False,
+            save_crop=False, verbose=False,
+        )[0]
+        boxes = result.boxes.cpu()
+        return predictions(boxes.xyxy.tolist(), boxes.conf.tolist(), boxes.cls.tolist(),
+                           mapping, args.conf, args.max_det)
+    return predict, names
+
+
 def build_predictor(spec, names, args):
     device = "cpu" if args.device == "cpu" else f"cuda:{args.device}"
     if spec["backend"] == "ultralytics":
-        from ultralytics import YOLO
-
-        model = YOLO(spec["weights"])
-        mapping = class_mapping(model.names, names)
-
-        def predict(path):
-            result = model.predict(str(path), imgsz=args.imgsz, device=args.device, conf=args.conf,
-                                   iou=args.iou, max_det=args.max_det, rect=False, half=False,
-                                   save=False, verbose=False)[0]
-            boxes = result.boxes.cpu()
-            return predictions(boxes.xyxy.tolist(), boxes.conf.tolist(), boxes.cls.tolist(),
-                               mapping, args.conf, args.max_det)
+        predict, _ = build_ultralytics_predictor(spec["weights"], args, names)
         return predict, "Ultralytics native prediction; square letterbox input"
 
     if spec["backend"] == "mmdet":

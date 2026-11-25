@@ -1,5 +1,26 @@
 # 论文检测对比图：GT 和全部模型
 
+## 日常出图
+
+`tools/draw_detection_results.py` 默认遍历 `images/train`、`images/val` 和 `images/test`，每张图只输出一张原分辨率的带框 PNG。将下面示例的权重路径换成自己模型的 `best.pt`，脚本会从权重读取类别名。
+
+```bash
+python tools/draw_detection_results.py --weights runs/detect/jiot-ribbon-attention/backbone-p3-p4/0/weights/best.pt
+```
+
+标准训练权重的结果放在对应实验的 `detection-results/{train,val,test}/`。可用 `--output` 指定其他路径。
+
+公开基线复用仓库中的权重清单，结果放在 `runs/detection-baselines/<模型名>/{train,val,test}/`。在 YOLO 环境中运行下方命令，各框架环境名可按服务器配置调整。
+
+```bash
+python tools/draw_detection_results.py --baselines \
+  --backend-env mmdet=mmdet --backend-env rtdetrv2=rtdetr
+```
+
+基线模式会复用已有 PNG，失败后可直接重跑这条命令补齐；更换权重、数据或绘制设置后，可指定新 `--output` 或加 `--overwrite`。默认使用 `--conf 0.25 --iou 0.7 --max-det 16`。用 `--backend` 可以单独跑当前环境中的一个框架。
+
+## 标注与预测并排出图
+
 `tools/export_detection_comparison.py` 对同一批原图导出 GT 和预测框。所有列使用相同的类别颜色、线宽、字体，并保存原图分辨率 PNG 和坐标 JSON。标签使用与检测框同色的背景和无描边的白色文字。无检出也保存图片。此脚本不生成热力图，不修改论文原有图片，也不重新训练模型。
 
 ## 权重清单

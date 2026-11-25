@@ -11,6 +11,6 @@
     {"name": "DETR-R50", "backend": "mmdet", "config": "/home/tkz/code/github/mmdetection/work_dirs/detr_r50/detr_r50_300e.py", "weights": "/home/tkz/code/github/mmdetection/work_dirs/detr_r50/best_coco_bbox_mAP_epoch_280.pth"},
     {"name": "Deformable-DETR-R50", "backend": "mmdet", "config": "/home/tkz/code/github/mmdetection/work_dirs/deformable_detr_r50/deformable_detr_r50_300e.py", "weights": "/home/tkz/code/github/mmdetection/work_dirs/deformable_detr_r50/best_coco_bbox_mAP_epoch_96.pth"},
     {"name": "Faster-R-CNN-R50", "backend": "mmdet", "config": "/home/tkz/code/github/mmdetection/work_dirs/faster_rcnn_r50/faster_rcnn_r50_300e.py", "weights": "/home/tkz/code/github/mmdetection/work_dirs/faster_rcnn_r50/best_coco_bbox_mAP_epoch_49.pth"},
-    {"name": "PAGI-YOLO", "backend": "ultralytics", "weights": "/home/tkz/code/github/ultralytics/runs/detect/axis-interp/1/weights/best.pt"}
+    {"name": "PAGI-YOLO", "backend": "ultralytics", "baseline": false, "weights": "/home/tkz/code/github/ultralytics/runs/detect/axis-interp/1/weights/best.pt"}
   ]
 }
