@@ -11,6 +11,7 @@ from unittest.mock import Mock, patch
 from PIL import Image
 
 from tools.draw_detection_results import main
+from tools.export_detection_comparison import draw
 
 
 class DrawDetectionResultsTests(unittest.TestCase):
@@ -24,6 +25,14 @@ class DrawDetectionResultsTests(unittest.TestCase):
             images.mkdir(parents=True)
             Image.new("RGB", (120, 80), "white").save(images / "one.jpg")
         self.common = ["--dataset", str(self.dataset), "--device", "cpu"]
+
+    def write_ground_truth(self):
+        (self.dataset / "data.yaml").write_text("names:\n  1: hole\n  0: row\n", encoding="utf-8")
+        for split in ("train", "val", "test"):
+            labels = self.dataset / "labels" / split / "nested"
+            labels.mkdir(parents=True)
+            label = "1 0.5 0.5 0.5 0.5\n" if split == "train" else ""
+            (labels / "one.txt").write_text(label, encoding="utf-8")
 
     def test_own_weights_draw_every_split_without_a_manifest(self):
         weights = self.root / "run" / "weights" / "best.pt"
@@ -80,17 +89,20 @@ class DrawDetectionResultsTests(unittest.TestCase):
         self.assertFalse((output / "Proposed").exists())
 
     def test_baseline_backends_can_run_in_separate_environments(self):
+        self.write_ground_truth()
         manifest = self.root / "models.json"
         manifest.write_text(json.dumps({
             "classes": ["row"],
             "models": [{"name": "DETR", "backend": "mmdet"}, {"name": "RT-DETR", "backend": "rtdetrv2"}],
         }), encoding="utf-8")
-        with patch("tools.draw_detection_results.subprocess.run", return_value=Mock(returncode=0)) as run:
-            self.assertEqual(main([
-                "--baselines", "--manifest", str(manifest), "--output", str(self.root / "results"),
-                "--backend-env", "mmdet=mmdet", "--backend-env", "rtdetrv2=rtdetr", "--overwrite",
-                *self.common,
-            ]), 0)
+        output = self.root / "results"
+        with contextlib.redirect_stdout(io.StringIO()):
+            with patch("tools.draw_detection_results.subprocess.run", return_value=Mock(returncode=0)) as run:
+                self.assertEqual(main([
+                    "--baselines", "--gt", "--manifest", str(manifest), "--output", str(output),
+                    "--backend-env", "mmdet=mmdet", "--backend-env", "rtdetrv2=rtdetr", "--overwrite",
+                    *self.common,
+                ]), 0)
         self.assertEqual(run.call_count, 2)
         for call, backend, environment in zip(run.call_args_list, ("mmdet", "rtdetrv2"), ("mmdet", "rtdetr")):
             command = call.args[0]
@@ -98,3 +110,35 @@ class DrawDetectionResultsTests(unittest.TestCase):
             self.assertEqual(command[command.index("--backend") + 1], backend)
             self.assertIn("--overwrite", command)
             self.assertNotIn("--backend-env", command)
+            self.assertNotIn("--gt", command)
+        self.assertTrue((output / "GT" / "test" / "nested" / "one.jpg.png").is_file())
+
+    def test_ground_truth_uses_dataset_classes_and_only_outputs_pngs(self):
+        self.write_ground_truth()
+        output = self.root / "results"
+        args = ["--gt", "--output", str(output), "--manifest", str(self.root / "unused.json"), *self.common]
+        with contextlib.redirect_stdout(io.StringIO()):
+            with patch("tools.draw_detection_results.draw", wraps=draw) as renderer:
+                self.assertEqual(main(args), 0)
+                self.assertEqual(main(args), 0)
+        self.assertEqual(renderer.call_count, 3)
+        _, records, names, _ = renderer.call_args_list[0].args
+        self.assertEqual(names, ["row", "hole"])
+        self.assertEqual(records, [{"class_id": 1, "xyxy": [30, 20, 90, 60], "score": None}])
+        self.assertEqual(len([path for path in output.rglob("*") if path.is_file()]), 3)
+        self.assertEqual(len(list(output.rglob("*.png"))), 3)
+        with Image.open(output / "GT" / "train" / "nested" / "one.jpg.png") as image:
+            self.assertEqual(image.size, (120, 80))
+            self.assertEqual(image.getpixel((30, 60)), (0, 153, 255))
+        with Image.open(output / "GT" / "test" / "nested" / "one.jpg.png") as image:
+            self.assertEqual(image.getpixel((30, 60)), (255, 255, 255))
+
+    def test_missing_ground_truth_label_is_reported(self):
+        self.write_ground_truth()
+        label = self.dataset / "labels" / "train" / "nested" / "one.txt"
+        label.unlink()
+        output = self.root / "results"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(main(["--gt", "--output", str(output), *self.common]), 1)
+        self.assertIn(repr(str(label)), errors.getvalue())
+        self.assertFalse((output / "GT" / "train" / "nested" / "one.jpg.png").exists())

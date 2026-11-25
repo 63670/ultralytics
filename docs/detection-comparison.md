@@ -10,14 +10,20 @@ python tools/draw_detection_results.py --weights runs/detect/jiot-ribbon-attenti
 
 标准训练权重的结果放在对应实验的 `detection-results/{train,val,test}/`。可用 `--output` 指定其他路径。
 
+标注框用 `--gt` 绘制，读取数据集的 `data.yaml` 类别和 `labels/{train,val,test}/`，输出 `runs/detection-baselines/GT/{train,val,test}/`。空标注文件对应无缺陷图，缺失标注文件会报错。
+
+```bash
+python tools/draw_detection_results.py --gt
+```
+
 公开基线复用仓库中的权重清单，结果放在 `runs/detection-baselines/<模型名>/{train,val,test}/`。在 YOLO 环境中运行下方命令，各框架环境名可按服务器配置调整。
 
 ```bash
-python tools/draw_detection_results.py --baselines \
+python tools/draw_detection_results.py --baselines --gt \
   --backend-env mmdet=mmdet --backend-env rtdetrv2=rtdetr
 ```
 
-基线模式会复用已有 PNG，失败后可直接重跑这条命令补齐；更换权重、数据或绘制设置后，可指定新 `--output` 或加 `--overwrite`。默认使用 `--conf 0.25 --iou 0.7 --max-det 16`。用 `--backend` 可以单独跑当前环境中的一个框架。
+基线和标注模式会复用已有 PNG，失败后可直接重跑同一命令补齐。更换权重、数据或绘制设置后，可指定新 `--output` 或加 `--overwrite`。预测默认使用 `--conf 0.25 --iou 0.7 --max-det 16`。用 `--backend` 可以单独跑当前环境中的一个框架。
 
 ## 标注与预测并排出图
 
