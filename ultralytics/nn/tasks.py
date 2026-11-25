@@ -62,6 +62,7 @@ from ultralytics.nn.modules import (
     GatedInterpolationUpsample,
     LateralGuidedUpsample,
     MorphologyAdaptiveUpsample,
+    CellDetailUpsample,
     PhaseAwareUpsample,
     C2fPSA,
     C3Ghost,
@@ -2185,7 +2186,7 @@ def parse_model(d, ch, verbose=True):
             c2 = make_divisible(min(args[0], max_channels) * width, 8)
             args = [ch[f[0]], c2, n, ch[f[1]], *args[1:]]
             n = 1
-        elif m in {LateralGuidedUpsample, MorphologyAdaptiveUpsample}:
+        elif m in {LateralGuidedUpsample, MorphologyAdaptiveUpsample, CellDetailUpsample}:
             if not isinstance(f, list) or len(f) != 2 or n != 1:
                 raise ValueError(f"{m.__name__} requires a single layer with [coarse_feature, lateral_feature].")
             c2 = ch[f[0]]

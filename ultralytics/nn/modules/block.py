@@ -58,6 +58,7 @@ __all__ = (
     "GatedInterpolationUpsample",
     "LateralGuidedUpsample",
     "MorphologyAdaptiveUpsample",
+    "CellDetailUpsample",
     "PhaseAwareUpsample",
     "C2fPSA",
     "C3Ghost",
@@ -1158,6 +1159,35 @@ class MorphologyAdaptiveUpsample(nn.Module):
         context = F.interpolate(pooled, size=size, mode="bilinear", align_corners=False)
         correction = local_weight * (local - nearest) + context_weight * (context - nearest)
         return base + self.project(correction)
+
+
+class CellDetailUpsample(nn.Module):
+    """Restore high-resolution detail while preserving the coarse mean of each 2x2 cell."""
+
+    def __init__(self, c1: int, lateral_channels: int, detail_channels: int = 4):
+        super().__init__()
+        if detail_channels < 1:
+            raise ValueError("detail_channels must be positive.")
+        self.coarse_guide = nn.Conv2d(c1, detail_channels, 1, bias=False)
+        self.lateral_detail = nn.Conv2d(lateral_channels, detail_channels, 1, bias=False)
+        self.gate = nn.Conv2d(3 * detail_channels, detail_channels, 1)
+        self.project = nn.Conv2d(detail_channels, c1, 1, bias=False)
+        nn.init.zeros_(self.project.weight)
+
+    def forward(self, features: list[torch.Tensor]) -> torch.Tensor:
+        """Inject a gated, zero-mean lateral residual into nearest-neighbor upsampling."""
+        coarse, lateral = features
+        base = F.interpolate(coarse, scale_factor=2, mode="nearest")
+        detail = self.lateral_detail(lateral)
+        cell_mean = F.avg_pool2d(detail, 2, stride=2)
+        detail = detail - F.interpolate(cell_mean, scale_factor=2, mode="nearest")
+
+        coarse_guide = self.coarse_guide(coarse)
+        disagreement = (coarse_guide - cell_mean).abs()
+        gate = self.gate(torch.cat((coarse_guide, cell_mean, disagreement), dim=1)).sigmoid()
+        # Use one gate per cell so scaling preserves the zero-mean residual.
+        correction = self.project(detail * F.interpolate(gate, scale_factor=2, mode="nearest"))
+        return base + correction
 
 
 class PhaseAwareUpsample(nn.Module):
