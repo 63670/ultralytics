@@ -1,4 +1,4 @@
-"""Check content-routed global context and its single-stage YOLOv8 integration."""
+"""Check content-routed global context and its YOLOv8 backbone integration."""
 
 import unittest
 from pathlib import Path
@@ -12,7 +12,8 @@ from ultralytics.utils import DEFAULT_CFG_DICT, YAML
 
 CONFIGS = Path(__file__).resolve().parents[2] / "ultralytics/cfg/models/v8"
 BASELINE = CONFIGS / "yolov8n-fabric-baseline.yaml"
-CANDIDATE = CONFIGS / "yolov8n-fabric-state-context.yaml"
+P4 = CONFIGS / "yolov8n-fabric-state-context.yaml"
+P3_P4 = CONFIGS / "yolov8n-fabric-state-context-p3-p4.yaml"
 
 
 class FabricStateContextTests(unittest.TestCase):
@@ -40,28 +41,34 @@ class FabricStateContextTests(unittest.TestCase):
         self.assertGreater(change[0, 0, 0, 0].item(), 1.0)
         self.assertLess(change[0, 0, 0, 1].item(), 0.05)
 
-    def test_candidate_changes_only_backbone_p4_and_preserves_initial_predictions(self):
+    def test_candidates_change_only_the_expected_backbone_stages_and_preserve_initial_predictions(self):
         torch.manual_seed(0)
-        base_cfg, candidate_cfg = YAML.load(BASELINE), YAML.load(CANDIDATE)
-        candidate_cfg["backbone"][6] = base_cfg["backbone"][6]
-        self.assertEqual(candidate_cfg, base_cfg)
-
+        base_cfg = YAML.load(BASELINE)
         baseline = DetectionModel(str(BASELINE), verbose=False).eval()
-        model = DetectionModel(str(CANDIDATE), verbose=False).eval()
-        block = model.model[6]
-        self.assertIsInstance(block, C2fStateContext)
-        self.assertEqual(model.stride.tolist(), [8, 16, 32])
         image = torch.rand(1, 3, 128, 160)
-        with torch.no_grad():
-            model.load(baseline, verbose=False)
-            torch.testing.assert_close(model(image)[0], baseline(image)[0], rtol=0, atol=0)
-            block.state_expand.weight.normal_(0, 0.1)
-            feats = torch.rand(1, 128, 8, 10)
-            torch.testing.assert_close(block(feats), block.forward_split(feats))
+        for config, stages in ((P4, [6]), (P3_P4, [4, 6])):
+            with self.subTest(config=config.name), torch.no_grad():
+                candidate_cfg = YAML.load(config)
+                for stage in stages:
+                    candidate_cfg["backbone"][stage] = base_cfg["backbone"][stage]
+                self.assertEqual(candidate_cfg, base_cfg)
 
-    def test_detection_loss_updates_state_projection_and_routing(self):
+                model = DetectionModel(str(config), verbose=False).eval()
+                blocks = [(i, layer) for i, layer in enumerate(model.model) if isinstance(layer, C2fStateContext)]
+                self.assertEqual([i for i, _ in blocks], stages)
+                self.assertEqual(model.stride.tolist(), [8, 16, 32])
+                model.load(baseline, verbose=False)
+                torch.testing.assert_close(model(image)[0], baseline(image)[0], rtol=0, atol=0)
+
+                for _, block in blocks:
+                    self.assertEqual(block.route.out_channels, 16)
+                    block.state_expand.weight.normal_(0, 0.1)
+                    features = torch.rand(1, block.cv1.conv.in_channels, 8, 10)
+                    torch.testing.assert_close(block(features), block.forward_split(features))
+
+    def test_detection_loss_updates_both_state_projections_and_routing(self):
         torch.manual_seed(0)
-        model = DetectionModel(str(CANDIDATE), verbose=False).train()
+        model = DetectionModel(str(P3_P4), verbose=False).train()
         model.args = SimpleNamespace(**DEFAULT_CFG_DICT)
         batch = {
             "img": torch.rand(2, 3, 128, 160),
@@ -69,16 +76,17 @@ class FabricStateContextTests(unittest.TestCase):
             "cls": torch.tensor([[0.0], [1.0], [2.0]]),
             "bboxes": torch.tensor([[0.5, 0.3, 0.65, 0.05], [0.3, 0.5, 0.05, 0.65], [0.7, 0.7, 0.15, 0.15]]),
         }
-        block = model.model[6]
         optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
         for step in range(2):
             optimizer.zero_grad()
             loss, _ = model(batch)
             self.assertTrue(torch.isfinite(loss).all())
             loss.sum().backward()
-            self.assertGreater(block.state_expand.weight.grad.abs().sum().item(), 0)
-            for layer in (block.route, block.route_spatial, block.state_reduce):
-                gradient = layer.weight.grad
-                self.assertTrue(torch.isfinite(gradient).all())
-                self.assertEqual(gradient.count_nonzero().item() > 0, step == 1)
+            for stage in (4, 6):
+                block = model.model[stage]
+                self.assertGreater(block.state_expand.weight.grad.abs().sum().item(), 0)
+                for layer in (block.route, block.route_spatial, block.state_reduce):
+                    gradient = layer.weight.grad
+                    self.assertTrue(torch.isfinite(gradient).all())
+                    self.assertEqual(gradient.count_nonzero().item() > 0, step == 1)
             optimizer.step()
