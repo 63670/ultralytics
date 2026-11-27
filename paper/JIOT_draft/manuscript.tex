@@ -60,7 +60,7 @@ The main contributions of our work are as follows.
   \item We develop CDU for the two top-down pyramid stages. A gate conditioned on coarse and lateral features controls how much of the lateral detail is added to each reconstructed cell.
 \end{enumerate}
 
-The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes the detector and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} reports detector comparisons and class-specific performance. Section~\ref{sec:conclusion} concludes.
+The remainder of this paper is organized as follows. Section~\ref{sec:system-design} presents the defect detection and closed-loop control system. Section~\ref{sec:method} describes the detector and its two components. Section~\ref{sec:experimental-setup} defines the dataset and evaluation protocol. Section~\ref{sec:results} presents quantitative and qualitative detector comparisons. Section~\ref{sec:conclusion} concludes.
 
 \section{Defect Detection and Closed-Loop Control System}
 \label{sec:system-design}
@@ -302,6 +302,16 @@ Overall & 91 & 91.0 & 97.7 & 96.8 & 66.8 \\
 \end{table}
 
 Table~\ref{tab:category-results} reports the validator's precision, recall, and average precision for each defect category. The reported recall is 99.4\% for row defects and 100.0\% for col defects. Holes have the lowest precision, at 81.6\%, and a recall of 93.6\%. The test set contains 12 col instances and 19 hole instances.
+
+\subsection{Qualitative Comparison}
+Figure~\ref{fig:detection-comparison} shows predictions on selected fabric images. ISU-YOLO localizes both the horizontal and vertical defects in the second and third rows. In the seventh row, ISU-YOLO localizes the hole near the image boundary, while YOLOv8n displays no prediction box for that image.
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.90\textheight,keepaspectratio]{compare.png}
+\caption{Qualitative comparison on nine selected fabric images, including five training images and four test images. The columns show ground-truth labels, predictions from five baseline detectors, and ISU-YOLO (Ours). Red, blue, and green boxes indicate row, col, and hole defects, respectively.}
+\label{fig:detection-comparison}
+\end{figure*}
 
 \FloatBarrier
 \section{Conclusion}
