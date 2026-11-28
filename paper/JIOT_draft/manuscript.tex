@@ -233,27 +233,27 @@ Data protocol
 \end{table}
 
 \begin{table}[!t]
-\caption{Test-set detector comparison. Parameters are in millions, FLOPs in billions, and mAP in percent. FPS denotes FP32 model-forward throughput on an RTX 3090 at batch size 1 and $640\times640$. Bold and underlined values indicate first and second ranks, with ties sharing a rank.}
+\caption{Test-set detector comparison. Parameters are in millions, FLOPs in billions, and P, R, and mAP in percent. Bold and underlined values indicate first and second ranks, with ties sharing a rank.}
 \label{tab:comparison}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{1.06}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrr@{}}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrrrr@{}}
 \toprule
-Model & Params & FLOPs & mAP50 & mAP50--95 & FPS \\
+Model & Params & FLOPs & P & R & mAP50 & mAP50--95 & FPS \\
 \midrule
-YOLOv9t~\cite{wang2025yolov9} & \textbf{2.12} & 8.5 & 90.1 & 53.3 & 291 \\
-YOLOv10n~\cite{wang2024yolov10} & 2.78 & 8.8 & 88.2 & 58.5 & \underline{524} \\
-YOLO11n~\cite{ultralytics2023} & 2.62 & \underline{6.7} & 93.3 & 60.8 & 463 \\
-YOLO12n~\cite{tian2025yolov12} & 2.60 & 7.6 & 89.0 & 56.8 & 326 \\
-YOLO26n~\cite{ultralytics2023} & \underline{2.57} & \textbf{6.2} & 90.5 & 58.2 & 425 \\
-RT-DETR-R18~\cite{zhao2024rtdetr} & 20.09 & 60.7 & 95.2 & \textbf{67.7} & 146 \\
-DETR-R50~\cite{carion2020detr} & 41.28 & 77.3 & \underline{96.4} & 53.6 & 101 \\
-Deformable DETR-R50~\cite{zhu2021deformable} & 39.8 & 158.7 & \textbf{96.8} & 64.3 & 49 \\
-Faster R-CNN-R50~\cite{ren2015faster} & 41.1 & 181.5 & 96.1 & 64.7 & 66 \\
-YOLOv8n (Baseline)~\cite{ultralytics2023} & 3.01 & 8.1 & 90.5 & 58.4 & \textbf{554} \\
-ISU-YOLO (ours) & 3.02 & 8.2 & \textbf{96.8} & \underline{66.8} & 454 \\
+YOLOv9t~\cite{wang2025yolov9} & \textbf{2.12} & 8.5 & 82.4 & 90.8 & 90.1 & 53.3 & 291 \\
+YOLOv10n~\cite{wang2024yolov10} & 2.78 & 8.8 & 88.6 & 74.2 & 88.2 & 58.5 & \underline{524} \\
+YOLO11n~\cite{ultralytics2023} & 2.62 & \underline{6.7} & 91.1 & 89.5 & 93.3 & 60.8 & 463 \\
+YOLO12n~\cite{tian2025yolov12} & 2.60 & 7.6 & 93.0 & 78.5 & 89.0 & 56.8 & 326 \\
+YOLO26n~\cite{ultralytics2023} & \underline{2.57} & \textbf{6.2} & 90.3 & 86.2 & 90.5 & 58.2 & 425 \\
+RT-DETR-R18~\cite{zhao2024rtdetr} & 20.09 & 60.7 & \textbf{97.7} & 94.5 & 95.2 & \textbf{67.7} & 146 \\
+DETR-R50~\cite{carion2020detr} & 41.28 & 77.3 & \textbf{97.7} & 94.5 & \underline{96.4} & 53.6 & 101 \\
+\shortstack[l]{Deformable\\DETR-R50~\cite{zhu2021deformable}} & 39.8 & 158.7 & 93.7 & \textbf{97.8} & \textbf{96.8} & 64.3 & 49 \\
+\shortstack[l]{Faster R-CNN\\(R50)~\cite{ren2015faster}} & 41.1 & 181.5 & \underline{95.7} & \textbf{97.8} & 96.1 & 64.7 & 66 \\
+YOLOv8n~\cite{ultralytics2023} & 3.01 & 8.1 & 89.4 & 81.1 & 90.5 & 58.4 & \textbf{554} \\
+ISU-YOLO (ours) & 3.02 & 8.2 & 91.0 & \underline{97.7} & \textbf{96.8} & \underline{66.8} & 454 \\
 \bottomrule
 \end{tabular*}
 \par\smallskip
@@ -264,21 +264,25 @@ Table~\ref{tab:implementation} summarizes the training protocol and the edge pro
 
 \subsection{Evaluation Metrics}
 \label{sec:evaluation}
-Intersection over union (IoU) measures the overlap between predicted and ground-truth bounding boxes as the ratio of their intersection area to their union area. Detection accuracy is evaluated using mAP50 and mAP50--95. Let $a_c(t)$ denote the average precision for class $c$ at IoU threshold $t$. The metrics are computed as
+Intersection over union (IoU) is the ratio of the intersection area to the union area of a predicted box and a ground-truth box. At a given IoU threshold $t$, precision ($P$) and recall ($R$) are computed from true positives (TP), false positives (FP), and false negatives (FN). Average precision (AP) integrates the precision--recall curve for class $c$, and mean average precision (mAP) averages AP across the $N_c=3$ classes.
 \begin{align}
-\operatorname{mAP}_{50} &= \frac{1}{N_c}\sum_{c=1}^{N_c}a_c(0.50)
-\label{eq:metrics}\displaybreak[1]\\
-\operatorname{mAP}_{50:95} &= \frac{1}{10N_c}\sum_{c=1}^{N_c}\sum_{t\in T}a_c(t)
-\label{eq:ap}
+P &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}},
+\label{eq:precision}\\*
+R &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}},
+\label{eq:recall}\\*
+\mathrm{AP}_c(t) &= \int_0^1 P_c(r;t)\,\mathrm{d}r,
+\label{eq:ap}\\*
+\mathrm{mAP}(t) &= \frac{1}{N_c}\sum_{c=1}^{N_c}\mathrm{AP}_c(t).
+\label{eq:metrics}
 \end{align}
-\noindent where $N_c=3$ and $T=\{0.50,0.55,\ldots,0.95\}$. Both metrics are reported as percentages, with improvements expressed in percentage points.
+\noindent Here $P_c(r;t)$ is precision at recall $r$ for class $c$ and IoU threshold $t$. mAP50 is $\mathrm{mAP}(0.50)$, and mAP50--95 averages $\mathrm{mAP}(t)$ over ten IoU thresholds from 0.50 to 0.95 in steps of 0.05. For the Ultralytics detectors, overall precision and recall are class averages at IoU 0.50, evaluated at the confidence threshold that maximizes the smoothed class-mean F1 score. P, R, AP, and mAP are reported as percentages.
 
 Model parameters and FLOPs are measured at $640\times640$ input resolution using each model's respective framework. GPU throughput measures the model's forward pass on an RTX 3090 at FP32 precision, batch size 1, and $640\times640$ input resolution. It excludes image decoding and preprocessing, host-to-device transfer, and postprocessing outside the model's forward pass.
 
 \section{Results and Discussion}
 \label{sec:results}
 \subsection{Comparison With Other Detectors}
-As shown in Table~\ref{tab:comparison}, the detector ties Deformable DETR-R50 for the highest reported mAP50 (96.8\%) and ranks second in mAP50--95 (66.8\%). It improves on the YOLOv8n reference by 6.3 and 8.4 percentage points, respectively. The fused model has 3,023,329 parameters and requires 8.2 GFLOPs at \(640\times640\) input resolution. Its reported throughput is 454 FPS, compared with 554 FPS for YOLOv8n and 463 FPS for YOLO11n. RT-DETR-R18 achieves 67.7\% mAP50--95 at 146 FPS, with 20.09 M parameters and 60.7 GFLOPs. The comparison reports the accuracy and computation of the complete detector. A matched-seed component study is needed to estimate the contributions of attention and upsampling individually.
+As shown in Table~\ref{tab:comparison}, ISU-YOLO ties Deformable DETR-R50 for the highest reported mAP50 (96.8\%) and ranks second in mAP50--95 (66.8\%). It improves on the YOLOv8n reference by 6.3 and 8.4 percentage points, respectively. Its precision of 91.0\% and recall of 97.7\% exceed the YOLOv8n values by 1.6 and 16.6 percentage points, respectively. The fused model has 3,023,329 parameters and requires 8.2 GFLOPs at \(640\times640\) input resolution. Its reported throughput is 454 FPS, compared with 554 FPS for YOLOv8n and 463 FPS for YOLO11n. RT-DETR-R18 achieves 67.7\% mAP50--95 at 146 FPS, with 20.09 M parameters and 60.7 GFLOPs. The comparison reports the accuracy and computation of the complete detector. A matched-seed component study is needed to estimate the contributions of attention and upsampling individually.
 
 \subsection{Performance by Defect Category}
 \label{sec:category-results}
