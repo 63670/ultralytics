@@ -10,7 +10,7 @@
 
 对比表中 Ultralytics 模型的 P、R、mAP50 和 mAP50–95 来自各自的 `test_metrics.log`。YOLO26n 使用 `runs/detect/yolo26n/2/test_metrics.log`，对应 90.3%、86.2%、90.5%、58.2%。RT-DETR-R18、DETR-R50、Deformable DETR-R50 和 Faster R-CNN-R50 的 P、R 沿用 JMS 主对比表中同名、同组 mAP 的记录。
 
-正文依次使用 `figures/fig1.png`（闭环系统架构）、`figures/fig2.png`（产线安装与硬件组件）、`figures/fig3.png`（ISU-YOLO 网络结构与示例检测）和 `figures/compare.png`（定性检测对比）。对比图包含 9 张图，其中训练集 5 张、测试集 4 张。`figures/ribbon-cell-detail.*` 和 PPTX 保留为方法图的编辑素材。
+正文依次使用 `figures/fig1.png`（闭环系统架构）、`figures/fig2.png`（产线安装与硬件组件）、`figures/typical.png`（三类典型瑕疵，各 6 张，用于说明 ISA 和 CDU 的设计动机）、`figures/fig3.png`（ISU-YOLO 网络结构与示例检测）和 `figures/compare.png`（定性检测对比）。对比图包含 9 张图，其中训练集 5 张、测试集 4 张。`figures/ribbon-cell-detail.*` 和 PPTX 保留为方法图的编辑素材。
 
 硬件正文采用图中确认的 RK3588、STM32、RJ45 以太网、接近传感器及额定 12 V / 3 A 电源。新板成本及 ISU-YOLO 的板端吞吐量待确认。
 

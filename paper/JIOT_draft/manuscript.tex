@@ -134,6 +134,16 @@ Figure~\ref{fig:hardware}(A) shows the installed system on the production line. 
 
 \section{Detection Algorithm}
 \label{sec:method}
+\subsection{Defect Appearance and Design Motivation}
+Figure~\ref{fig:typical-defects} shows how defect shape and extent vary in the captured fabric images. Horizontal and vertical defects form narrow traces that can extend over much of the image. Their contrast varies along the trace, so a local neighborhood may reveal only part of a defect. This motivates ISA, which connects distant positions within narrow feature strips. Holes range from small punctures to larger openings along the fabric edge. Their boundaries can occupy only part of a coarse feature cell, which motivates CDU to use finer lateral features to recover variation within each upsampled cell.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.98\textwidth]{typical.png}
+\caption{Representative defects in circular-knitted fabric. Each row contains six examples. From top to bottom, the rows show horizontal defects (\emph{row}, red), vertical defects (\emph{col}, blue), and holes (\emph{hole}, green).}
+\label{fig:typical-defects}
+\end{figure*}
+
 \subsection{Network Architecture}
 ISU-YOLO extends YOLOv8n~\cite{ultralytics2023} at four locations (Fig.~\ref{fig:isu-yolo}). ISA is applied to the outputs of the backbone C2f blocks at P3 and P4, where the strides are 8 and 16. CDU replaces the two nearest-neighbor operations in the top-down feature pyramid, from P5 to P4 and from the fused P4 feature to P3. Each upsampler takes the coarse feature and the corresponding higher-resolution backbone feature. Its output is concatenated with that backbone feature before C2f fusion. The bottom-up path supplies the P3, P4, and P5 detection outputs \cite{lin2017fpn,liu2018panet}.
 
@@ -183,7 +193,7 @@ The parameter cost per upsampler is \(g(2C_x+C_l)+3g^2+g\), including the gate b
 \section{Experimental Setup}
 \label{sec:experimental-setup}
 \subsection{Dataset}
-The dataset was collected from a real circular-knitting production line and covers three defect categories: horizontal defects (\emph{row}), vertical defects (\emph{col}), and holes (\emph{hole}). It comprises 403 images with 468 annotated defect instances, divided into training, validation, and test sets of 282, 40, and 81 images, respectively, as summarized in Table~\ref{tab:data}.
+The dataset was collected from a circular-knitting production line and comprises 403 images with 468 annotated instances of horizontal defects, vertical defects, and holes. The training, validation, and test sets contain 282, 40, and 81 images, respectively (Table~\ref{tab:data}).
 \begin{table}[!htbp]
 \caption{Image-level split and defect-instance counts in the real production-line dataset.}
 \label{tab:data}
@@ -262,6 +272,13 @@ ISU-YOLO (ours) & 3.02 & 8.2 & 91.0 & \underline{97.7} & \textbf{96.8} & \underl
 
 Table~\ref{tab:implementation} summarizes the training protocol and the edge prototype. The proposed detector uses \texttt{yolov8n.pt} initialization. The reported results use the best validation checkpoint from the run with seed~6. Other comparison models use available pretrained checkpoints from their respective implementations.
 
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.90\textheight,keepaspectratio]{compare.png}
+\caption{Qualitative comparison on nine selected fabric images, including five training images and four test images. The columns show ground-truth labels, predictions from five baseline detectors, and ISU-YOLO (Ours). Red, blue, and green boxes indicate row, col, and hole defects, respectively.}
+\label{fig:detection-comparison}
+\end{figure*}
+
 \subsection{Evaluation Metrics}
 \label{sec:evaluation}
 Intersection over union (IoU) is the ratio of the intersection area to the union area of a predicted box and a ground-truth box. At a given IoU threshold $t$, precision ($P$) and recall ($R$) are computed from true positives (TP), false positives (FP), and false negatives (FN). Average precision (AP) integrates the precision--recall curve for class $c$, and mean average precision (mAP) averages AP across the $N_c=3$ classes.
@@ -309,13 +326,6 @@ Table~\ref{tab:category-results} reports the validator's precision, recall, and 
 
 \subsection{Qualitative Comparison}
 Figure~\ref{fig:detection-comparison} shows predictions on selected fabric images. ISU-YOLO localizes both the horizontal and vertical defects in the second and third rows. In the seventh row, ISU-YOLO localizes the hole near the image boundary, while YOLOv8n displays no prediction box for that image.
-
-\begin{figure*}[p]
-\centering
-\includegraphics[width=\textwidth,height=0.90\textheight,keepaspectratio]{compare.png}
-\caption{Qualitative comparison on nine selected fabric images, including five training images and four test images. The columns show ground-truth labels, predictions from five baseline detectors, and ISU-YOLO (Ours). Red, blue, and green boxes indicate row, col, and hole defects, respectively.}
-\label{fig:detection-comparison}
-\end{figure*}
 
 \FloatBarrier
 \section{Conclusion}
