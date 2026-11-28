@@ -242,14 +242,14 @@ Data protocol
 \renewcommand{\arraystretch}{1.0}
 \end{table}
 
-\begin{table}[!t]
+\begin{table*}[!t]
 \caption{Test-set detector comparison. Parameters are in millions, FLOPs in billions, and P, R, and mAP in percent. Bold and underlined values indicate first and second ranks, with ties sharing a rank.}
 \label{tab:comparison}
 \centering
-\footnotesize
-\setlength{\tabcolsep}{2pt}
+\small
+\setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.06}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrrrrr@{}}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrr@{}}
 \toprule
 Model & Params & FLOPs & P & R & mAP50 & mAP50--95 & FPS \\
 \midrule
@@ -260,15 +260,15 @@ YOLO12n~\cite{tian2025yolov12} & 2.60 & 7.6 & 93.0 & 78.5 & 89.0 & 56.8 & 326 \\
 YOLO26n~\cite{ultralytics2023} & \underline{2.57} & \textbf{6.2} & 90.3 & 86.2 & 90.5 & 58.2 & 425 \\
 RT-DETR-R18~\cite{zhao2024rtdetr} & 20.09 & 60.7 & \textbf{97.7} & 94.5 & 95.2 & \textbf{67.7} & 146 \\
 DETR-R50~\cite{carion2020detr} & 41.28 & 77.3 & \textbf{97.7} & 94.5 & \underline{96.4} & 53.6 & 101 \\
-\shortstack[l]{Deformable\\DETR-R50~\cite{zhu2021deformable}} & 39.8 & 158.7 & 93.7 & \textbf{97.8} & \textbf{96.8} & 64.3 & 49 \\
-\shortstack[l]{Faster R-CNN\\(R50)~\cite{ren2015faster}} & 41.1 & 181.5 & \underline{95.7} & \textbf{97.8} & 96.1 & 64.7 & 66 \\
+Deformable DETR-R50~\cite{zhu2021deformable} & 39.8 & 158.7 & 93.7 & \textbf{97.8} & \textbf{96.8} & 64.3 & 49 \\
+Faster R-CNN (R50)~\cite{ren2015faster} & 41.1 & 181.5 & \underline{95.7} & \textbf{97.8} & 96.1 & 64.7 & 66 \\
 YOLOv8n~\cite{ultralytics2023} & 3.01 & 8.1 & 89.4 & 81.1 & 90.5 & 58.4 & \textbf{554} \\
 ISU-YOLO (ours) & 3.02 & 8.2 & 91.0 & \underline{97.7} & \textbf{96.8} & \underline{66.8} & 454 \\
 \bottomrule
 \end{tabular*}
 \par\smallskip
 \renewcommand{\arraystretch}{1.0}
-\end{table}
+\end{table*}
 
 Table~\ref{tab:implementation} summarizes the training protocol and the edge prototype. The proposed detector uses \texttt{yolov8n.pt} initialization. The reported results use the best validation checkpoint from the run with seed~6. Other comparison models use available pretrained checkpoints from their respective implementations.
 
