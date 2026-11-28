@@ -135,7 +135,7 @@ Figure~\ref{fig:hardware}(A) shows the installed system on the production line. 
 \section{Detection Algorithm}
 \label{sec:method}
 \subsection{Defect Appearance and Design Motivation}
-Figure~\ref{fig:typical-defects} shows how defect shape and extent vary in the captured fabric images. Horizontal and vertical defects form narrow traces that can extend over much of the image. Their contrast varies along the trace, so a local neighborhood may reveal only part of a defect. This motivates ISA, which connects distant positions within narrow feature strips. Holes range from small punctures to larger openings along the fabric edge. Their boundaries can occupy only part of a coarse feature cell, which motivates CDU to use finer lateral features to recover variation within each upsampled cell.
+Figure~\ref{fig:typical-defects} shows two kinds of spatial variation relevant to the detector. Horizontal and vertical defects occupy narrow traces, but their visible lengths range from short segments to marks that span most of the image. The fabric texture and local contrast can make some portions of a trace harder to distinguish than others. A response at one location can therefore benefit from evidence farther along the same direction. Holes range from small punctures to openings that reach the edge of the visible fabric. At a hole boundary or a narrow trace, different positions within a single coarse feature cell can represent different parts of the defect and its surroundings. These observations motivate attention across distant positions at the backbone stages and recovery of within-cell variation during top-down upsampling.
 
 \begin{figure*}[!t]
 \centering
@@ -145,7 +145,15 @@ Figure~\ref{fig:typical-defects} shows how defect shape and extent vary in the c
 \end{figure*}
 
 \subsection{Network Architecture}
-ISU-YOLO extends YOLOv8n~\cite{ultralytics2023} at four locations (Fig.~\ref{fig:isu-yolo}). ISA is applied to the outputs of the backbone C2f blocks at P3 and P4, where the strides are 8 and 16. CDU replaces the two nearest-neighbor operations in the top-down feature pyramid, from P5 to P4 and from the fused P4 feature to P3. Each upsampler takes the coarse feature and the corresponding higher-resolution backbone feature. Its output is concatenated with that backbone feature before C2f fusion. The bottom-up path supplies the P3, P4, and P5 detection outputs \cite{lin2017fpn,liu2018panet}.
+ISU-YOLO extends YOLOv8n~\cite{ultralytics2023} at the backbone and the top-down feature pyramid (Fig.~\ref{fig:isu-yolo}). ISA follows the C2f outputs at P3 and P4, which have strides of 8 and 16. The enhanced backbone features are denoted by $B_3$ and $B_4$. Feature $B_5$ is the output of the fast spatial pyramid pooling (SPPF) block at stride 32. We omit the batch dimension in the notation below.
+
+CDU replaces the two nearest-neighbor upsamplers in the top-down path \cite{lin2017fpn,liu2018panet}. Let $T_4$ and $T_3$ be the fused top-down features and $\mathcal{F}_k$ the neck C2f block at level $k$. With brackets denoting channel concatenation, the fusion proceeds as
+\begin{align}
+T_4 &= \mathcal{F}_4\!\left([\operatorname{CDU}_4(B_5,B_4),B_4]\right),\notag\\
+T_3 &= \mathcal{F}_3\!\left([\operatorname{CDU}_3(T_4,B_3),B_3]\right).
+\label{eq:top-down-fusion}
+\end{align}
+\noindent In each stage, the lateral feature is used inside CDU to guide reconstruction and then enters the C2f fusion. The second CDU takes the fused P4 feature $T_4$ and the finer backbone feature $B_3$. The bottom-up path propagates $T_3$ to the coarser scales by fusing the downsampled features with $T_4$ and $B_5$ in order. The detection head uses the resulting P3, P4, and P5 features.
 
 \begin{figure*}[!tbp]
 \centering
@@ -155,40 +163,77 @@ ISU-YOLO extends YOLOv8n~\cite{ultralytics2023} at four locations (Fig.~\ref{fig
 \end{figure*}
 
 \subsection{Interleaved Strip Attention}
-An elongated defect may have a weak response along part of its length. Attention within a narrow band lets a feature use evidence from distant positions while preserving each sampled position. Related work uses grouped and dilated attention to reduce the cost of exchanging information across an image \cite{tu2022maxvit,fan2026randomgrouping}.
+ISA associates spatially separated evidence along elongated defects. Grouped attention provides a way to exchange information across a feature map with a limited number of key positions per query \cite{tu2022maxvit,fan2026randomgrouping}. In ISA, each group contains interleaved positions from a narrow strip, and its output retains a separate feature at each sampled position.
 
-Let \(F\in\mathbb{R}^{C\times H\times W}\) be the output of a backbone C2f block, with the batch dimension omitted. A bias-free \(1\times1\) projection produces \(6d\) channels, followed by an additive \(3\times3\) depthwise convolution. We divide these channels into two branches, each with \(d\)-channel queries, keys, and values. The horizontal branch groups two adjacent rows and collects columns with the same index modulo eight. The vertical branch applies the same grouping to the transposed spatial grid. Padded keys are masked, and each output is returned to its original position before padding is cropped. Within one group, the update is
+\subsubsection{Projection and Local Mixing}
+Let $F\in\mathbb{R}^{C\times H\times W}$ be the feature after C2f aggregation. A bias-free $1\times1$ convolution $W_{\mathrm{qkv}}$ projects $F$ to $6d$ channels, where $d$ is the query, key, and value dimension in each branch. A bias-free $3\times3$ depthwise convolution adds local context to give
+\begin{align}
+Z &= W_{\mathrm{qkv}}F,\notag\\
+Z' &= Z+\operatorname{DWConv}_{3\times3}(Z).
+\label{eq:isa-projection}
+\end{align}
+\noindent We split $Z'$ evenly along the channel dimension into horizontal and vertical branches. Each branch contains $3d$ channels, divided into $d$ channels each for queries, keys, and values. The depthwise operation mixes adjacent positions before the strip grouping at the original resolution.
+
+\begin{samepage}
+\subsubsection{Interleaved Strip Grouping}
+Let $(i,j)$ index a position with zero-based row and column coordinates. For strip width $b$ and sampling step $s$, group membership in the horizontal and vertical branches is specified by
+\begin{align}
+\mathcal{G}_{\mathrm{h}}(i,j) &= (\lfloor i/b\rfloor,\,j\bmod s),\notag\\
+\mathcal{G}_{\mathrm{v}}(i,j) &= (\lfloor j/b\rfloor,\,i\bmod s).
+\label{eq:isa-grouping}
+\end{align}
+\end{samepage}
+\noindent We use $b=2$ and $s=8$. One horizontal group, for example, includes both of the first two rows at columns $0,8,16,\ldots$. The neighboring positions at columns $1,9,17,\ldots$ belong to another group in the same strip. The vertical branch uses the same operation with the row and column coordinates exchanged. Bottom and right padding completes partial groups at the feature-map boundaries.
+
+\subsubsection{Group Attention and Residual Output}
+For a group of $n$ positions, the query, key, and value matrices $Q$, $K$, and $V$ each have size $n\times d$. Scaled dot-product attention produces the group output
 \begin{equation}
-A=\operatorname{softmax}\!\left(QK^\top/\sqrt{d}\right)V,
+A=\operatorname{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}+\mathcal{M}\right)V,
 \label{eq:ribbon-attention}
 \end{equation}
-where softmax is applied across the keys for each query. After the group outputs are restored to the feature grid, the two branches are concatenated and projected to \(C\) channels, yielding
+\noindent where the mask $\mathcal{M}$ suppresses padded keys and softmax is applied across keys. The group outputs are scattered back to their spatial locations and padded positions are cropped. A bias-free $1\times1$ convolution $W_o$ projects the concatenated maps $A_{\mathrm{h}},A_{\mathrm{v}}\in\mathbb{R}^{d\times H\times W}$ to $C$ channels for the residual update
 \begin{equation}
 F_{\mathrm{out}}=F+W_o[A_{\mathrm{h}},A_{\mathrm{v}}].
 \label{eq:ribbon-residual}
 \end{equation}
-The output projection \(W_o\) is initialized to zero.
-
-For \(640\times640\) inputs, P3 and P4 have grids of \(80\times80\) and \(40\times40\), respectively. Each query attends to 20 positions per branch at P3 and 10 at P4. With \(d=8\), the module adds \(8Cd+54d\) weights, including \(54d\) depthwise weights. The two stages have \(C=64\) and \(C=128\), giving a total of 13,152 added weights.
+\noindent Zero-initializing $W_o$ makes $F_{\mathrm{out}}=F$ at initialization. For $640\times640$ inputs, the P3 and P4 grids are $80\times80$ and $40\times40$, respectively. Thus each query attends to 20 positions per branch at P3 and 10 at P4. With $d=8$, the input and output projections require $6Cd$ and $2Cd$ weights, respectively, and local mixing adds $9(6d)$ depthwise weights. At the two stages ($C=64$ and $C=128$), ISA adds 13,152 weights in total.
 
 \subsection{Cell Detail Upsampling}
-Thin defects and holes can occupy different fractions of the four high-resolution positions associated with one coarse cell. Upsampling starts from nearest-neighbor replication of the coarse response, then adds the spatial differences available in the lateral feature. This design draws on cross-scale feature fusion that uses fine-scale evidence to recover boundary detail \cite{chen2024freqfusion}.
+Nearest-neighbor upsampling replicates one coarse value across four finer positions. Local variation within these four positions matters when a thin trace or a hole boundary passes through the cell. Following the use of fine-scale evidence in cross-scale feature fusion \cite{chen2024freqfusion}, CDU adds a detail term derived from the lateral feature. We construct the term so that its mean vanishes within each upsampled cell.
 
-Let \(X\) be the coarse feature with \(C_x\) channels and \(L\) be the lateral feature with \(C_l\) channels at twice the spatial resolution. The lateral projection \(W_l\) maps \(L\) to \(g=4\) channels. With \(D_2\) denoting \(2\times2\) average pooling at stride two and \(U_2\) denoting nearest-neighbor upsampling, we form
+\subsubsection{Within-Cell Detail Extraction}
+Let $X\in\mathbb{R}^{C_x\times H\times W}$ be the coarse feature and $L\in\mathbb{R}^{C_l\times2H\times2W}$ the aligned lateral feature. Denote nearest-neighbor upsampling by a factor of two as $U_2$ and average pooling over nonoverlapping $2\times2$ cells as $D_2$. The base is $N=U_2(X)$. A bias-free $1\times1$ projection $W_l$ maps $L$ to $g=4$ detail channels. Subtracting the mean $M$ from the four positions of each cell gives the detail map $D$ as
 \begin{align}
-Z &= W_l L,\quad M=D_2(Z),\\
+Z &= W_l L,\qquad M=D_2(Z),\notag\\
 D &= Z-U_2(M).
 \label{eq:cell-detail}
 \end{align}
-The signed detail \(D\) has zero mean in each \(2\times2\) cell. To control detail transfer, a coarse \(1\times1\) projection \(W_c\) maps \(X\) to the same number of channels. A pointwise convolution followed by a sigmoid predicts one gate for each latent channel in each coarse cell:
-\begin{align}
-G &= \sigma\!\left(W_g[W_cX,M,|W_cX-M|]+b_g\right),\\
-Y &= U_2(X)+W_p\!\left(D\odot U_2(G)\right).
-\label{eq:cell-output}
-\end{align}
-Here \(\odot\) denotes element-wise multiplication and \(W_p\) is a bias-free projection to \(C_x\) channels. The same gate scales all four positions in a cell, so \(D_2(Y)=X\) in exact arithmetic. This property applies at the upsampler output, before lateral concatenation. A zero-initialized \(W_p\) starts the module at nearest-neighbor upsampling.
+\noindent Since $D_2(U_2(M))=M$, this subtraction gives $D_2(D)=0$. The residual $D$ has size $g\times2H\times2W$, and it retains the signed deviation of each position from its cell mean.
 
-The parameter cost per upsampler is \(g(2C_x+C_l)+3g^2+g\), including the gate bias. The two stages use \((C_x,C_l)=(256,128)\) and \((128,64)\), adding 3,944 parameters in total. The full detector adds 17,096 parameters to the YOLOv8n architecture.
+\subsubsection{Cell-Wise Gate}
+The amount of transferred detail depends on the coarse response and the lateral feature. A bias-free $1\times1$ projection $W_c$ maps $X$ to $g$ channels, so the projected feature $S$ can be compared with the lateral mean $M$ at each coarse position. The gate $G$ is computed from the two descriptors and their element-wise absolute difference $\Delta$ as
+\begin{align}
+S &= W_c X,\qquad \Delta=|S-M|,\notag\\
+G &= \sigma\!\left(W_g[S,M,\Delta]+b_g\right).
+\label{eq:cell-gate}
+\end{align}
+\noindent Here $W_g$ projects the $3g$ concatenated channels to $g$ with a $1\times1$ convolution, $b_g$ is its bias, and $\sigma$ is the sigmoid function. The gate $G\in(0,1)^{g\times H\times W}$ contains a weight for each detail channel and coarse cell. Applying $U_2$ to $G$ shares each weight across the four positions of its cell.
+
+\subsubsection{Mean-Preserving Reconstruction}
+A bias-free $1\times1$ projection $W_p$ maps the gated detail back to $C_x$ channels. The output $Y\in\mathbb{R}^{C_x\times2H\times2W}$ is
+\begin{equation}
+Y=N+W_p\!\left(D\odot U_2(G)\right),
+\label{eq:cell-output}
+\end{equation}
+\noindent where $\odot$ denotes element-wise multiplication. Within a cell, the gate is spatially constant and $W_p$ is linear. Averaging the four output positions therefore gives
+\begin{align}
+D_2(Y) &= X+W_p\!\left(G\odot D_2(D)\right)\notag\\
+       &= X.
+\label{eq:cell-mean-preservation}
+\end{align}
+\noindent Equation~\eqref{eq:cell-mean-preservation} describes the CDU output in exact arithmetic before lateral concatenation. The responses within a cell can vary with local shape while their mean retains the coarse response. At initialization $W_p=0$, so the module starts from the nearest-neighbor output $N$.
+
+The three bias-free projections and the gate require $g(2C_x+C_l)+3g^2+g$ parameters per CDU. At the P5-to-P4 and P4-to-P3 stages, $(C_x,C_l)$ equals $(256,128)$ and $(128,64)$, respectively. The two CDUs add 3,944 parameters, bringing the total addition of ISA and CDU to 17,096 parameters over YOLOv8n.
 
 \section{Experimental Setup}
 \label{sec:experimental-setup}
